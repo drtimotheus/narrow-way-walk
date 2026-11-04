@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 cd "$(dirname "$0")"
 echo "=================================================================="
 echo "  THE NARROW WAY WALK — Push to GitHub (drtimotheus/narrow-way-walk)"

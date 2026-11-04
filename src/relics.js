@@ -1,7 +1,7 @@
 // ============================================================================
 // THE NARROW WAY — ZONE 1: RELIC WORKSHOP & 3D GLB TURNTABLE INSPECTOR
 // ============================================================================
-// FLAG: DEC-01, DEC-06 — Loads assets/models/relics-manifest.json and .glb
+// Loads assets/models/relics-manifest.json and .glb
 // models using GLTFLoader + MeshoptDecoder (with procedural fallback), builds
 // world relic pedestals, and powers the interactive 3D Relic Workshop modal.
 

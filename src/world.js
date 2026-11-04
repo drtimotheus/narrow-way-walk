@@ -1,9 +1,10 @@
 // ============================================================================
 // THE NARROW WAY — ZONE 1: 3D STAGE BUILDER, ELIAS COMPANION & INTERACTABLES
 // ============================================================================
-// FLAG: DEC-01, DEC-02 — Builds the 6 canonical 3D stages of Elias's Seoul and
-// the Sea of Glass, renders Elias Cho as a 3D companion walking beside the
-// Fellow-Traveler (never a skin the player wears), and places interactive nodes.
+// Builds the 6 canonical 3D stages of Elias's Seoul and the Sea of Glass,
+// renders Elias Cho as a 3D companion walking beside the Fellow-Traveler
+// (never a skin the player wears), and places interactive nodes with clean
+// proximity-only short name tags.
 
 import * as THREE from 'three';
 import {
@@ -15,57 +16,95 @@ import {
 } from './painterly.js';
 import { createWorldRelicPedestal } from './relics.js';
 
-function makeLabelSprite(title, sub, accentHex = '#5cc8ff') {
+function makeCompactNameTag(text, accentHex = '#5cc8ff') {
+  const clean = String(text || '').trim();
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 160;
+  canvas.width = 256;
+  canvas.height = 68;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = 'rgba(10, 15, 28, 0.86)';
+
+  ctx.fillStyle = 'rgba(8, 14, 26, 0.88)';
   ctx.strokeStyle = accentHex;
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.roundRect(8, 8, 496, 144, 18);
+  ctx.roundRect(10, 8, 236, 52, 26);
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = accentHex;
-  ctx.font = 'bold 24px Georgia, serif';
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(title.slice(0, 36), 256, 62);
-
-  ctx.fillStyle = '#e2e8f0';
-  ctx.font = '20px system-ui, sans-serif';
-  ctx.fillText((sub || '').slice(0, 44), 256, 110);
+  ctx.textBaseline = 'middle';
+  ctx.fillText(clean, 128, 35);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+  const mat = new THREE.SpriteMaterial({
+    map: tex,
+    transparent: true,
+    depthWrite: false,
+    depthTest: true
+  });
   const sprite = new THREE.Sprite(mat);
-  sprite.scale.set(4.2, 1.32, 1);
+  sprite.scale.set(1.65, 0.44, 1);
   return sprite;
 }
 
+export function getShortNodeLabel(node) {
+  if (!node) return '';
+  if (node.type === 'well') {
+    const num = (node.wellId || '').replace('well_', '') || '1';
+    return `Well ${num}`;
+  }
+  if (node.type === 'stand') {
+    const num = (node.standId || '').replace('stand_', '') || '1';
+    return `Stand ${num}`;
+  }
+  if (node.type === 'treasure') {
+    const num = (node.treasureId || '').replace('treasure_', '') || '1';
+    return `Treasure ${num}`;
+  }
+  if (node.type === 'wisdom') {
+    const num = (node.wisdomId || '').replace('wisdom_', '') || '1';
+    return `Wisdom ${num}`;
+  }
+  if (node.type === 'relic') {
+    if (node.relicId === 'aquamarine-tuning-stone') return 'Token';
+    if (node.relicId === 'davids-cypress-kinnor') return 'Relic 2';
+    return 'Relic 3';
+  }
+  if (node.type === 'portal') {
+    const next = (node.targetStageIdx ?? 1) + 1;
+    return `Stage ${next} →`;
+  }
+  if (node.type === 'gatehouse_finale') {
+    return 'Treasure Gate';
+  }
+  return 'Inspect';
+}
+
 export function createCharacterFigure({
-  coatHex = 0x1e293b,
+  coatHex = 0x26354d,
   scarfHex = 0x5cc8ff,
   skinHex = 0xe8c5a5,
   hairHex = 0x111827,
   hasGuitarCase = false,
   hasHarp = false,
   portraitKey = null,
-  label = 'Elias Cho',
-  roleSub = 'Companion · Walk Beside Him'
+  label = 'Elias',
+  shortTag = null,
+  alwaysShowTag = false
 }) {
   const group = new THREE.Group();
-  const coatMat = new THREE.MeshStandardMaterial({ color: coatHex, roughness: 0.65 });
+  const coatMat = new THREE.MeshStandardMaterial({ color: coatHex, roughness: 0.55 });
   const scarfMat = new THREE.MeshStandardMaterial({
     color: scarfHex,
     emissive: scarfHex,
-    emissiveIntensity: 0.2,
-    roughness: 0.45
+    emissiveIntensity: 0.28,
+    roughness: 0.4
   });
-  const skinMat = new THREE.MeshStandardMaterial({ color: skinHex, roughness: 0.6 });
-  const hairMat = new THREE.MeshStandardMaterial({ color: hairHex, roughness: 0.8 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: skinHex, roughness: 0.55 });
+  const hairMat = new THREE.MeshStandardMaterial({ color: hairHex, roughness: 0.75 });
 
   const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 0.75, 10), hairMat);
   legs.position.y = 0.38;
@@ -82,53 +121,57 @@ export function createCharacterFigure({
   group.add(legs, torso, scarf, head, hair);
 
   if (hasGuitarCase) {
-    const caseMat = new THREE.MeshStandardMaterial({ color: 0x3b2314, roughness: 0.6 });
+    const caseMat = new THREE.MeshStandardMaterial({ color: 0x4a2c18, roughness: 0.55 });
     const gCase = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.88, 0.16), caseMat);
     gCase.position.set(0.06, 1.18, -0.26);
     gCase.rotation.z = -0.18;
     group.add(gCase);
   }
   if (hasHarp) {
-    const harpMat = new THREE.MeshStandardMaterial({ color: 0x9c6b30, roughness: 0.45 });
+    const harpMat = new THREE.MeshStandardMaterial({ color: 0xb07c3a, roughness: 0.4 });
     const harp = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 8, 18, Math.PI * 1.45), harpMat);
     harp.position.set(0.32, 1.18, 0.16);
     const gem = new THREE.Mesh(
       new THREE.OctahedronGeometry(0.06, 0),
-      new THREE.MeshStandardMaterial({ color: 0x5cc8ff, emissive: 0x38bdf8 })
+      new THREE.MeshStandardMaterial({ color: 0x5cc8ff, emissive: 0x38bdf8, emissiveIntensity: 0.6 })
     );
     gem.position.set(0.32, 1.0, 0.22);
     group.add(harp, gem);
   }
-  if (portraitKey && PORTRAIT_ART_MAP[portraitKey]) {
+  if (portraitKey && PORTRAIT_ART_MAP[portraitKey] && portraitKey !== 'elias') {
     const pTex = loadStageArtTexture(0, label, PORTRAIT_ART_MAP[portraitKey]);
     const disc = new THREE.Mesh(
-      new THREE.CircleGeometry(0.42, 24),
+      new THREE.CircleGeometry(0.36, 24),
       new THREE.MeshBasicMaterial({ map: pTex, side: THREE.DoubleSide })
     );
-    disc.position.set(0, 3.35, 0);
+    disc.position.set(0, 2.75, 0);
     const rim = new THREE.Mesh(
-      new THREE.RingGeometry(0.42, 0.47, 24),
+      new THREE.RingGeometry(0.36, 0.4, 24),
       new THREE.MeshBasicMaterial({ color: scarfHex, side: THREE.DoubleSide })
     );
-    rim.position.set(0, 3.35, 0.01);
+    rim.position.set(0, 2.75, 0.01);
     group.add(disc, rim);
   }
-  if (label) {
-    const sprite = makeLabelSprite(label, roleSub, '#7dd3fc');
-    sprite.position.set(0, 2.45, 0);
+
+  const displayTag = shortTag || (label ? label.split(' ')[0] : '');
+  if (displayTag) {
+    const sprite = makeCompactNameTag(displayTag, '#7dd3fc');
+    sprite.position.set(0, 2.22, 0);
+    sprite.visible = Boolean(alwaysShowTag);
     group.add(sprite);
+    group.userData.nameTag = sprite;
   }
   return group;
 }
 
 const NODE_STYLES = {
-  well: { color: 0x38bdf8, hex: '#38bdf8', sub: 'Well of Living Water · Rest & Scroll' },
-  stand: { color: 0xf97316, hex: '#fb923c', sub: 'Stand · 2d6 + Courage (Transparent)' },
-  treasure: { color: 0xfacc15, hex: '#facc15', sub: 'Treasure Choice · Give (+1) or Keep (+0)' },
-  wisdom: { color: 0xa7f3d0, hex: '#6ee7b7', sub: 'Wisdom Page · Read KJV Scripture' },
-  relic: { color: 0x60a5fa, hex: '#93c5fd', sub: 'Relic Pedestal · 3D Turntable' },
-  portal: { color: 0xc084fc, hex: '#d8b4fe', sub: 'Stage Passage · Step Forward' },
-  gatehouse_finale: { color: 0xfbbf24, hex: '#fde047', sub: 'Treasure Gate & NW1 Save Code' }
+  well: { color: 0x38bdf8, hex: '#38bdf8' },
+  stand: { color: 0xf97316, hex: '#fb923c' },
+  treasure: { color: 0xfacc15, hex: '#facc15' },
+  wisdom: { color: 0xa7f3d0, hex: '#6ee7b7' },
+  relic: { color: 0x60a5fa, hex: '#93c5fd' },
+  portal: { color: 0xc084fc, hex: '#d8b4fe' },
+  gatehouse_finale: { color: 0xfbbf24, hex: '#fde047' }
 };
 
 export function createNodeMonument(node, isCompleted = false) {
@@ -141,7 +184,7 @@ export function createNodeMonument(node, isCompleted = false) {
     color: isCompleted ? 0x34d399 : style.color,
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: 0.72
+    opacity: 0.78
   });
   const baseRing = new THREE.Mesh(new THREE.RingGeometry(1.1, 1.32, 36), ringMat);
   baseRing.rotation.x = -Math.PI / 2;
@@ -154,11 +197,11 @@ export function createNodeMonument(node, isCompleted = false) {
     group.add(ped);
     group.userData.floatingMesh = ped.userData.spinTarget;
   } else if (node.type === 'well') {
-    const stoneMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.55 });
+    const stoneMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.5 });
     const waterMat = new THREE.MeshStandardMaterial({
       color: 0x38bdf8,
       emissive: 0x0284c7,
-      emissiveIntensity: 0.7,
+      emissiveIntensity: 0.85,
       roughness: 0.15
     });
     const curb = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, 0.72, 20), stoneMat);
@@ -170,12 +213,12 @@ export function createNodeMonument(node, isCompleted = false) {
     group.add(curb, pool, gem);
     group.userData.floatingMesh = gem;
   } else if (node.type === 'stand') {
-    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x27171c, roughness: 0.5 });
+    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x3b232a, roughness: 0.45 });
     const coreMat = new THREE.MeshStandardMaterial({
       color: isCompleted ? 0x34d399 : 0xf97316,
-      emissive: isCompleted ? 0x059669 : 0xc2410c,
-      emissiveIntensity: 0.75,
-      roughness: 0.25
+      emissive: isCompleted ? 0x059669 : 0xea580c,
+      emissiveIntensity: 0.85,
+      roughness: 0.22
     });
     const base = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.85, 0.7, 8), pillarMat);
     base.position.y = 0.35;
@@ -184,12 +227,12 @@ export function createNodeMonument(node, isCompleted = false) {
     group.add(base, crystal);
     group.userData.floatingMesh = crystal;
   } else if (node.type === 'treasure') {
-    const pedMat = new THREE.MeshStandardMaterial({ color: 0x292524, roughness: 0.6 });
+    const pedMat = new THREE.MeshStandardMaterial({ color: 0x3f3a36, roughness: 0.55 });
     const goldMat = new THREE.MeshStandardMaterial({
       color: 0xfacc15,
-      emissive: 0xb45309,
-      emissiveIntensity: 0.65,
-      roughness: 0.25,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.78,
+      roughness: 0.22,
       metalness: 0.6
     });
     const ped = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.85, 0.85), pedMat);
@@ -199,12 +242,12 @@ export function createNodeMonument(node, isCompleted = false) {
     group.add(ped, crown);
     group.userData.floatingMesh = crown;
   } else {
-    const standMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+    const standMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.45 });
     const scrollMat = new THREE.MeshStandardMaterial({
       color: style.color,
       emissive: style.color,
-      emissiveIntensity: 0.35,
-      roughness: 0.3
+      emissiveIntensity: 0.48,
+      roughness: 0.25
     });
     const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.45, 1.0, 12), standMat);
     pillar.position.y = 0.5;
@@ -215,31 +258,63 @@ export function createNodeMonument(node, isCompleted = false) {
     group.userData.floatingMesh = tablet;
   }
 
-  const label = makeLabelSprite(
-    isCompleted ? `✓ ${node.label}` : node.label,
-    style.sub,
+  const shortText = getShortNodeLabel(node);
+  const label = makeCompactNameTag(
+    isCompleted ? `✓ ${shortText}` : shortText,
     isCompleted ? '#34d399' : style.hex
   );
-  label.position.set(0, 2.55, 0);
+  label.position.set(0, 2.35, 0);
+  label.visible = false; // Shown only when within interact range, one at a time (nearest wins)
   group.add(label);
+  group.userData.labelSprite = label;
   return group;
 }
 
-function populateStageScenery(stageId, envGroup) {
+function addWarmStreetLamps(envGroup, ecoMode = false) {
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5, metalness: 0.4 });
+  const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffe4a0 });
+  const positions = [
+    [-4.8, -4],
+    [4.8, -11],
+    [-4.8, -18],
+    [4.8, -24]
+  ];
+  positions.forEach(([x, z], idx) => {
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 3.6, 8), poleMat);
+    pole.position.set(x, 1.8, z);
+    const lantern = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 10), bulbMat);
+    lantern.position.set(x, 3.68, z);
+    envGroup.add(pole, lantern);
+    if (!ecoMode || idx % 2 === 0) {
+      const lampLight = new THREE.PointLight(0xffcf70, 2.2, 14, 1.4);
+      lampLight.position.set(x, 3.5, z);
+      envGroup.add(lampLight);
+    }
+  });
+}
+
+function populateStageScenery(stageId, envGroup, ecoMode = false) {
   const wallMat = new THREE.MeshStandardMaterial({
-    map: createPainterlyTexture('#182030', '#243046', '#0e1420', 48),
-    roughness: 0.78
+    map: createPainterlyTexture('#263349', '#384b6b', '#172030', 48),
+    roughness: 0.72
   });
   const warmMat = new THREE.MeshStandardMaterial({
     color: 0xfbbf24,
-    emissive: 0xd97706,
-    emissiveIntensity: 0.65
+    emissive: 0xf59e0b,
+    emissiveIntensity: 0.85
   });
   const neonBlueMat = new THREE.MeshStandardMaterial({
     color: 0x38bdf8,
-    emissive: 0x0284c7,
-    emissiveIntensity: 0.8
+    emissive: 0x0ea5e9,
+    emissiveIntensity: 0.95
   });
+  const neonCoralMat = new THREE.MeshStandardMaterial({
+    color: 0xfb7185,
+    emissive: 0xe11d48,
+    emissiveIntensity: 0.85
+  });
+
+  addWarmStreetLamps(envGroup, ecoMode);
 
   if (stageId === 'seoul_corridor' || stageId === 'alley_to_glass') {
     for (let i = -3; i <= 3; i++) {
@@ -247,20 +322,22 @@ function populateStageScenery(stageId, envGroup) {
       bL.position.set(-8.8, 4.5, i * 6.2);
       const bR = new THREE.Mesh(new THREE.BoxGeometry(4.5, 8.5 + (i % 2) * 2, 4.5), wallMat);
       bR.position.set(8.8, 4.2, i * 6.2);
-      const sign = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.4, 2.2), i % 2 === 0 ? neonBlueMat : warmMat);
+      const signMat = i % 3 === 0 ? neonCoralMat : i % 2 === 0 ? neonBlueMat : warmMat;
+      const sign = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.5, 2.3), signMat);
       sign.position.set(i % 2 === 0 ? -6.4 : 6.4, 3.8, i * 6.2);
       envGroup.add(bL, bR, sign);
     }
     if (stageId === 'alley_to_glass') {
       const david = createCharacterFigure({
-        coatHex: 0x0369a1,
+        coatHex: 0x0284c7,
         scarfHex: 0x7dd3fc,
         hasHarp: true,
         portraitKey: 'david',
         label: 'David the King',
-        roleSub: 'Mentor · Spirit of Might (Crownless)'
+        shortTag: 'David',
+        alwaysShowTag: false
       });
-      david.position.set(5.6, 0, -9.2);
+      david.position.set(3.2, 0, -15.8);
       david.rotation.y = -0.5;
       envGroup.add(david);
     }
@@ -268,7 +345,7 @@ function populateStageScenery(stageId, envGroup) {
     for (let i = -2; i <= 2; i++) {
       const tower = new THREE.Mesh(new THREE.BoxGeometry(5.2, 12, 4.8), wallMat);
       tower.position.set(i * 6.5, 6, -15.5);
-      const glassWindow = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 8.5), neonBlueMat);
+      const glassWindow = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 8.5), i % 2 === 0 ? neonBlueMat : warmMat);
       glassWindow.position.set(i * 6.5, 6, -13.05);
       envGroup.add(tower, glassWindow);
     }
@@ -295,17 +372,17 @@ function populateStageScenery(stageId, envGroup) {
     counter.position.set(4.5, 0.52, -3.5);
     const bottle = new THREE.Mesh(
       new THREE.CylinderGeometry(0.08, 0.11, 0.42, 12),
-      new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.2, transparent: true, opacity: 0.85 })
+      new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.2, transparent: true, opacity: 0.88 })
     );
     bottle.position.set(4.5, 1.26, -3.5);
     envGroup.add(counter, bottle);
   } else if (stageId === 'sea_of_glass_climax') {
     const witnesses = [
-      { name: 'David the King', role: 'Light Blue · Might · Psalm 51:17', x: -5.2, z: -3.5, coat: 0x0284c7, harp: true, portrait: 'david' },
-      { name: 'Daniel the Prophet', role: 'Green · Counsel · Daniel 6:10', x: 5.2, z: -3.5, coat: 0x15803d, harp: false, portrait: 'daniel' },
-      { name: 'Paul the Apostle', role: 'Dark Blue · Knowledge · 2 Cor 12:9', x: -6.4, z: -9.5, coat: 0x1d4ed8, harp: false, portrait: 'paul' },
-      { name: 'Queen Esther', role: 'Red · Spirit of the Lord · Esther 4:14', x: 6.4, z: -9.5, coat: 0xb91c1c, harp: false, portrait: 'esther' },
-      { name: 'Adaeze & Matthias & Talia', role: 'Fellow-Soldiers · Humming the 4 Notes', x: -3.8, z: 3.5, coat: 0x4f46e5, harp: false, portrait: 'adaeze' }
+      { name: 'David the King', shortTag: 'David', x: -5.2, z: -3.5, coat: 0x0284c7, harp: true, portrait: 'david' },
+      { name: 'Daniel the Prophet', shortTag: 'Daniel', x: 5.2, z: -3.5, coat: 0x15803d, harp: false, portrait: 'daniel' },
+      { name: 'Paul the Apostle', shortTag: 'Paul', x: -6.4, z: -9.5, coat: 0x1d4ed8, harp: false, portrait: 'paul' },
+      { name: 'Queen Esther', shortTag: 'Esther', x: 6.4, z: -9.5, coat: 0xb91c1c, harp: false, portrait: 'esther' },
+      { name: 'Adaeze & Matthias & Talia', shortTag: 'Adaeze', x: -3.8, z: 3.5, coat: 0x4f46e5, harp: false, portrait: 'adaeze' }
     ];
     for (const w of witnesses) {
       const fig = createCharacterFigure({
@@ -314,7 +391,8 @@ function populateStageScenery(stageId, envGroup) {
         hasHarp: w.harp,
         portraitKey: w.portrait,
         label: w.name,
-        roleSub: w.role
+        shortTag: w.shortTag,
+        alwaysShowTag: false
       });
       fig.position.set(w.x, 0, w.z);
       fig.lookAt(0, 0, -4);
@@ -332,12 +410,13 @@ export class WorldStageManager {
     this.seaMaterial = null;
     this.particles = null;
     this.eliasCompanion = createCharacterFigure({
-      coatHex: 0x1e293b,
+      coatHex: 0x283852,
       scarfHex: 0x38bdf8,
       hasGuitarCase: true,
       portraitKey: 'elias',
       label: 'Elias Cho',
-      roleSub: 'Companion · Walk Beside Him (Never Controlled)'
+      shortTag: 'Elias',
+      alwaysShowTag: true
     });
     this.scene.add(this.eliasCompanion);
   }
@@ -348,18 +427,23 @@ export class WorldStageManager {
     }
     this.nodeGroups = [];
     const pal = stage.palette || {};
-    this.scene.fog = new THREE.FogExp2(pal.fog || '#0b101d', 0.022);
+    // Lighter atmospheric fog so warm street lamps, neon accents, and distant murals glow clearly
+    this.scene.fog = new THREE.FogExp2(pal.fog || '#162238', 0.0115);
 
     const sky = createSkyDome(
-      pal.skyTop || '#070b14',
-      pal.skyHorizon || '#162238'
+      pal.skyTop || '#121e36',
+      pal.skyHorizon || '#2e4b73'
     );
     this.stageGroup.add(sky);
 
-    const amb = new THREE.AmbientLight(0xdbeafe, 0.95);
-    const dir = new THREE.DirectionalLight(pal.aquamarine || '#5cc8ff', 1.85);
-    dir.position.set(8, 18, 10);
-    this.stageGroup.add(amb, dir);
+    // Brightened painterly lighting pass matching the painted art
+    const hemi = new THREE.HemisphereLight(0xe0f2fe, 0x3b2f26, 1.55);
+    const amb = new THREE.AmbientLight(0xfffbeb, 0.9);
+    const dir = new THREE.DirectionalLight(0xffe8b3, 2.25);
+    dir.position.set(10, 22, 12);
+    const rimDir = new THREE.DirectionalLight(pal.aquamarine || '#5cc8ff', 1.35);
+    rimDir.position.set(-10, 14, -18);
+    this.stageGroup.add(hemi, amb, dir, rimDir);
 
     const theme = stage.theme || stage.id;
     const isGlassStage = theme === 'alley_to_glass' || theme === 'sea_of_glass_climax';
@@ -370,11 +454,11 @@ export class WorldStageManager {
       this.stageGroup.add(floor);
     } else {
       this.seaMaterial = null;
-      const gHex = pal.ground || '#141a26';
+      const gHex = pal.ground || '#222b3a';
       const floorMat = new THREE.MeshStandardMaterial({
-        map: createPainterlyTexture(gHex, '#233046', '#0b0f18', 72),
-        roughness: 0.72,
-        metalness: 0.18
+        map: createPainterlyTexture(gHex, '#384c6b', '#172030', 72),
+        roughness: 0.62,
+        metalness: 0.22
       });
       const floor = new THREE.Mesh(new THREE.PlaneGeometry(36, 48), floorMat);
       floor.rotation.x = -Math.PI / 2;
@@ -384,24 +468,23 @@ export class WorldStageManager {
     const pathMat = new THREE.MeshStandardMaterial({
       color: pal.accent || '#38bdf8',
       emissive: pal.accent || '#38bdf8',
-      emissiveIntensity: 0.22,
-      roughness: 0.4,
+      emissiveIntensity: 0.35,
+      roughness: 0.35,
       transparent: true,
-      opacity: 0.42
+      opacity: 0.52
     });
-    const pathMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 34), pathMat);
+    const pathMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 36), pathMat);
     pathMesh.rotation.x = -Math.PI / 2;
     pathMesh.position.set(0, 0.02, -12);
     this.stageGroup.add(pathMesh);
 
-    populateStageScenery(theme, this.stageGroup);
+    populateStageScenery(theme, this.stageGroup, ecoMode);
 
-    // 3D Stage Art Mural Frame (loads stage's linked PNG from assets/art/*.png first,
-    // falls back to procedural canvas with FLAG: DEC-07 badge only when absent)
+    // 3D Stage Art Mural Frame
     const artTex = loadStageArtTexture(stage.idx ?? 0, stage.title);
     const frameMesh = new THREE.Mesh(
       new THREE.BoxGeometry(8.4, 5.2, 0.22),
-      new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.35, metalness: 0.65 })
+      new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.68 })
     );
     frameMesh.position.set(0, 4.4, -29.2);
     const canvasPlane = new THREE.Mesh(
@@ -425,7 +508,7 @@ export class WorldStageManager {
       color: isGlassStage ? 0xfde047 : 0x93c5fd,
       size: isGlassStage ? 0.14 : 0.09,
       transparent: true,
-      opacity: 0.7
+      opacity: 0.72
     });
     this.particles = new THREE.Points(pGeo, pMat);
     this.stageGroup.add(this.particles);
@@ -445,6 +528,18 @@ export class WorldStageManager {
     if (this.particles) {
       this.particles.rotation.y = elapsed * 0.03;
     }
+
+    // Find the single nearest node within interact range (4.2m) so only 1 short label shows at a time
+    let nearestMon = null;
+    let bestDist = 4.2;
+    for (const mon of this.nodeGroups) {
+      const d = Math.hypot(mon.position.x - playerPos.x, mon.position.z - playerPos.z);
+      if (d < bestDist) {
+        bestDist = d;
+        nearestMon = mon;
+      }
+    }
+
     for (const mon of this.nodeGroups) {
       if (mon.userData.floatingMesh) {
         mon.userData.floatingMesh.rotation.y = elapsed * 0.9;
@@ -454,15 +549,20 @@ export class WorldStageManager {
         const s = 1 + Math.sin(elapsed * 3.0) * 0.06;
         mon.userData.haloRing.scale.set(s, s, 1);
       }
+      if (mon.userData.labelSprite) {
+        mon.userData.labelSprite.visible = mon === nearestMon;
+      }
     }
-    const targetX = playerPos.x - 1.35;
-    const targetZ = playerPos.z - 0.85;
+
+    // Elias walks beside the Fellow-Traveler to the left-forward so his small "Elias" tag never covers the player center
+    const targetX = playerPos.x - 1.75;
+    const targetZ = playerPos.z - 1.15;
     this.eliasCompanion.position.x += (targetX - this.eliasCompanion.position.x) * Math.min(1, dt * 4.5);
     this.eliasCompanion.position.z += (targetZ - this.eliasCompanion.position.z) * Math.min(1, dt * 4.5);
     this.eliasCompanion.position.y = Math.abs(Math.sin(elapsed * 3.2)) * 0.04;
   }
 
-  getNearestNode(playerPos, maxDist = 3.2) {
+  getNearestNode(playerPos, maxDist = 4.2) {
     let best = null;
     let bestD = maxDist;
     for (const mon of this.nodeGroups) {

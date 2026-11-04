@@ -145,11 +145,11 @@ for (const f of deliveredFiles) {
 }
 console.log(`✓ Total local static site + 3D GLB weight: ${(totalDeliveredBytes / 1024).toFixed(1)} KB (${totalDeliveredBytes} bytes) — well under the 15,360 KB (15 MB) budget!`);
 
-// 9. Morning Sign-Off Checks (OPEN-01, OPEN-03, Favor Test, DEC-05 No-Theophany, ES Module Exports)
-assert.equal(WORLD_CONFIG.worldTitle, 'The Narrow Way Walk', 'OPEN-01: worldTitle must be The Narrow Way Walk');
-assert.equal(html.includes('<title>The Narrow Way Walk'), true, 'OPEN-01: index.html <title> must be The Narrow Way Walk');
-assert.equal(html.includes('The Narrow Way Walk · Zone I'), true, 'OPEN-01: index.html header must be The Narrow Way Walk');
-assert.equal(WORLD_CONFIG.gatehouseBook1Url, '#gatehouse-book-01-placeholder', 'OPEN-03: Gatehouse URL must remain placeholder');
+// 9. Morning Sign-Off Checks (Title, Gatehouse, Favor Test, No-Theophany, ES Module Exports)
+assert.equal(WORLD_CONFIG.worldTitle, 'The Narrow Way Walk', 'worldTitle must be The Narrow Way Walk');
+assert.equal(html.includes('<title>The Narrow Way Walk'), true, 'index.html <title> must be The Narrow Way Walk');
+assert.equal(html.includes('The Narrow Way Walk · Zone I'), true, 'index.html header must be The Narrow Way Walk');
+assert.equal(WORLD_CONFIG.gatehouseBook1Url, '', 'Gatehouse URL must be empty when hidden');
 
 // Favor Test check: must not deal +1 damage to Stronghold
 assert.equal(mainJs.includes('Extra +1 damage'), false, 'Favor Test +1 damage branch must be removed');
@@ -197,9 +197,9 @@ for (const artPath of requiredArtFiles) {
 }
 console.log(`✓ Linked PNG art inventory verified: ${requiredArtFiles.length} files present in assets/art/ and wired via STAGE_ART_MAP, WISDOM_ART_MAP, PORTRAIT_ART_MAP, loadArtIntoImage, and loadStageArtTexture`);
 
-// DEC-05 No-Theophany Check: verify all 3D character figures created in src/world.js are strictly human companions/Mentors
+// No-Theophany Check: verify all 3D character figures created in src/world.js are strictly human companions/Mentors
 const labelMatches = [...worldJs.matchAll(/label:\s*['"]([^'"]+)['"]|name:\s*['"]([^'"]+)['"]/g)].map((m) => m[1] || m[2]);
 for (const lbl of labelMatches) {
-  assert.equal(/God|Father|Jesus|Christ|Lord|Throne/i.test(lbl), false, `DEC-05 violation: 3D figure label "${lbl}" must never depict a theophany`);
+  assert.equal(/God|Father|Jesus|Christ|Lord|Throne/i.test(lbl), false, `No-Theophany violation: 3D figure label "${lbl}" must never depict a theophany`);
 }
-console.log(`✓ Morning Sign-Off checks passed (OPEN-01 title, OPEN-03 placeholder, Favor Test rule, ES module exports, DEC-05 No-Theophany across ${labelMatches.length} 3D character figures: ${labelMatches.join(', ')})`);
+console.log(`✓ Morning Sign-Off checks passed (Title, Gatehouse, Favor Test rule, ES module exports, No-Theophany across ${labelMatches.length} 3D character figures: ${labelMatches.join(', ')})`);

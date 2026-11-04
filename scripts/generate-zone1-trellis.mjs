@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================================
 // THE NARROW WAY — Zone 1 TRELLIS Image-to-3D Relic Generator (Push-Free)
-// FLAG: DEC-06 / OPEN-04 — Adapted from Pilgrim Walk's scripts/generate-trellis-3d.mjs
+// Adapted from Pilgrim Walk's scripts/generate-trellis-3d.mjs
 // with ALL git add/commit/push operations stripped out and output directed
 // strictly into /Users/Timotheus/Desktop/Narrow Way Walk/assets/models/.
 // Run in the morning (with internet access) after running scripts/link-approved-art.sh:

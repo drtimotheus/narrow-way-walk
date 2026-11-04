@@ -1,9 +1,9 @@
 // ============================================================================
 // THE NARROW WAY — ZONE 1 (ELIAS / BOOK 1): MAIN APPLICATION CONTROLLER
 // ============================================================================
-// FLAG: DEC-01..DEC-07 — Implements Companion-POV agency, transparent 2d6
-// Stand checks, Treasure choices (Give +1 / Keep +0), Grace Rule at Wells,
-// David's Aquamarine Tuning-Stone Relic Workshop, and NW1 progress codes.
+// Implements Companion-POV agency, transparent 2d6 Stand checks, Treasure
+// choices (Give +1 / Keep +0), Grace Rule at Wells, David's Aquamarine
+// Tuning-Stone Relic Workshop, and NW1 progress codes.
 
 import * as THREE from 'three';
 import {
@@ -21,13 +21,17 @@ import { audio } from './audio.js';
 import {
   STAGE_ART_MAP,
   PORTRAIT_ART_MAP,
+  STAND_ART_MAP,
+  WELL_ART_MAP,
+  TREASURE_ART_MAP,
   WISDOM_ART_MAP,
+  preloadAllZone1Art,
   loadArtIntoImage
 } from './painterly.js';
 import { loadRelicsManifest, RelicTurntableInspector } from './relics.js';
-import { WorldStageManager } from './world.js';
+import { WorldStageManager, getShortNodeLabel } from './world.js';
 
-// FLAG: DEC-05 — Dedicated localStorage key (never collides with Pilgrim Walk)
+// Dedicated localStorage key (never collides with Pilgrim Walk)
 const STORAGE_KEY = 'narrow_way_walk_save_v1';
 
 function createDefaultState() {
@@ -35,6 +39,8 @@ function createDefaultState() {
     version: 1,
     zoneId: 'zone-01-elias-seoul',
     firstSightCompleted: false,
+    hintDismissed: false,
+    seenStrongholdDef: false,
     startingStats: { courage: 10, strength: 20, favor: 9 },
     stats: { courage: 10, strength: 20, favor: 9, treasure: 0 },
     oil: 1,
@@ -99,7 +105,7 @@ function computeChecksum(str) {
   return hash.toString(16).toUpperCase().padStart(4, '0');
 }
 
-// FLAG: DEC-05 — NW1 Progress Code Export & Import
+// NW1 Progress Code Export & Import (format unchanged)
 export function generateNW1Code() {
   const payload = {
     v: 1,
@@ -176,6 +182,7 @@ export function restoreFromNW1Code(codeStr) {
 let renderer, scene, camera, worldManager;
 const playerPos = new THREE.Vector3(0, 0, 12);
 let cameraYaw = 0;
+let cameraDistance = 4.6; // Clamped between 3.0m and 9.0m
 const keys = {};
 const joyDelta = { x: 0, y: 0 };
 
@@ -217,6 +224,8 @@ export function updateHUD() {
   setText('hud-oil', `${state.oil}/2`);
   setText('hud-bread', `${state.bread}/3`);
   setText('hud-scrolls', `${state.scrollsLearned.length}/5`);
+  setText('hud-stage-progress', `Stage ${state.currentStageIdx + 1} of ${STAGES.length}`);
+
   const tokenEl = document.getElementById('hud-token');
   if (tokenEl) {
     if (!state.tokenEarned) {
@@ -230,6 +239,12 @@ export function updateHUD() {
       tokenEl.className = 'hud-pill-val ready';
     }
   }
+
+  const hintCard = document.getElementById('controls-hint-card');
+  if (hintCard) {
+    hintCard.classList.toggle('hidden', Boolean(state.hintDismissed));
+  }
+
   const stage = STAGES[state.currentStageIdx] || STAGES[0];
   setText('stage-title', stage.title);
   setText('stage-subtitle', `${stage.actLabel} · ${stage.subtitle}`);
@@ -260,7 +275,7 @@ function renderStageBar() {
   STAGES.forEach((stg, idx) => {
     const btn = document.createElement('button');
     btn.className = `stage-tab ${idx === state.currentStageIdx ? 'active' : ''}`;
-    btn.textContent = `${idx + 1}. ${stg.title.replace(/^Stage [IVX]+ — /, '')}`;
+    btn.textContent = `${idx + 1}. ${stg.title.replace(/^Stage [IVX]+ [—·] /, '')}`;
     btn.addEventListener('click', () => {
       audio.playChime('step');
       loadStage(idx);
@@ -277,8 +292,10 @@ function renderQuickNodeBar() {
   stage.nodes.forEach((node) => {
     const btn = document.createElement('button');
     const done = isNodeDone(node);
+    const shortLbl = getShortNodeLabel(node);
     btn.className = `node-chip type-${node.type} ${done ? 'done' : ''}`;
-    btn.textContent = `${done ? '✓ ' : ''}${node.label}`;
+    btn.textContent = `${done ? '✓ ' : ''}${shortLbl}`;
+    btn.title = node.label;
     btn.addEventListener('click', () => {
       playerPos.set(node.pos[0], 0, node.pos[2] + 1.8);
       openNodeInteraction(node);
@@ -302,7 +319,7 @@ export function openNodeInteraction(node) {
   } else if (node.type === 'relic') {
     openRelicModal(node.relicId);
   } else if (node.type === 'portal') {
-    loadStage(node.targetStageIdx ?? state.currentStageIdx + 1);
+    openStageCompleteModal(node.targetStageIdx ?? state.currentStageIdx + 1);
   } else if (node.type === 'gatehouse_finale') {
     openFinaleModal();
   }
@@ -332,7 +349,7 @@ export function openWelcomeModal() {
     {
       stageIdx: 0,
       pngUrl: PORTRAIT_ART_MAP.cover,
-      title: WORLD_CONFIG.zoneTitle,
+      title: WORLD_CONFIG.worldTitle,
       subtitle: 'Book 1: The Unseen Chord'
     }
   );
@@ -343,6 +360,26 @@ export function openWelcomeModal() {
     }
   };
   updatePreview();
+
+  const hasSavedProgress =
+    state.firstSightCompleted ||
+    state.currentStageIdx > 0 ||
+    state.standsCleared.length > 0 ||
+    state.wellsVisited.length > 0 ||
+    Object.keys(state.treasuresChosen).length > 0;
+
+  const btnContinue = document.getElementById('btn-continue-walk');
+  if (btnContinue) {
+    btnContinue.classList.toggle('hidden', !hasSavedProgress);
+    btnContinue.textContent = `Continue Walk (Stage ${state.currentStageIdx + 1} of ${STAGES.length}) →`;
+    btnContinue.onclick = () => {
+      audio.init();
+      audio.playKinnorChord();
+      state.firstSightCompleted = true;
+      saveState();
+      closeAllModals();
+    };
+  }
 
   const btnRoll = document.getElementById('btn-roll-stats');
   if (btnRoll) {
@@ -361,16 +398,84 @@ export function openWelcomeModal() {
     };
   }
 
+  const btnGuide = document.getElementById('btn-open-guide-from-welcome');
+  if (btnGuide) {
+    btnGuide.onclick = () => openGuideModal();
+  }
+
   const btnBegin = document.getElementById('btn-begin-walk');
   if (btnBegin) {
+    btnBegin.textContent = hasSavedProgress
+      ? 'Start Fresh Walk (Stage 1) →'
+      : 'Start Walk beside Elias →';
     btnBegin.onclick = () => {
       audio.init();
       audio.playKinnorChord();
-      state.firstSightCompleted = true;
-      saveState();
+      if (hasSavedProgress) {
+        const startStats = { ...state.startingStats };
+        state = createDefaultState();
+        state.startingStats = startStats;
+        state.stats = { ...startStats, treasure: 0 };
+        state.firstSightCompleted = true;
+        saveState();
+        loadStage(0);
+      } else {
+        state.firstSightCompleted = true;
+        saveState();
+      }
       closeAllModals();
     };
   }
+}
+
+export function openGuideModal() {
+  showModal('guide-modal');
+  const btnTitle = document.getElementById('btn-guide-to-title');
+  if (btnTitle) {
+    btnTitle.onclick = () => openWelcomeModal();
+  }
+}
+
+export function openStageCompleteModal(nextStageIdx) {
+  const curStage = STAGES[state.currentStageIdx] || STAGES[0];
+  const targetIdx = Math.max(0, Math.min(STAGES.length - 1, nextStageIdx));
+  const nextStage = STAGES[targetIdx] || STAGES[0];
+
+  setText('stage-complete-title', `${curStage.title} — Completed`);
+  setText(
+    'stage-complete-meta',
+    `Stage ${state.currentStageIdx + 1} of ${STAGES.length} · Treasure: ${state.stats.treasure} · Scrolls: ${state.scrollsLearned.length}/5`
+  );
+  setText(
+    'stage-complete-summary',
+    `You and Elias have walked through ${curStage.title}. Ahead lies ${nextStage.title} (${nextStage.actLabel}).`
+  );
+  loadArtIntoImage(
+    document.getElementById('stage-complete-art-img'),
+    document.getElementById('stage-complete-art-badge'),
+    {
+      stageIdx: targetIdx,
+      pngUrl: STAGE_ART_MAP[targetIdx],
+      title: nextStage.title,
+      subtitle: nextStage.subtitle
+    }
+  );
+
+  const btnBook1 = document.getElementById('btn-stage-complete-book1');
+  if (btnBook1) {
+    btnBook1.onclick = () => openGatehouseModal();
+  }
+
+  const btnCont = document.getElementById('btn-stage-complete-continue');
+  if (btnCont) {
+    btnCont.textContent = `Continue to Stage ${targetIdx + 1} of ${STAGES.length} →`;
+    btnCont.onclick = () => {
+      loadStage(targetIdx);
+      closeAllModals();
+    };
+  }
+
+  showModal('stage-complete-modal');
 }
 
 export function openWisdomModal(wisdomId) {
@@ -436,14 +541,17 @@ export function openWellModal(wellId) {
   setText('well-kjv-text', firstVerse ? `"${firstVerse.text}" — ${firstVerse.ref}` : '');
   setText('well-reward-banner', rewardNotice);
   setText('well-question', linkedWisdom?.questions?.[0] || 'Where has Pride asked you to wear a mask instead of resting in grace?');
+
+  const artCfg = WELL_ART_MAP[well.id] || { url: STAGE_ART_MAP[well.stageIdx ?? state.currentStageIdx], motif: 'sea_of_glass', stageIdx: well.stageIdx ?? 0 };
   loadArtIntoImage(
     document.getElementById('well-art-img'),
     document.getElementById('well-art-badge'),
     {
-      stageIdx: well.stageIdx ?? state.currentStageIdx,
-      pngUrl: STAGE_ART_MAP[well.stageIdx ?? state.currentStageIdx],
+      stageIdx: artCfg.stageIdx,
+      pngUrl: artCfg.url,
       title: well.title,
-      subtitle: well.subtitle
+      subtitle: well.subtitle,
+      motif: artCfg.motif
     }
   );
 
@@ -475,7 +583,7 @@ export function openTreasureModal(treasureId) {
     document.getElementById('treasure-art-badge'),
     {
       stageIdx: tr.stageIdx ?? state.currentStageIdx,
-      pngUrl: STAGE_ART_MAP[tr.stageIdx ?? state.currentStageIdx],
+      pngUrl: TREASURE_ART_MAP[tr.id] || STAGE_ART_MAP[tr.stageIdx ?? state.currentStageIdx],
       title: tr.title,
       subtitle: `Section ${tr.sectionNum} · ${tr.person}`
     }
@@ -533,6 +641,11 @@ export function openTreasureModal(treasureId) {
 
 export function openStandModal(standId) {
   const st = STANDS[standId] || Object.values(STANDS)[0];
+  const isFirstStronghold = !state.seenStrongholdDef;
+  if (!state.seenStrongholdDef) {
+    state.seenStrongholdDef = true;
+    saveState();
+  }
   state.tokenSpentInCurrentStand = false;
   activeStandSession = {
     stand: st,
@@ -544,6 +657,7 @@ export function openStandModal(standId) {
     scrollApplied: false,
     tokenAuto10Next: false,
     lastRoundLost: false,
+    showStrongholdDef: isFirstStronghold || st.id === 'stand_1',
     log: [
       `Stand entered: ${st.title} (${st.strongholdName} · Courage ${st.baseCourage}, Strength ${st.baseStrength}).`,
       `Scripture Root: ${st.scriptureRoot}`,
@@ -569,14 +683,26 @@ function renderStandSession() {
   setText('stand-player-courage', state.stats.courage);
   setText('stand-player-strength', `${state.stats.strength}/${state.startingStats.strength}`);
   setText('stand-player-favor', `${state.stats.favor}/${state.startingStats.favor}`);
+
+  const defEl = document.getElementById('stand-stronghold-def');
+  if (defEl) {
+    defEl.classList.toggle('hidden', !s.showStrongholdDef);
+  }
+  const coachEl = document.getElementById('stand-coach-tip');
+  if (coachEl) {
+    coachEl.classList.toggle('hidden', !(st.id === 'stand_1' && s.round === 0));
+  }
+
+  const artCfg = STAND_ART_MAP[st.id] || { url: STAGE_ART_MAP[st.stageIdx ?? state.currentStageIdx], motif: 'mirror', stageIdx: st.stageIdx ?? 0 };
   loadArtIntoImage(
     document.getElementById('stand-art-img'),
     document.getElementById('stand-art-badge'),
     {
-      stageIdx: st.stageIdx ?? state.currentStageIdx,
-      pngUrl: STAGE_ART_MAP[st.stageIdx ?? state.currentStageIdx],
+      stageIdx: artCfg.stageIdx,
+      pngUrl: artCfg.url,
       title: st.title,
-      subtitle: `${st.strongholdName} · ${st.scriptureRoot}`
+      subtitle: `${st.strongholdName} · ${st.scriptureRoot}`,
+      motif: artCfg.motif
     }
   );
 
@@ -628,7 +754,7 @@ function renderStandSession() {
   const btnRoll = document.getElementById('btn-stand-roll');
   if (btnRoll) {
     if (st.isRiggedBait) {
-      btnRoll.textContent = 'Walk Out of the Rigged Trap in Wisdom (Sec. 145 -> Sec. 158 · Learn Scroll 5)';
+      btnRoll.textContent = 'Walk Out of the Trap in Wisdom (Sec. 145 -> Sec. 158 · Learn Scroll 5)';
     } else if (s.enemyStrength <= 0) {
       btnRoll.textContent = '✓ Stand Cleared — Claim Victory & Continue';
     } else {
@@ -681,7 +807,7 @@ function handleStandRollRound() {
     );
     audio.playChime('stand_win');
     if (s.enemyStrength <= 0) {
-      s.log.push(`VICTORY: ${st.victoryText}`);
+      s.log.push(`Victory: ${st.victoryText}`);
       if (!state.standsCleared.includes(st.id)) state.standsCleared.push(st.id);
       saveState();
     }
@@ -715,8 +841,8 @@ function bindStandAuxButtons() {
   if (btnFavor) {
     btnFavor.disabled = !s.lastRoundLost || state.stats.favor <= 0 || s.enemyStrength <= 0;
     btnFavor.textContent = s.lastRoundLost
-      ? `Test Favor to Halve Loss (2d6 <= ${state.stats.favor} · Costs 1 Favor)`
-      : `Test Favor (Available When Round Lost)`;
+      ? `Test Favor (2d6 <= ${state.stats.favor})`
+      : `Test Favor`;
     btnFavor.onclick = () => {
       if (!s.lastRoundLost || state.stats.favor <= 0) return;
       const d1 = rollDie();
@@ -727,7 +853,7 @@ function bindStandAuxButtons() {
       s.lastRoundLost = false;
       if (blessed) {
         state.stats.strength = Math.min(state.startingStats.strength, state.stats.strength + 1);
-        s.log.push(`Favor Test [${d1}+${d2}=${sum} <= Favor]: BLESSED! Last round loss halved (+1 Strength restored, -1 Favor).`);
+        s.log.push(`Favor Test [${d1}+${d2}=${sum} <= Favor]: Blessed! Last round loss halved (+1 Strength restored, -1 Favor).`);
         audio.playChime('stand_win');
       } else {
         s.log.push(`Favor Test [${d1}+${d2}=${sum} > Favor]: Tested (-1 Favor).`);
@@ -741,7 +867,7 @@ function bindStandAuxButtons() {
   const btnOil = document.getElementById('btn-stand-oil');
   if (btnOil) {
     btnOil.disabled = state.oil <= 0 || state.stats.strength >= state.startingStats.strength;
-    btnOil.textContent = `Use Oil (+4 Strength · ${state.oil} left)`;
+    btnOil.textContent = `Use Oil (+4 Str · ${state.oil})`;
     btnOil.onclick = () => {
       if (state.oil <= 0) return;
       state.oil -= 1;
@@ -758,10 +884,10 @@ function bindStandAuxButtons() {
   if (btnToken) {
     btnToken.disabled = !state.tokenEarned || state.tokenUsed || s.tokenAuto10Next;
     btnToken.textContent = !state.tokenEarned
-      ? 'Aquamarine Stone (Find at Well 1)'
+      ? 'Token (Well 1)'
       : state.tokenUsed
-        ? 'Aquamarine Stone (Used This Walk)'
-        : 'Use Aquamarine Stone (Auto-10 Next Roll)';
+        ? 'Token (Used)'
+        : 'Use Token (Auto-10)';
     btnToken.onclick = () => {
       if (!state.tokenEarned || state.tokenUsed) return;
       state.tokenUsed = true;
@@ -789,9 +915,8 @@ function bindStandAuxButtons() {
   }
 }
 
-export function triggerGraceFall(standObj) {
+export function triggerGraceFall() {
   // Grace Rule (Book 1 How-To-Play §3): No dead ends. Keep all Scrolls & Treasure.
-  // If Mentor's Token was spent in the Stand you fell in, restore it.
   if (state.tokenSpentInCurrentStand) {
     state.tokenUsed = false;
     state.tokenSpentInCurrentStand = false;
@@ -942,6 +1067,11 @@ export function openFinaleModal() {
   const codeBox = document.getElementById('finale-nw1-code');
   if (codeBox) codeBox.value = generateNW1Code();
 
+  const btnGate = document.getElementById('btn-finale-open-gatehouse');
+  if (btnGate) {
+    btnGate.onclick = () => openGatehouseModal();
+  }
+
   audio.playKinnorChord();
   showModal('finale-modal');
 }
@@ -951,6 +1081,17 @@ export function openGatehouseModal() {
   if (codeInput) codeInput.value = generateNW1Code();
   const statusEl = document.getElementById('gatehouse-import-status');
   if (statusEl) statusEl.textContent = '';
+
+  const shopLink = document.getElementById('gatehouse-book-link');
+  if (shopLink) {
+    if (WORLD_CONFIG.gatehouseBook1Url) {
+      shopLink.href = WORLD_CONFIG.gatehouseBook1Url;
+      shopLink.classList.remove('hidden');
+    } else {
+      shopLink.classList.add('hidden');
+    }
+  }
+
   loadArtIntoImage(
     document.getElementById('gatehouse-art-img'),
     document.getElementById('gatehouse-art-badge'),
@@ -984,7 +1125,7 @@ function initThreeWorld() {
   window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
     if (e.code === 'KeyE' || e.code === 'Enter') {
-      const near = worldManager.getNearestNode(playerPos, 3.8);
+      const near = worldManager.getNearestNode(playerPos, 4.2);
       if (near) openNodeInteraction(near);
     }
   });
@@ -992,11 +1133,28 @@ function initThreeWorld() {
     keys[e.code] = false;
   });
 
+  // Scroll-to-zoom clamped so camera cannot go closer than 3.0m from the player (default 4.6m, max 9.0m)
+  renderer.domElement.addEventListener(
+    'wheel',
+    (e) => {
+      e.preventDefault();
+      cameraDistance = Math.max(3.0, Math.min(9.0, cameraDistance + e.deltaY * 0.004));
+    },
+    { passive: false }
+  );
+
   let dragging = false;
   let lastX = 0;
+  let downX = 0;
+  let downY = 0;
+  const raycaster = new THREE.Raycaster();
+  const pointerNDC = new THREE.Vector2();
+
   renderer.domElement.addEventListener('pointerdown', (e) => {
     dragging = true;
     lastX = e.clientX;
+    downX = e.clientX;
+    downY = e.clientY;
     audio.init();
   });
   window.addEventListener('pointermove', (e) => {
@@ -1005,8 +1163,29 @@ function initThreeWorld() {
     lastX = e.clientX;
     cameraYaw -= dx * 0.0045;
   });
-  window.addEventListener('pointerup', () => {
+  window.addEventListener('pointerup', (e) => {
+    if (!dragging) return;
     dragging = false;
+    // Tap / Click picking on pointerup only (zero per-frame ReadPixels / zero GPU stall)
+    const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
+    if (moved < 6 && e.target === renderer.domElement && worldManager && camera) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointerNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointerNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointerNDC, camera);
+      const hits = raycaster.intersectObjects(worldManager.nodeGroups, true);
+      if (hits.length > 0) {
+        let obj = hits[0].object;
+        while (obj && !obj.userData?.node) {
+          obj = obj.parent;
+        }
+        if (obj && obj.userData?.node) {
+          const n = obj.userData.node;
+          playerPos.set(n.pos[0], 0, n.pos[2] + 1.8);
+          openNodeInteraction(n);
+        }
+      }
+    }
   });
 
   // Virtual touch joystick for mobile / tablet browsers
@@ -1024,11 +1203,11 @@ function initThreeWorld() {
     });
     window.addEventListener('pointermove', (e) => {
       if (!joyActive) return;
-      const dx = Math.max(-36, Math.min(36, e.clientX - cx));
-      const dy = Math.max(-36, Math.min(36, e.clientY - cy));
+      const dx = Math.max(-34, Math.min(34, e.clientX - cx));
+      const dy = Math.max(-34, Math.min(34, e.clientY - cy));
       joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-      joyDelta.x = dx / 36;
-      joyDelta.y = dy / 36;
+      joyDelta.x = dx / 34;
+      joyDelta.y = dy / 34;
     });
     window.addEventListener('pointerup', () => {
       joyActive = false;
@@ -1049,11 +1228,16 @@ function bindUIButtons() {
     if (el) el.addEventListener('click', fn);
   };
 
-  bindClick('btn-nav-zone-start', () => loadStage(0));
+  bindClick('btn-nav-zone-start', () => openWelcomeModal());
   bindClick('btn-nav-inventory', () => openInventoryModal());
   bindClick('btn-nav-relics', () => openRelicModal('aquamarine-tuning-stone'));
   bindClick('btn-nav-gatehouse', () => openGatehouseModal());
-  bindClick('btn-nav-help', () => openWelcomeModal());
+  bindClick('btn-nav-help', () => openGuideModal());
+
+  bindClick('btn-dismiss-hint', () => {
+    state.hintDismissed = true;
+    saveState();
+  });
 
   bindClick('btn-toggle-story', () => {
     const drawer = document.getElementById('stage-drawer');
@@ -1128,14 +1312,15 @@ function animate(now) {
     playerPos.x += (moveRight * cos - moveForward * sin) * speed;
     playerPos.z += (-moveForward * cos - moveRight * sin) * speed;
     playerPos.x = Math.max(-6.5, Math.min(6.5, playerPos.x));
-    playerPos.z = Math.max(-16.5, Math.min(14.5, playerPos.z));
+    playerPos.z = Math.max(-27.5, Math.min(14.5, playerPos.z));
   }
 
   if (camera) {
+    const clampedDist = Math.max(3.0, Math.min(9.0, cameraDistance));
     camera.position.set(
-      playerPos.x + Math.sin(cameraYaw) * 4.5,
-      2.35,
-      playerPos.z + Math.cos(cameraYaw) * 4.5
+      playerPos.x + Math.sin(cameraYaw) * clampedDist,
+      2.2 + (clampedDist - 3.0) * 0.16,
+      playerPos.z + Math.cos(cameraYaw) * clampedDist
     );
     camera.lookAt(
       playerPos.x - Math.sin(cameraYaw) * 4,
@@ -1146,13 +1331,13 @@ function animate(now) {
 
   if (worldManager) {
     worldManager.update(dt, elapsed, playerPos);
-    const near = worldManager.getNearestNode(playerPos, 3.6);
+    const near = worldManager.getNearestNode(playerPos, 4.2);
     const promptBar = document.getElementById('proximity-prompt-bar');
     const promptBtn = document.getElementById('btn-proximity-interact');
     if (promptBar && promptBtn) {
       if (near) {
         promptBar.classList.remove('hidden');
-        promptBtn.textContent = `Interact [E / Tap]: ${near.label}`;
+        promptBtn.textContent = `Interact [E / Tap]: ${getShortNodeLabel(near)}`;
         promptBtn.onclick = () => openNodeInteraction(near);
       } else {
         promptBar.classList.add('hidden');
@@ -1166,6 +1351,7 @@ function animate(now) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  preloadAllZone1Art();
   initThreeWorld();
   bindUIButtons();
   loadStage(state.currentStageIdx);
@@ -1179,12 +1365,23 @@ window.addEventListener('DOMContentLoaded', () => {
 window.narrowWayApp = {
   getState: () => state,
   getWorldManager: () => worldManager,
+  getPlayerPos: () => playerPos,
+  setCameraDistance: (d) => {
+    cameraDistance = Math.max(3.0, Math.min(9.0, Number(d) || 4.6));
+    return cameraDistance;
+  },
+  getCameraDistance: () => cameraDistance,
   STAGE_ART_MAP,
   PORTRAIT_ART_MAP,
+  STAND_ART_MAP,
+  WELL_ART_MAP,
+  TREASURE_ART_MAP,
   WISDOM_ART_MAP,
   loadArtIntoImage,
   loadStage,
   openWelcomeModal,
+  openGuideModal,
+  openStageCompleteModal,
   openStandModal,
   openTreasureModal,
   openWellModal,

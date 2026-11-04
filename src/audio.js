@@ -1,6 +1,6 @@
 // ============================================================================
 // THE NARROW WAY — Zone 1 Web Audio Controller (Kinnor Chords & Seoul Rain)
-// FLAG: OPEN-05 / DEC-01 — Synthesizes gentle Web Audio harmonic kinnor/harp
+// Synthesizes gentle Web Audio harmonic kinnor/harp
 // chords (including Elias & David's 4-note unfinished melody from Sec. 18, 77,
 // 129, 282) and soft rain/crystal ambience with Master & Music volume controls.
 // ============================================================================

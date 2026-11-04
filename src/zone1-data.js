@@ -4,19 +4,17 @@
 // Guiding Mentor: David the King (Light Blue • Spirit of Might • Aquamarine)
 // Player Role: The Fellow-Traveler (Companion POV — Four Standing Rules)
 // All Scripture quotations are verbatim King James Version (KJV).
-// FLAG: DEC-02 / DEC-03 / DEC-05 — Traces 100% to gamebooks/book-01/draft.md,
+// Traces 100% to gamebooks/book-01/draft.md,
 // outline.md, how-to-play-and-sheet.md, mechanics-sheet.md, and novels/Vol1/.
 // ============================================================================
 
 export const WORLD_CONFIG = {
-  // FLAG: OPEN-01 — Confirmed morning call: "The Narrow Way Walk"
   worldTitle: 'The Narrow Way Walk',
   worldSubtitle: 'Zone I Pilot · Book 1: The Unseen Chord (Elias Cho · Seoul)',
-  saveKey: 'narrow_way_walk_save_v1', // FLAG: DEC-08 — Fresh key separate from Pilgrim Walk
-  codePrefix: 'NW1',                 // FLAG: DEC-08 — Fresh progress code prefix
-  // FLAG: OPEN-03 — Gatehouse Book 1 outbound link placeholder pending Timothy's URL
-  gatehouseBook1Url: '#gatehouse-book-01-placeholder',
-  gatehouseBook1Status: 'OPEN — Pending Timothy’s Gatehouse Book 1 Shop URL'
+  saveKey: 'narrow_way_walk_save_v1',
+  codePrefix: 'NW1',
+  gatehouseBook1Url: '',
+  gatehouseBook1Status: 'Edition Details Available in the Gatehouse'
 };
 
 // All 5 Verbatim KJV Scrolls in Book 1 (draft.md Scroll Index, lines 3609-3620)
@@ -331,7 +329,7 @@ export const WELLS = {
     stageIdx: 4,
     title: 'Well 5 · The Kitchen Floor & Threshold of the Sea (Section 245)',
     subtitle: 'Beside the factory-capped, untouched bottle before the Five-Stronghold Storm',
-    // FLAG: DEC-05 — Strict no-theophany guardrail: unseen Throne represented only by warm sanctuary light & KJV citations
+    // Strict no-theophany guardrail: unseen Throne represented only by warm sanctuary light & KJV citations
     body:
       'Right there on the kitchen floor, with the green bottle still factory-capped and untouched on the counter above you, the linoleum tilts open into warm, fire-veined crystal. A steady golden-white sanctuary light shines across the Sea of Glass (Revelation 4:6; 15:2 KJV)—reminding you that Christ’s victory on the Cross is already accomplished and total (“It is finished,” John 19:30; “the devils also believe, and tremble,” James 2:19 KJV).',
     grantsScroll: null,
@@ -346,7 +344,7 @@ export const WELLS = {
 };
 
 // All 8 Canonical Stands in Book 1 (draft.md Sections 33, 29, 95, 145, 152, 164, 114, 260)
-// FLAG: DEC-04 — Uses exact Courage/Strength/Crack/Demolish numbers from gamebooks/book-01/draft.md
+// Uses exact Courage/Strength/Crack/Demolish numbers from gamebooks/book-01/draft.md
 export const STANDS = {
   stand_1: {
     id: 'stand_1',
@@ -425,7 +423,7 @@ export const STANDS = {
     num: 4,
     sectionNum: 145,
     stageIdx: 2,
-    title: 'Stand 4 · The Back-Room Boast at Hannam-dong (RIGGED BAIT)',
+    title: 'Stand 4 · The Back-Room Boast at Hannam-dong',
     strongholdName: 'Pride (#15) + Addictions (#23)',
     scriptureRoot: '1 Corinthians 6:12; Proverbs 16:18 (KJV)',
     baseCourage: 11,
@@ -436,7 +434,7 @@ export const STANDS = {
     whisper:
       '“What’s the matter? Are you two afraid of a room? Step inside Tae-yang’s green room for ten minutes and prove how strong your recovery is. If you walk away now, everyone at the party will say you’re still weak.”',
     victoryLawPrompt:
-      'WISDOM NOTICE (Section 145): Some battles are snares of ego that are ONLY won by refusing them! Choose to walk out into the night with Elias right now (Section 158) instead of fighting a rigged Courage 11 snare in the doorway.',
+      'Step 1 (The Victory Law — Section 145): Some battles are snares of ego that are won only by refusing them! Choose to walk out into the night with Elias right now (Section 158) instead of fighting a rigged Courage 11 snare in the doorway.',
     victoryLawEffect: { courageDelta: 0, strengthDelta: 0, note: 'Refusing the rigged fight costs 0 Strength, restores +1 Courage & +1 Strength, and teaches Scroll 5!' },
     scrollLawEffect: { courageDelta: 0, strengthDelta: 0, note: 'Refusing the rigged fight in wisdom is the true victory!' },
     victoryText:
@@ -522,7 +520,7 @@ export const STANDS = {
     num: 8,
     sectionNum: 260,
     stageIdx: 5,
-    title: 'Stand 8 (CLIMAX) · The Obsidian Crown of Pride & The Fig-Leaf Door of Shame',
+    title: 'Stand 8 · The Obsidian Crown of Pride & The Fig-Leaf Door of Shame',
     strongholdName: 'Pride (#15) + Shame (#17) [with Jealousy #27, Abandonment #21, Occult #29]',
     scriptureRoot: 'Proverbs 16:18; Psalm 51:17; Genesis 3:7; Revelation 15:2 (KJV)',
     baseCourage: 10,
@@ -802,7 +800,7 @@ export const ENDINGS = {
 };
 
 // 6 Connected 3D Walkable Stages of Zone 1 (Story Path)
-// FLAG: DEC-02 — Every stage traces directly to Book 1 Acts I–V and Vol 1 Novel Elias chapters
+// Every stage traces directly to Book 1 Acts I–V and Vol 1 Novel Elias chapters
 export const STAGES = [
   {
     idx: 0,
@@ -963,7 +961,7 @@ export const STAGES = [
         type: 'stand',
         standId: 'stand_4',
         pos: [3.6, 0, -19.5],
-        label: '⚠ Stand 4 (RIGGED BAIT): The Back-Room Boast at Hannam-dong (Sec. 145 -> 158)',
+        label: '⚔ Stand 4: The Back-Room Boast at Hannam-dong (Sec. 145 -> 158)',
         color: '#ff9f1c'
       },
       {
@@ -1183,7 +1181,7 @@ export const STAGES = [
         type: 'stand',
         standId: 'stand_8',
         pos: [0, 0, -13.0],
-        label: '⚔ CLIMAX STAND 8: The Obsidian Crown of Pride (#15) & Fig-Leaf Door of Shame (#17) (Sec. 260)',
+        label: '⚔ Stand 8: The Obsidian Crown of Pride (#15) & Fig-Leaf Door of Shame (#17) (Sec. 260)',
         color: '#ff6b6b'
       },
       {

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================================
 // THE NARROW WAY — Zone 1 Local Binary glTF 2.0 (.glb) Relic Builder
-// FLAG: DEC-06 — Generates valid, compact binary .glb 3D models for Zone 1's
+// Generates valid, compact binary .glb 3D models for Zone 1's
 // Mentor's Token ("David's Aquamarine Tuning-Stone", Sec. 48) and companion
 // Zone 1 relics so GLTFLoader + MeshoptDecoder and the 3D Relic Workshop
 // Turntable Inspector work 100% offline with zero external network calls.
@@ -357,7 +357,7 @@ const relics = [
     sectionRef: 'Section 48 (Well 1 — The Curb on the Sea of Glass)',
     kjvRef: 'Proverbs 16:18–19; Isaiah 11:2 (KJV)',
     file: 'assets/models/aquamarine-tuning-stone.glb',
-    pipelineBadge: 'FLAG: DEC-06 · Local Procedural GLB (TRELLIS script ready in scripts/)',
+    pipelineBadge: '3D GLB Relic · Zone I Collection',
     description:
       "A smooth, translucent sky-blue Aquamarine stone cut from the cypress frame of King David's own harp (Light Blue — Spirit of Might, Isaiah 11:2). Given at Well 1 (Sec. 48). Once per book: treat your 2d6 Stand roll as an automatic 10, OR pass one Favor Test as Blessed without losing Favor, OR hear which learned KJV Scroll resonates against a Stronghold.",
     buf: buildAquamarineTuningStone()
@@ -371,7 +371,7 @@ const relics = [
     sectionRef: 'Sections 43–48 & 277 (The Sea of Glass)',
     kjvRef: 'Psalm 51:17; 2 Samuel 12:20 (KJV)',
     file: 'assets/models/davids-cypress-kinnor.glb',
-    pipelineBadge: 'FLAG: DEC-06 · Local Procedural GLB (TRELLIS script ready in scripts/)',
+    pipelineBadge: '3D GLB Relic · Zone I Collection',
     description:
       "The weathered ten-stringed Bethlehem cypress kinnor inlaid with an Aquamarine stone and carrying one snapped string from the day David shielded his brother in the dust and left his royal circlet on the ground. 'The sacrifices of God are a broken spirit: a broken and a contrite heart, O God, thou wilt not despise.' (Psalm 51:17 KJV)",
     buf: buildDavidsCypressKinnor()
@@ -385,7 +385,7 @@ const relics = [
     sectionRef: 'Sections 18, 77, 93, 129, 282 & 300',
     kjvRef: 'Isaiah 53:4; Isaiah 61:3 (KJV)',
     file: 'assets/models/mothers-cassette-player.glb',
-    pipelineBadge: 'FLAG: DEC-06 · Local Procedural GLB (TRELLIS script ready in scripts/)',
+    pipelineBadge: '3D GLB Relic · Zone I Collection',
     description:
       "Grace Mi-ran Cho's old portable tape player, its plastic door taped shut since the month before she entered the hospital two years ago, alongside the crumpled paper bearing the four unpolished, unproduced notes that Elias, Adaeze, Brother Matthias, Talia, and the Fellow-Traveler hum on the floor of the Sea of Glass to dissolve Heaviness (#20).",
     buf: buildMothersCassettePlayer()

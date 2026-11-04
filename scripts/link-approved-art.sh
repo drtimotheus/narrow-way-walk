@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 # ============================================================================
 # THE NARROW WAY — Link Approved LvD Universe Art into Zone 1 (Read-Only Copy)
-# FLAG: DEC-07 — Copies Timothy's existing approved Sea of Glass Issue 1 art
+# Copies Timothy's existing approved Sea of Glass Issue 1 art
 # and Mentor/Guest portraits from "/Users/Timotheus/Desktop/LvD Universe" into
 # assets/art/ without modifying or touching the source folder.
 # ============================================================================
