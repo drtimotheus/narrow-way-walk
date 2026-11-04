@@ -367,11 +367,24 @@ export function openWisdomModal(wisdomId) {
   setText('wisdom-question', (page.questions || []).join('  |  '));
   const artEl = document.getElementById('wisdom-art-img');
   if (artEl) {
-    artEl.src = createPainterlyArtDataURL({
-      title: page.title,
-      subtitle: page.sectionRef,
-      palette: 'glass'
-    });
+    const panelMap = {
+      wisdom_1: './assets/art/sea-01-panel-11.png',
+      wisdom_2: './assets/art/sea-01-panel-14.png',
+      wisdom_3: './assets/art/sea-01-panel-35.png',
+      wisdom_4: './assets/art/sea-01-panel-35.png',
+      wisdom_5: './assets/art/sea-01-panel-74.png',
+      wisdom_6: './assets/art/sea-01-panel-14.png',
+      wisdom_7: './assets/art/sea-01-panel-92.png'
+    };
+    artEl.onerror = () => {
+      artEl.onerror = null;
+      artEl.src = createPainterlyArtDataURL({
+        title: page.title,
+        subtitle: page.sectionRef,
+        palette: 'glass'
+      });
+    };
+    artEl.src = panelMap[page.id] || './assets/art/sea-01-cover-preview.jpg';
   }
   showModal('wisdom-modal');
 }
@@ -656,31 +669,24 @@ function bindStandAuxButtons() {
 
   const btnFavor = document.getElementById('btn-stand-favor');
   if (btnFavor) {
-    btnFavor.disabled = state.stats.favor <= 0 || s.enemyStrength <= 0;
-    btnFavor.textContent = `Test Favor (2d6 <= ${state.stats.favor} · Costs 1 Favor)`;
+    btnFavor.disabled = !s.lastRoundLost || state.stats.favor <= 0 || s.enemyStrength <= 0;
+    btnFavor.textContent = s.lastRoundLost
+      ? `Test Favor to Halve Loss (2d6 <= ${state.stats.favor} · Costs 1 Favor)`
+      : `Test Favor (Available When Round Lost)`;
     btnFavor.onclick = () => {
-      if (state.stats.favor <= 0) return;
+      if (!s.lastRoundLost || state.stats.favor <= 0) return;
       const d1 = rollDie();
       const d2 = rollDie();
       const sum = d1 + d2;
       const blessed = sum <= state.stats.favor;
       state.stats.favor = Math.max(0, state.stats.favor - 1);
+      s.lastRoundLost = false;
       if (blessed) {
-        if (s.lastRoundLost) {
-          state.stats.strength = Math.min(state.startingStats.strength, state.stats.strength + 1);
-          s.lastRoundLost = false;
-          s.log.push(`Favor Test [${d1}+${d2}=${sum} <= Favor]: BLESSED! Last round loss halved (+1 Strength restored).`);
-        } else {
-          s.enemyStrength = Math.max(0, s.enemyStrength - 1);
-          s.log.push(`Favor Test [${d1}+${d2}=${sum} <= Favor]: BLESSED! Extra +1 damage to ${st.strongholdName} (${s.enemyStrength} left).`);
-          if (s.enemyStrength <= 0 && !state.standsCleared.includes(st.id)) {
-            state.standsCleared.push(st.id);
-            s.log.push(`VICTORY: ${st.victoryText}`);
-          }
-        }
+        state.stats.strength = Math.min(state.startingStats.strength, state.stats.strength + 1);
+        s.log.push(`Favor Test [${d1}+${d2}=${sum} <= Favor]: BLESSED! Last round loss halved (+1 Strength restored, -1 Favor).`);
         audio.playChime('stand_win');
       } else {
-        s.log.push(`Favor Test [${d1}+${d2}=${sum} > Favor]: Unblessed this round (-1 Favor).`);
+        s.log.push(`Favor Test [${d1}+${d2}=${sum} > Favor]: Tested (-1 Favor).`);
       }
       saveState();
       renderStandSession();

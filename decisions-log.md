@@ -6,26 +6,21 @@
 
 ---
 
-## 1. OPEN ITEMS — Reserved for Timothy's Morning Decision (Not Decided Tonight)
+## 1. OPEN ITEMS — Morning Sign-Off Calls Applied (Nov 4, 2026)
 
-Per §1 and §4 of the Overnight Prompt, the following items remain **OPEN** for Timothy's morning confirmation and are implemented with clearly marked placeholders (`FLAG: OPEN-01` through `FLAG: OPEN-05`):
+Per Timothy's Zone 1 Morning Sign-Off (`FLAG: OPEN-01` through `FLAG: OPEN-05`):
 
-1. **`OPEN-01` — Final World Title:**
-   - **Current Placeholder Used in UI (`index.html`, `src/main.js`):** *"The Narrow Way — A 3D Companion Walk (Zone I Pilot: The Unseen Chord)"*
-   - **Decision Needed from Timothy:** Confirm final public title for the 12-zone 3D game world (e.g., *The Narrow Way*, *The Narrow Way Walk*, or *The Narrow Way: Companion Walk*).
-2. **`OPEN-02` — GitHub Repository Name & First Remote Push:**
-   - **Current State:** Local git repository initialized in `/Users/Timotheus/Desktop/Narrow Way Walk` (`branch: main`) with local commits at each completed milestone. **Zero remotes added; zero pushes executed.**
-   - **Proposed Repo Name:** `narrow-way-walk` (under GitHub account `timothyholt`, matching `pilgrim-walk`, paired with Cloudflare Pages auto-deploy + Google Drive backup folder).
-   - **Decision Needed from Timothy:** Confirm repo name `narrow-way-walk` before running `gh repo create` and pushing.
-3. **`OPEN-03` — Gatehouse Book 1 Outbound Shop URL:**
-   - **Current Placeholder Used (`src/zone1-data.js`, `index.html`):** `#gatehouse-book-01-placeholder` (renders an explicit `[OPEN — Pending Timothy's Gatehouse Book 1 Shop URL]` notice when clicked/hovered in the Gatehouse modal).
-   - **Decision Needed from Timothy:** Provide the live Lulu / Kickstarter / store URL for *The Narrow Way — Book 1: The Unseen Chord* (and *The Sea of Glass Chronicles — Volume 1*).
-4. **`OPEN-04` — Art Source & 3D Relic Generation Pipeline for Later Zones (Zones 2–12):**
-   - **Current State in Zone 1:** Uses painterly procedural WebGL/Canvas textures derived from the approved *Sea of Glass* Issue 1 / Book 1 palette and visual descriptors (`sea-01-art-prompts.md`, `character-sheets/all-mentor-reference-sheets.md`) plus a locally built, Meshopt-ready `.glb` 3D model for **David's Aquamarine Tuning-Stone** (`assets/models/aquamarine-tuning-stone.glb`) and 3D sculpted procedural monuments (`FLAG: DEC-06`).
-   - **Decision Needed from Timothy:** Confirm whether he wants to run the offline HuggingFace TRELLIS / Hunyuan3D script (`scripts/generate-zone1-trellis.mjs`, prepared in this repo with git-push stripped out) outside the sandbox against `art/sea-01/` and `cover-redo-sea-01/sea-01-cover-art.png`, and confirm the art source strategy for Zones 2–12.
-5. **`OPEN-05` — Optional Background MP3 Music & Voice Narration Tracks:**
-   - **Current State in Zone 1:** Synthesizes gentle Web Audio harmonic kinnor/harp chords (David's four-note unfinished melody in F# minor / D major, Seoul rain bed, and Sea of Glass crystal resonance) with zero external MP3 dependencies, full Master/Music/Ambient volume sliders, and Mute toggle.
-   - **Decision Needed from Timothy:** Confirm whether dedicated MP3 tracks (such as Elias's stripped-down acoustic melody or spoken narration) should be recorded/added for Zone 1.
+1. **`OPEN-01` — Final World Title (CONFIRMED):**
+   - **Confirmed Public Title:** **`The Narrow Way Walk`** (applied across `index.html` `<title>`, top header, welcome modal, and `src/zone1-data.js` `worldTitle`). Folder and repo names remain unchanged.
+2. **`OPEN-02` — GitHub Repository Name & First Remote Push (CONFIRMED NAME; STOPPED AT GATE):**
+   - **Confirmed Repo Name:** `narrow-way-walk`.
+   - **Current State:** Local git repository in `/Users/Timotheus/Desktop/Narrow Way Walk` (`branch: main`). **Zero remotes added; zero pushes executed** — stopped at the morning gate awaiting Timothy's explicit go-ahead.
+3. **`OPEN-03` — Gatehouse Book 1 Outbound Shop URL (STAYS PLACEHOLDER):**
+   - **Confirmed State (`src/zone1-data.js`, `index.html`):** Remains `#gatehouse-book-01-placeholder`. No Book 1 buy page exists yet; no URL is invented.
+4. **`OPEN-04` — Art Source & 3D Relic Generation Pipeline for Later Zones (CONFIRMED POLICY):**
+   - **Confirmed Pattern for Later Zones:** Approved comic-panel art via the linker script + flagged procedural placeholders; TRELLIS strictly opt-in per zone, never auto-run, never touching the Pilgrim Walk repo; no AI image generation. Zone 2 stays stopped.
+5. **`OPEN-05` — Audio (CONFIRMED SYNTHESIZED WEB AUDIO):**
+   - **Confirmed State (`src/audio.js`):** Keeps synthesized Web Audio harmonic kinnor/harp chords and Seoul rain ambience, with no recorded stems. Checked `gamebooks/book-01/draft.md` (Sections 6, 18, 77, 93, 129, 282, 300): the book names **no specific musical pitches** for the four-note melody, so `src/audio.js` (`F#4–A4–E4–D4`) is retained as-is.
 
 ---
 
@@ -105,7 +100,7 @@ All required source files in `/Users/Timotheus/Desktop/LvD Universe/` and `/User
    - **Does It Run From Here Tonight?** Inside the overnight autonomous terminal sandbox (`BypassSandbox: false`), external network calls to `hf.space` and shell reads outside `/Users/Timotheus/Desktop/Narrow Way Walk` are blocked by macOS sandbox policy (and bypassing the sandbox would prompt the sleeping user, which is forbidden).
    - **How It Is Used Tonight (`FLAG: DEC-06`):**
      1. We created a clean, push-free local script `scripts/generate-zone1-trellis.mjs` inside `/Users/Timotheus/Desktop/Narrow Way Walk/scripts/` (with all `git add/commit/push` removed and output pointed strictly to `/Users/Timotheus/Desktop/Narrow Way Walk/assets/models/`) so Timothy can optionally run it with one command in the morning if desired.
-     2. We built a local, offline deterministic `.glb` generator (`scripts/build-local-glb-models.mjs`) that writes valid binary glTF 2.0 (`.glb`) 3D models directly into `/Users/Timotheus/Desktop/Narrow Way Walk/assets/models/` for **David's Aquamarine Tuning-Stone & Cypress Harp (`aquamarine-tuning-stone.glb`)**, **The Sea of Glass Well Basin (`well-of-grace-basin.glb`)**, and **The KJV Wisdom Scroll Pedestal (`wisdom-scroll-pedestal.glb`)**, loaded by `GLTFLoader` + `MeshoptDecoder` and registered in the **Relic Workshop** turntable inspector.
+     2. We built a local, offline deterministic `.glb` generator (`scripts/build-local-glb-models.mjs`) that writes valid binary glTF 2.0 (`.glb`) 3D models directly into `/Users/Timotheus/Desktop/Narrow Way Walk/assets/models/` for **David's Aquamarine Tuning-Stone (`aquamarine-tuning-stone.glb`)**, **David's Crownless Cypress Harp / Kinnor (`davids-cypress-kinnor.glb`)**, and **Mother's Taped Portable Cassette Player (`mothers-cassette-player.glb`)**, loaded by `GLTFLoader` + `MeshoptDecoder` and registered in the **Relic Workshop** turntable inspector.
 2. **The Relic Maker / Relic Workshop (`src/tripo.js` & `index.html` `#tripo-modal`):**
    - **What It Does:** Loads `.glb` models via Three.js `GLTFLoader` + `MeshoptDecoder`, applies the warm oil-on-linen painterly shader (`applyPainterlyToLoadedModel`), places them on 3D pedestals in the world, and provides an interactive 3D Turntable Inspector modal (`260×260` WebGL canvas with drag-to-orbit and scroll-to-zoom).
    - **How It Is Used Tonight:** Adapted into `src/relics.js` for Zone 1's Relic Collection, showcasing **#1 · David's Aquamarine Tuning-Stone (Mentor's Token)** plus Zone 1's companion relics (**#2 · David's Crownless Cypress Kinnor** and **#3 · Mother's Taped Cassette Player** — clearly marked with `FLAG:` comments).
@@ -120,7 +115,7 @@ All required source files in `/Users/Timotheus/Desktop/LvD Universe/` and `/User
 
 ---
 
-## 3. BEST-JUDGMENT DECISIONS LOG (`DEC-01` through `DEC-14`)
+## 3. BEST-JUDGMENT DECISIONS LOG (`DEC-01` through `DEC-09`)
 
 Every decision below is marked with a matching `// FLAG: DEC-XX` or `<!-- FLAG: DEC-XX -->` comment in the codebase. Nothing is claimed as approved.
 
@@ -128,14 +123,14 @@ Every decision below is marked with a matching `// FLAG: DEC-XX` or `<!-- FLAG: 
 * **What Was Decided:** Plain ES-module static site rooted in `/Users/Timotheus/Desktop/Narrow Way Walk/` with zero build step and zero backend:
   - `index.html` — Main entry point, Three.js `0.160.0` CDN importmap (`three` + `three/addons/`), responsive HUD, Stand modal, Wisdom Page modal, Relic Workshop turntable modal, Gatehouse & `NW1` Progress Code modal, and mobile touch joystick.
   - `src/zone1-data.js` — All Book 1 canonical story beats, 6 walkable 3D districts/scenes, 8 Stands, 5 Wells, 7 KJV Wisdom Spreads, 5 verbatim KJV Scrolls, 8 Treasure opportunities, and the Treasure Gate (`Sec. 298–300`).
-  - `src/painterly.js` & `src/postprocess.js` — Warm oil-on-linen / Sea-of-Glass crystal shaders, procedural brushwork textures, and Eco/Balanced/High quality post-processing.
+  - `src/painterly.js` — Warm oil-on-linen / Sea-of-Glass crystal shaders, procedural brushwork textures, and flagged procedural canvas art.
   - `src/relics.js` — `GLTFLoader` + `MeshoptDecoder` loader and interactive 3D Turntable Inspector for **David's Aquamarine Tuning-Stone** and companion Zone 1 relics.
   - `src/world.js` — 3D Zone 1 scene builder (Seoul Rain-Slicked Alley & Venue Corridor, Sea of Glass Threshold, Mapo-gu Apartment & Hannam-dong Hallway, Seoul Columbarium Stairs & Hall C, Church Basement & Kitchen Floor, and Sea of Glass Climax & Thursday Recovery Circle), including the visible 3D companion character **Elias Cho** walking beside the player, **King David** at the Wells, readable 3D Wisdom Pages, glowing Well checkpoints, Treasure interaction markers, and Stronghold monoliths.
   - `src/audio.js` — Web Audio harmonic synthesis (David's four-note cypress kinnor chord, gentle Seoul rain, Sea of Glass crystal shimmer) with Master / Music / Ambient volume sliders and Mute toggle.
   - `src/main.js` — Game state controller, transparent `2d6 + Courage` Stand engine, Victory Law & Scroll resonance, Favor Test roller, Grace Restoration return-to-Well flow, Treasure tracker, `localStorage` persistence, and `NW1-...` progress code export/import.
 * **Why:** Matches the proven, zero-friction static architecture of `Pilgrim Way Art World Game` (§2 item 6 & §5), runs immediately via `python3 -m http.server` or Cloudflare Pages with no bundler fragility, and lazy-loads assets cleanly.
 * **Alternatives Considered:** Vite/React/TypeScript SPA (rejected because a build step complicates instant local preview and adds bundle weight without helping the 3D WebGL loop).
-* **Canon Trace:** Mirrors `Pilgrim Way Art World Game` (`index.html`, `src/main.js`, `src/painterly.js`, `src/postprocess.js`, `src/tripo.js`).
+* **Canon Trace:** Mirrors `Pilgrim Way Art World Game` (`index.html`, `src/main.js`, `src/painterly.js`, `src/tripo.js`).
 * **Code Flag Locations:** `index.html`, `src/main.js`.
 
 ### `DEC-02` — Six Connected 3D Walkable Areas Along the Zone 1 Story Path (`FLAG: DEC-02`)
@@ -212,7 +207,7 @@ Every decision below is marked with a matching `// FLAG: DEC-XX` or `<!-- FLAG: 
   - Includes `Large Text` toggle, `Reduced Motion` toggle, and `Master / Music / Ambient` volume sliders + Mute button.
 * **Why:** Implements §3 Systems & §5 Technical Shape (*"auto-Eco for mobile/low-power; phone-browser playable; keyboard + mouse/touch; readable text; volume control; unmissable way back to zone start and Gatehouse"*).
 * **Canon Trace:** `Pilgrim Way Art World Game/src/main.js` & `index.html`.
-* **Code Flag Locations:** `src/main.js`, `src/postprocess.js`, `index.html`.
+* **Code Flag Locations:** `src/main.js`, `index.html`.
 
 ---
 

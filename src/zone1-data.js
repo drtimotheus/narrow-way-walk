@@ -9,8 +9,8 @@
 // ============================================================================
 
 export const WORLD_CONFIG = {
-  // FLAG: OPEN-01 — World title placeholder pending Timothy's morning confirmation
-  worldTitle: 'The Narrow Way',
+  // FLAG: OPEN-01 — Confirmed morning call: "The Narrow Way Walk"
+  worldTitle: 'The Narrow Way Walk',
   worldSubtitle: 'Zone I Pilot · Book 1: The Unseen Chord (Elias Cho · Seoul)',
   saveKey: 'narrow_way_walk_save_v1', // FLAG: DEC-08 — Fresh key separate from Pilgrim Walk
   codePrefix: 'NW1',                 // FLAG: DEC-08 — Fresh progress code prefix

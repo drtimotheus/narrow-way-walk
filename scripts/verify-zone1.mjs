@@ -144,3 +144,33 @@ for (const f of deliveredFiles) {
   totalDeliveredBytes += st.size;
 }
 console.log(`✓ Total local static site + 3D GLB weight: ${(totalDeliveredBytes / 1024).toFixed(1)} KB (${totalDeliveredBytes} bytes) — well under the 15,360 KB (15 MB) budget!`);
+
+// 9. Morning Sign-Off Checks (OPEN-01, OPEN-03, Favor Test, DEC-05 No-Theophany, ES Module Exports)
+assert.equal(WORLD_CONFIG.worldTitle, 'The Narrow Way Walk', 'OPEN-01: worldTitle must be The Narrow Way Walk');
+assert.equal(html.includes('<title>The Narrow Way Walk'), true, 'OPEN-01: index.html <title> must be The Narrow Way Walk');
+assert.equal(html.includes('The Narrow Way Walk · Zone I'), true, 'OPEN-01: index.html header must be The Narrow Way Walk');
+assert.equal(WORLD_CONFIG.gatehouseBook1Url, '#gatehouse-book-01-placeholder', 'OPEN-03: Gatehouse URL must remain placeholder');
+
+// Favor Test check: must not deal +1 damage to Stronghold
+assert.equal(mainJs.includes('Extra +1 damage'), false, 'Favor Test +1 damage branch must be removed');
+assert.equal(mainJs.includes('!s.lastRoundLost'), true, 'Favor Test in Stand must only be active when lastRoundLost is true');
+
+// Local ES Module Named Export/Import Integrity Check
+const audioJs = fs.readFileSync('src/audio.js', 'utf8');
+const painterlyJs = fs.readFileSync('src/painterly.js', 'utf8');
+const relicsJs = fs.readFileSync('src/relics.js', 'utf8');
+const worldJs = fs.readFileSync('src/world.js', 'utf8');
+assert.equal(audioJs.includes('export const audio'), true, 'src/audio.js must export audio singleton');
+assert.equal(painterlyJs.includes('export function createPainterlyTexture'), true, 'src/painterly.js must export createPainterlyTexture');
+assert.equal(painterlyJs.includes('export function createSkyDome'), true, 'src/painterly.js must export createSkyDome');
+assert.equal(painterlyJs.includes('export function createSeaOfGlassMaterial'), true, 'src/painterly.js must export createSeaOfGlassMaterial');
+assert.equal(painterlyJs.includes('export function createPainterlyArtDataURL'), true, 'src/painterly.js must export createPainterlyArtDataURL');
+assert.equal(relicsJs.includes('export function createWorldRelicPedestal'), true, 'src/relics.js must export createWorldRelicPedestal');
+assert.equal(worldJs.includes('export class WorldStageManager'), true, 'src/world.js must export WorldStageManager');
+
+// DEC-05 No-Theophany Check: verify all 3D character figures created in src/world.js are strictly human companions/Mentors
+const labelMatches = [...worldJs.matchAll(/label:\s*['"]([^'"]+)['"]|name:\s*['"]([^'"]+)['"]/g)].map((m) => m[1] || m[2]);
+for (const lbl of labelMatches) {
+  assert.equal(/God|Father|Jesus|Christ|Lord|Throne/i.test(lbl), false, `DEC-05 violation: 3D figure label "${lbl}" must never depict a theophany`);
+}
+console.log(`✓ Morning Sign-Off checks passed (OPEN-01 title, OPEN-03 placeholder, Favor Test rule, ES module exports, DEC-05 No-Theophany across ${labelMatches.length} 3D character figures: ${labelMatches.join(', ')})`);

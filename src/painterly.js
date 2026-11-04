@@ -6,8 +6,10 @@
 // when scripts/link-approved-art.sh has not yet been run.
 // ============================================================================
 
+import * as THREE_NS from 'three';
+
 export class PainterlyEngine {
-  constructor(THREE) {
+  constructor(THREE = THREE_NS) {
     this.THREE = THREE;
     this._texCache = new Map();
   }
@@ -160,14 +162,15 @@ export function createPainterlySkyDome(THREE, radius = 180) {
 }
 
 // Sea of Glass & Rain-Slicked Asphalt Animated Shader Material
-export function createSeaOfGlassMaterial(THREE, deepHex = '#14334f', crystalHex = '#62d8ff', goldHex = '#ffe299') {
-  return new THREE.ShaderMaterial({
+export function createSeaOfGlassMaterial(THREE = THREE_NS, deepHex = '#14334f', crystalHex = '#62d8ff', goldHex = '#ffe299') {
+  const T = THREE && THREE.ShaderMaterial ? THREE : THREE_NS;
+  return new T.ShaderMaterial({
     transparent: true,
     uniforms: {
       uTime: { value: 0 },
-      uDeepColor: { value: new THREE.Color(deepHex) },
-      uCrystalColor: { value: new THREE.Color(crystalHex) },
-      uGoldColor: { value: new THREE.Color(goldHex) },
+      uDeepColor: { value: new T.Color(deepHex) },
+      uCrystalColor: { value: new T.Color(crystalHex) },
+      uGoldColor: { value: new T.Color(goldHex) },
       uGlassBlend: { value: 0.65 }
     },
     vertexShader: /* glsl */ `
@@ -198,4 +201,21 @@ export function createSeaOfGlassMaterial(THREE, deepHex = '#14334f', crystalHex 
       }
     `
   });
+}
+
+const defaultPainterly = new PainterlyEngine(THREE_NS);
+
+export function createPainterlyTexture(baseHex = '#2a3442', accentHex = '#5cd6ff') {
+  return defaultPainterly.createBrushTexture(baseHex, accentHex, 'stone');
+}
+
+export function createSkyDome(topHex = '#0d1322', horizonHex = '#2c4c6e') {
+  const mesh = createPainterlySkyDome(THREE_NS, 140);
+  mesh.material.uniforms.uTopColor.value.set(topHex);
+  mesh.material.uniforms.uHorizonColor.value.set(horizonHex);
+  return mesh;
+}
+
+export function createPainterlyArtDataURL({ title = 'The Unseen Chord', subtitle = '' } = {}) {
+  return defaultPainterly.createFlaggedSceneDataUrl(0, subtitle ? `${title} · ${subtitle}` : title);
 }

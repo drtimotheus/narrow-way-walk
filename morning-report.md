@@ -32,15 +32,13 @@ Then open **`http://localhost:8123`** in your desktop or mobile browser.
 
 ---
 
-## 2. OPEN Items (Top Priority for Your Morning Decisions)
+## 2. Morning Sign-Off Calls (`OPEN-01`..`OPEN-05`)
 
-Nothing below was decided autonomously; placeholders are in place and flagged:
-
-1. **`OPEN-01` — Final World Title:** Currently using working title **`The Narrow Way`** (`index.html:6`, `src/zone1-data.js:13`). Confirm or rename before locking Zone 1.
-2. **`OPEN-02` — GitHub Repository Name & Remote Setup:** Proposed repo name **`narrow-way-walk`**. Local git repository is initialized on `main` with clean rollback commits and **no remote added**.
-3. **`OPEN-03` — Gatehouse Book 1 Outbound URL:** Currently set to `#gatehouse-book-01-placeholder` (`index.html:465,489`, `src/zone1-data.js:18`). Replace with the live Gatehouse Book 1 URL when ready.
-4. **`OPEN-04` — Art Source for Zones 2–12:** Out of scope for Zone 1 pilot; left open for your direction before Zone 2 begins.
-5. **`OPEN-05` — Optional Recorded Audio Stem for the Four-Note Unseen Chord:** Currently synthesized via Web Audio API (`src/audio.js:3`) playing David's cypress kinnor (`D3–A3–E4–F#4`) and Seoul rain ambience with Mute/Volume controls.
+1. **`OPEN-01` — Final World Title (CONFIRMED):** Public title set to **`The Narrow Way Walk`** across `index.html` (`<title>`, top header, welcome modal) and `src/zone1-data.js` (`worldTitle`). Folder/repo names unchanged.
+2. **`OPEN-02` — GitHub Repository Name & Remote Setup (CONFIRMED, STOPPED AT GATE):** Repo name confirmed as **`narrow-way-walk`**. Per your Stop Gate, **no remote has been added, no repo created, and nothing pushed**.
+3. **`OPEN-03` — Gatehouse Book 1 Outbound URL (CONFIRMED PLACEHOLDER):** Remains `#gatehouse-book-01-placeholder` (`index.html:465,489`, `src/zone1-data.js:18`). No Book 1 buy page exists yet; no URL invented.
+4. **`OPEN-04` — Art Source for Later Zones (CONFIRMED POLICY, ZONES 2–12 STOPPED):** Approved comic-panel art via linker script + flagged procedural placeholders; TRELLIS strictly opt-in per zone, never auto-run, never touching the Pilgrim Walk repo; no AI image generation. Zone 2 stays stopped.
+5. **`OPEN-05` — Audio (CONFIRMED WEB AUDIO):** Kept synthesized Web Audio (`src/audio.js`), no recorded stems. Verified against `gamebooks/book-01/draft.md` (Sections 6, 18, 77, 93, 129, 282, 300): the book names **no specific musical pitches** for the four-note melody (`src/audio.js` plays `F#4–A4–E4–D4` in D major / F# minor).
 
 ---
 
@@ -76,7 +74,7 @@ Zone 1 ([`index.html`](file:///Users/Timotheus/Desktop/Narrow%20Way%20Walk/index
    - **Well 5 & Wisdom Page 5 (`Sec. 245`):** The kitchen floor beside the untouched, factory-capped green bottle (`Proverbs 16:18`, `James 4:6 KJV`).
 6. **Stage VI — The Sea of Glass Climax, Thursday Basement & Gatehouse (`Act V · Sec. 246–300`):**
    - **3D Witnesses & Peers:** **David the King**, **Daniel**, **Paul**, and **Queen Esther** stand beside **Elias**, **Adaeze Okonkwo**, **Brother Matthias**, and **Talia Reyes** on the fire-veined crystal floor (`Revelation 15:2 KJV`). Strictly **zero theophany depiction** (Decision 17 / §3).
-   - **Treasure Choice #7 (`Sec. 252`):** Step between **Adaeze** and Fear (`#32`) and clasp **Talia Reyes's** trembling hand (`+1 Treasure`).
+   - **Treasure Choice #7 (`Sec. 252`):** Shield **Adaeze** and clasp **Talia Reyes's** freezing hand against **Abandonment's** (`#21`) desert gale at `-1 Strength` cost (`+1 Treasure`).
    - **Climax Stand 8 (`Sec. 260`):** *The Obsidian Crown of Pride (`#15`) & Fig-Leaf Door of Shame (`#17`)* (`Courage 9, Strength 12`).
    - **Relic Pedestal #2 (`Sec. 277`):** Inspect *David's Crownless Cypress Harp (Kinnor)* in the 3D Relic Workshop.
    - **Treasure Choice #8 (`Sec. 288/294`):** Take **Chair #7** in Pastor Ji's unfilmed Thursday night basement circle instead of the televised festival (`+1 Treasure`).
@@ -167,7 +165,10 @@ After you review Zone 1 in local preview and approve the decisions in [`decision
 
 ## 9. Local Git Commit Log (`branch: main`, 0 Remotes, 0 Pushes)
 
+*(Note: The 6 overnight commits are listed below; the 7th commit on `main` records the Nov 4 Morning Sign-Off corrections.)*
+
 ```text
+b0ababf Add .gitignore and append local git log to morning-report.md
 83ca848 Add morning-report.md with full review checklist, FLAG index, and weight metrics
 12643c4 Build complete playable Zone 1 3D WebGL world, Relic Workshop, NW1 saves, and verification suite
 954ebf4 Add Zone 1 canonical data (8 Stands, 5 Wells, 5 KJV Scrolls, 7 Wisdom Spreads, 8 Treasures, 6 Stages)

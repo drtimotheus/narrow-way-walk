@@ -162,4 +162,25 @@ export class NarrowWayAudio {
       step++;
     }, 3400);
   }
+
+  playKinnorChord() {
+    this.playFourUnfinishedNotes();
+  }
+
+  playChime(type = 'step') {
+    if (type === 'treasure') {
+      this.playTreasureChime();
+    } else if (type === 'stand_win' || type === 'grace') {
+      this.playWellChime();
+    } else {
+      this.playDiceRollSound();
+    }
+  }
+
+  toggleMute() {
+    this.setVolumes({ muted: !this.muted });
+    return this.muted;
+  }
 }
+
+export const audio = new NarrowWayAudio();
