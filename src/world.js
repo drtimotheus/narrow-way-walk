@@ -9,7 +9,9 @@ import * as THREE from 'three';
 import {
   createPainterlyTexture,
   createSkyDome,
-  createSeaOfGlassMaterial
+  createSeaOfGlassMaterial,
+  loadStageArtTexture,
+  PORTRAIT_ART_MAP
 } from './painterly.js';
 import { createWorldRelicPedestal } from './relics.js';
 
@@ -50,6 +52,7 @@ export function createCharacterFigure({
   hairHex = 0x111827,
   hasGuitarCase = false,
   hasHarp = false,
+  portraitKey = null,
   label = 'Elias Cho',
   roleSub = 'Companion · Walk Beside Him'
 }) {
@@ -95,6 +98,20 @@ export function createCharacterFigure({
     );
     gem.position.set(0.32, 1.0, 0.22);
     group.add(harp, gem);
+  }
+  if (portraitKey && PORTRAIT_ART_MAP[portraitKey]) {
+    const pTex = loadStageArtTexture(0, label, PORTRAIT_ART_MAP[portraitKey]);
+    const disc = new THREE.Mesh(
+      new THREE.CircleGeometry(0.42, 24),
+      new THREE.MeshBasicMaterial({ map: pTex, side: THREE.DoubleSide })
+    );
+    disc.position.set(0, 3.35, 0);
+    const rim = new THREE.Mesh(
+      new THREE.RingGeometry(0.42, 0.47, 24),
+      new THREE.MeshBasicMaterial({ color: scarfHex, side: THREE.DoubleSide })
+    );
+    rim.position.set(0, 3.35, 0.01);
+    group.add(disc, rim);
   }
   if (label) {
     const sprite = makeLabelSprite(label, roleSub, '#7dd3fc');
@@ -239,6 +256,7 @@ function populateStageScenery(stageId, envGroup) {
         coatHex: 0x0369a1,
         scarfHex: 0x7dd3fc,
         hasHarp: true,
+        portraitKey: 'david',
         label: 'David the King',
         roleSub: 'Mentor · Spirit of Might (Crownless)'
       });
@@ -283,17 +301,18 @@ function populateStageScenery(stageId, envGroup) {
     envGroup.add(counter, bottle);
   } else if (stageId === 'sea_of_glass_climax') {
     const witnesses = [
-      { name: 'David the King', role: 'Light Blue · Might · Psalm 51:17', x: -5.2, z: -3.5, coat: 0x0284c7, harp: true },
-      { name: 'Daniel the Prophet', role: 'Orange · Counsel · Daniel 6:10', x: 5.2, z: -3.5, coat: 0xea580c, harp: false },
-      { name: 'Paul the Apostle', role: 'Blue · Knowledge · 2 Cor 12:9', x: -6.4, z: -9.5, coat: 0x2563eb, harp: false },
-      { name: 'Queen Esther', role: 'Green · Understanding · Esther 4:14', x: 6.4, z: -9.5, coat: 0x059669, harp: false },
-      { name: 'Adaeze & Matthias & Talia', role: 'Fellow-Soldiers · Humming the 4 Notes', x: -3.8, z: 3.5, coat: 0x4f46e5, harp: false }
+      { name: 'David the King', role: 'Light Blue · Might · Psalm 51:17', x: -5.2, z: -3.5, coat: 0x0284c7, harp: true, portrait: 'david' },
+      { name: 'Daniel the Prophet', role: 'Green · Counsel · Daniel 6:10', x: 5.2, z: -3.5, coat: 0x15803d, harp: false, portrait: 'daniel' },
+      { name: 'Paul the Apostle', role: 'Dark Blue · Knowledge · 2 Cor 12:9', x: -6.4, z: -9.5, coat: 0x1d4ed8, harp: false, portrait: 'paul' },
+      { name: 'Queen Esther', role: 'Red · Spirit of the Lord · Esther 4:14', x: 6.4, z: -9.5, coat: 0xb91c1c, harp: false, portrait: 'esther' },
+      { name: 'Adaeze & Matthias & Talia', role: 'Fellow-Soldiers · Humming the 4 Notes', x: -3.8, z: 3.5, coat: 0x4f46e5, harp: false, portrait: 'adaeze' }
     ];
     for (const w of witnesses) {
       const fig = createCharacterFigure({
         coatHex: w.coat,
         scarfHex: 0xfde047,
         hasHarp: w.harp,
+        portraitKey: w.portrait,
         label: w.name,
         roleSub: w.role
       });
@@ -316,6 +335,7 @@ export class WorldStageManager {
       coatHex: 0x1e293b,
       scarfHex: 0x38bdf8,
       hasGuitarCase: true,
+      portraitKey: 'elias',
       label: 'Elias Cho',
       roleSub: 'Companion · Walk Beside Him (Never Controlled)'
     });
@@ -375,6 +395,22 @@ export class WorldStageManager {
     this.stageGroup.add(pathMesh);
 
     populateStageScenery(theme, this.stageGroup);
+
+    // 3D Stage Art Mural Frame (loads stage's linked PNG from assets/art/*.png first,
+    // falls back to procedural canvas with FLAG: DEC-07 badge only when absent)
+    const artTex = loadStageArtTexture(stage.idx ?? 0, stage.title);
+    const frameMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(8.4, 5.2, 0.22),
+      new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.35, metalness: 0.65 })
+    );
+    frameMesh.position.set(0, 4.4, -29.2);
+    const canvasPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(7.9, 4.75),
+      new THREE.MeshBasicMaterial({ map: artTex })
+    );
+    canvasPlane.position.set(0, 4.4, -29.06);
+    this.stageGroup.add(frameMesh, canvasPlane);
+    this.currentStageArtTexture = artTex;
 
     const count = ecoMode ? 90 : 220;
     const pGeo = new THREE.BufferGeometry();

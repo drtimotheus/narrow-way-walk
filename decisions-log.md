@@ -183,12 +183,15 @@ Every decision below is marked with a matching `// FLAG: DEC-XX` or `<!-- FLAG: 
 * **Canon Trace:** `gamebooks/book-01/how-to-play-and-sheet.md` (Mentor's Token), `draft.md` (`Sec. 18, 48, 93`), and `Pilgrim Way Art World Game/src/tripo.js`.
 * **Code Flag Locations:** `scripts/build-local-glb-models.mjs`, `scripts/generate-zone1-trellis.mjs`, `src/relics.js`, `assets/models/relics-manifest.json`.
 
-### `DEC-07` — Painterly Canvas Art & Morning Link Script for Approved `sea-01` Art (`FLAG: DEC-07`)
-* **What Was Decided:** Because the sandboxed shell cannot run `cp` outside `/Users/Timotheus/Desktop/Narrow Way Walk`, the game includes `painterly.js` procedural oil-and-crystal canvas paintings tailored to each of the 6 stages' exact `sea-01-art-prompts.md` palettes and compositions (clearly badged as `[FLAG: PROCEDURAL-ART-PLACEHOLDER — Run scripts/link-approved-art.sh to swap in art/sea-01/ PNGs]`), AND includes `scripts/link-approved-art.sh` which copies Timothy's approved `cover-redo-sea-01/sea-01-cover-art.png`, `art/issue-01/portraits/david.png`, `art/sea-01/portraits/elias.png`, and key `art/sea-01/sea-01-panel-*.png` files into `assets/art/` in one second upon morning review.
-* **Why:** Obeys §1 & §6 (*"no new AI imagery, no generated reference images, no upscaling or altering Timothy's art... placeholder approach (simple geometry / flat art, always flagged)"*) while keeping cold-load weight tiny (`< 350 KB` total local payload).
-* **Alternatives Considered:** Generating AI images (strictly forbidden).
+### `DEC-07` — Linked `assets/art/*.png` Loader with Procedural Canvas Fallback (`FLAG: DEC-07`)
+* **What Was Decided:** `src/painterly.js` exports `STAGE_ART_MAP`, `PORTRAIT_ART_MAP`, `WISDOM_ART_MAP`, `loadArtIntoImage(imgEl, badgeEl, opts)`, and `loadStageArtTexture(stageIdx, title, customUrl)`:
+  - Every UI art surface (the top HUD `#stage-art-thumb` banner, `#welcome-art-img`, `#wisdom-art-img`, `#well-art-img`, `#treasure-art-img`, `#stand-art-img`, `#finale-art-img`, and `#gatehouse-art-img`) and every 3D stage art mural + character portrait medallion in `src/world.js` tries loading the linked PNG from `assets/art/*.png` first (populated by `scripts/link-approved-art.sh` from `/Users/Timotheus/Desktop/LvD Universe/`).
+  - When the linked PNG is present, it displays directly (`dataset.artSource = "linked-png"`) and hides the companion `.art-fallback-badge` element (`hidden`).
+  - Only when a PNG is absent (`onerror`) does the loader fall back to `createPainterlyArtDataURL()` (`dataset.artSource = "procedural-fallback"`) and reveal the `FLAG: DEC-07` badge (`#...-art-badge`).
+* **Why:** Obeys §1 & §6 (*"no new AI imagery, no generated reference images, no upscaling or altering Timothy's art... placeholder approach (simple geometry / flat art, always flagged)"*) and Muse's morning review requirement to load `assets/art/*.png` first and show `FLAG: DEC-07` only on fallback.
+* **Alternatives Considered:** Generating AI images (strictly forbidden) or drawing only procedural canvases (superseded by PNG-first loader with procedural fallback).
 * **Canon Trace:** `sea-01-art-prompts.md`, `cover-redo-sea-01/sea-01-cover-art.png`, `art/sea-01/`.
-* **Code Flag Locations:** `src/painterly.js`, `scripts/link-approved-art.sh`.
+* **Code Flag Locations:** `src/painterly.js`, `src/world.js`, `src/main.js`, `index.html`, `scripts/link-approved-art.sh`.
 
 ### `DEC-08` — Fresh `NW1` Progress Code Format & Separate `localStorage` Key (`FLAG: DEC-08`)
 * **What Was Decided:**

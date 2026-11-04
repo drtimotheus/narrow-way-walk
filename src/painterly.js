@@ -205,6 +205,38 @@ export function createSeaOfGlassMaterial(THREE = THREE_NS, deepHex = '#14334f', 
 
 const defaultPainterly = new PainterlyEngine(THREE_NS);
 
+// Canonical mapping of the 15 approved assets/art/ files copied by scripts/link-approved-art.sh
+export const STAGE_ART_MAP = {
+  0: './assets/art/sea-01-panel-06.png', // Stage I: 2,000-Seat Venue & Loading Bay Rain (Panel 2.2)
+  1: './assets/art/sea-01-panel-11.png', // Stage II: Neon Alley & Well 1 with King David (Panel 3.1)
+  2: './assets/art/sea-01-panel-14.png', // Stage III: Rehearsal, Apartment & Hannam-dong (Panel 3.4)
+  3: './assets/art/sea-01-panel-35.png', // Stage IV: Seoul Columbarium Steps & Hall C
+  4: './assets/art/sea-01-panel-74.png', // Stage V: Studio, Basement Youth Q&A & Kitchen Floor
+  5: './assets/art/sea-01-panel-92.png'  // Stage VI: Sea of Glass Climax & Thursday Basement Circle
+};
+
+export const PORTRAIT_ART_MAP = {
+  elias: './assets/art/elias.png',
+  david: './assets/art/david.png',
+  daniel: './assets/art/daniel.png',
+  paul: './assets/art/paul.png',
+  esther: './assets/art/esther.png',
+  adaeze: './assets/art/adaeze.png',
+  cover: './assets/art/sea-01-cover-art.png',
+  coverPreview: './assets/art/sea-01-cover-preview.jpg',
+  panel04: './assets/art/sea-01-panel-04.png'
+};
+
+export const WISDOM_ART_MAP = {
+  wisdom_1: './assets/art/sea-01-panel-11.png',
+  wisdom_2: './assets/art/sea-01-panel-14.png',
+  wisdom_3: './assets/art/sea-01-panel-35.png',
+  wisdom_4: './assets/art/sea-01-panel-35.png',
+  wisdom_5: './assets/art/sea-01-panel-74.png',
+  wisdom_6: './assets/art/sea-01-panel-04.png',
+  wisdom_7: './assets/art/sea-01-panel-92.png'
+};
+
 export function createPainterlyTexture(baseHex = '#2a3442', accentHex = '#5cd6ff') {
   return defaultPainterly.createBrushTexture(baseHex, accentHex, 'stone');
 }
@@ -216,6 +248,65 @@ export function createSkyDome(topHex = '#0d1322', horizonHex = '#2c4c6e') {
   return mesh;
 }
 
-export function createPainterlyArtDataURL({ title = 'The Unseen Chord', subtitle = '' } = {}) {
-  return defaultPainterly.createFlaggedSceneDataUrl(0, subtitle ? `${title} · ${subtitle}` : title);
+export function createPainterlyArtDataURL({ stageIdx = 0, title = 'The Unseen Chord', subtitle = '' } = {}) {
+  return defaultPainterly.createFlaggedSceneDataUrl(stageIdx, subtitle ? `${title} · ${subtitle}` : title);
+}
+
+// Tries loading the linked PNG from assets/art/*.png first; falls back to the
+// procedural canvas ONLY when absent, and shows the FLAG: DEC-07 badge ONLY on fallback.
+export function loadArtIntoImage(imgEl, badgeEl, { stageIdx = 0, pngUrl, title = 'The Unseen Chord', subtitle = '' } = {}) {
+  if (!imgEl) return;
+  const targetUrl = pngUrl || STAGE_ART_MAP[stageIdx] || STAGE_ART_MAP[0];
+  const probe = new Image();
+  probe.onload = () => {
+    imgEl.src = targetUrl;
+    imgEl.dataset.artSource = 'linked-png';
+    imgEl.dataset.loadedUrl = targetUrl;
+    if (badgeEl) {
+      badgeEl.textContent = '';
+      badgeEl.classList.add('hidden');
+    }
+  };
+  probe.onerror = () => {
+    imgEl.src = createPainterlyArtDataURL({ stageIdx, title, subtitle });
+    imgEl.dataset.artSource = 'procedural-fallback';
+    imgEl.dataset.loadedUrl = 'procedural-canvas';
+    if (badgeEl) {
+      badgeEl.textContent = 'FLAG: DEC-07 · Procedural Canvas Fallback (run scripts/link-approved-art.sh for sea-01 PNGs)';
+      badgeEl.classList.remove('hidden');
+    }
+  };
+  probe.src = targetUrl;
+}
+
+// Loads a stage or portrait PNG into a Three.js Texture first; falls back to the
+// procedural canvas texture (with FLAG: DEC-07 badge) ONLY if the PNG is absent.
+export function loadStageArtTexture(stageIdx = 0, title = 'The Unseen Chord', customUrl = null) {
+  const targetUrl = customUrl || STAGE_ART_MAP[stageIdx] || STAGE_ART_MAP[0];
+  const placeholderCanvas = document.createElement('canvas');
+  placeholderCanvas.width = 640;
+  placeholderCanvas.height = 400;
+  const tex = new THREE_NS.Texture(placeholderCanvas);
+  tex.colorSpace = THREE_NS.SRGBColorSpace;
+  tex.userData = { artSource: 'loading', url: targetUrl };
+
+  const probe = new Image();
+  probe.onload = () => {
+    tex.image = probe;
+    tex.userData.artSource = 'linked-png';
+    tex.userData.url = targetUrl;
+    tex.needsUpdate = true;
+  };
+  probe.onerror = () => {
+    const fbImg = new Image();
+    fbImg.onload = () => {
+      tex.image = fbImg;
+      tex.userData.artSource = 'procedural-fallback';
+      tex.userData.url = 'procedural-canvas';
+      tex.needsUpdate = true;
+    };
+    fbImg.src = createPainterlyArtDataURL({ stageIdx, title });
+  };
+  probe.src = targetUrl;
+  return tex;
 }

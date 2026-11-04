@@ -161,6 +161,19 @@
     .inv-card-body { font-family: var(--font-serif); font-size: 0.85rem; color: #e2e8f0; margin-top: 3px; }
     #relic-turntable-canvas { width: 100%; height: 250px; background: radial-gradient(circle, #162844 0%, #070b14 100%); border-radius: 10px; border: 1px solid var(--border-aqua); touch-action: none; }
     .code-textarea { width: 100%; min-height: 64px; background: #050811; color: var(--aqua); border: 1px solid var(--border-aqua); border-radius: 8px; padding: 8px; font-family: monospace; font-size: 0.82rem; }
+    .art-fallback-badge {
+      font-size: 0.75rem; color: var(--gold); background: rgba(180, 83, 9, 0.25);
+      border: 1px dashed var(--gold); border-radius: 6px; padding: 4px 8px;
+    }
+    .modal-art-img {
+      width: 100%; height: 145px; object-fit: cover; border-radius: 8px;
+      border: 1px solid var(--border-aqua); background: #060a12;
+    }
+    .stage-banner-row { display: flex; gap: 12px; align-items: center; }
+    #stage-art-thumb {
+      width: 112px; height: 64px; object-fit: cover; border-radius: 8px;
+      border: 1px solid var(--border-aqua); flex-shrink: 0; background: #060a12;
+    }
   </style>
 </head>
 <body>
@@ -212,11 +225,17 @@
       </div>
 
       <div class="stage-banner">
-        <div class="stage-banner-head">
-          <span id="stage-title">Stage I</span>
-          <span id="stage-subtitle"></span>
+        <div class="stage-banner-row">
+          <img id="stage-art-thumb" alt="Stage Scene Panel" />
+          <div style="flex:1; min-width:0;">
+            <div class="stage-banner-head">
+              <span id="stage-title">Stage I</span>
+              <span id="stage-subtitle"></span>
+            </div>
+            <p id="stage-narration"></p>
+            <div id="stage-art-badge" class="art-fallback-badge hidden"></div>
+          </div>
         </div>
-        <p id="stage-narration"></p>
         <div id="quick-node-bar"></div>
       </div>
     </div>
@@ -241,6 +260,8 @@
         </div>
         <button data-close-modal>✕</button>
       </div>
+      <img id="welcome-art-img" class="modal-art-img" alt="Book 1 Cover Art" />
+      <div id="welcome-art-badge" class="art-fallback-badge hidden"></div>
       <div class="kjv-box">
         "Pride goeth before destruction, and an haughty spirit before a fall. Better it is to be of an humble spirit with the lowly, than to divide the spoil with the proud." — Proverbs 16:18–19 (KJV)
       </div>
@@ -275,8 +296,8 @@
         </div>
         <button data-close-modal>✕</button>
       </div>
-      <!-- FLAG: DEC-07 — Procedural painterly art header -->
-      <img id="wisdom-art-img" alt="Painterly Scene Header" style="width:100%; height:140px; object-fit:cover; border-radius:8px; border:1px solid var(--border-aqua);" />
+      <img id="wisdom-art-img" class="modal-art-img" alt="Wisdom Scene Panel" />
+      <div id="wisdom-art-badge" class="art-fallback-badge hidden"></div>
       <div class="kjv-box">
         <div id="wisdom-kjv-text"></div>
         <div id="wisdom-kjv-ref" style="margin-top:6px; font-weight:700; color:var(--gold);"></div>
@@ -302,6 +323,8 @@
         </div>
         <button data-close-modal>✕</button>
       </div>
+      <img id="well-art-img" class="modal-art-img" alt="Well Scene Panel" />
+      <div id="well-art-badge" class="art-fallback-badge hidden"></div>
       <div id="well-reward-banner" style="background:rgba(52,211,153,0.16); border:1px solid var(--emerald); color:#a7f3d0; padding:8px 12px; border-radius:8px; font-weight:600;"></div>
       <p id="well-narrative" class="narrative-p"></p>
       <div id="well-kjv-text" class="kjv-box"></div>
@@ -326,6 +349,8 @@
         </div>
         <button data-close-modal>✕</button>
       </div>
+      <img id="treasure-art-img" class="modal-art-img" alt="Treasure Scene Panel" />
+      <div id="treasure-art-badge" class="art-fallback-badge hidden"></div>
       <p id="treasure-narrative" class="narrative-p"></p>
       <div class="choice-grid">
         <div class="choice-card" style="border-color:var(--gold);">
@@ -358,6 +383,8 @@
         </div>
         <button data-close-modal>✕</button>
       </div>
+      <img id="stand-art-img" class="modal-art-img" alt="Stand Scene Panel" />
+      <div id="stand-art-badge" class="art-fallback-badge hidden"></div>
       <p id="stand-narrative" class="narrative-p" style="font-size:0.86rem;"></p>
       <div class="choice-grid">
         <div class="choice-card">
@@ -455,6 +482,8 @@
         </div>
         <button data-close-modal>✕</button>
       </div>
+      <img id="finale-art-img" class="modal-art-img" alt="Finale Scene Panel" />
+      <div id="finale-art-badge" class="art-fallback-badge hidden"></div>
       <p id="finale-narrative" class="narrative-p"></p>
       <div id="finale-kjv" class="kjv-box"></div>
       <p id="finale-Benediction" class="narrative-p" style="font-weight:600; color:var(--aqua);"></p>
@@ -482,6 +511,8 @@
         </div>
         <button data-close-modal>✕</button>
       </div>
+      <img id="gatehouse-art-img" class="modal-art-img" alt="Book 1 Cover Art" />
+      <div id="gatehouse-art-badge" class="art-fallback-badge hidden"></div>
       <div class="choice-card" style="border-color:var(--gold);">
         <strong style="color:var(--gold);">Book 1: The Unseen Chord (Elias Cho &amp; King David)</strong>
         <p class="narrative-p" style="font-size:0.86rem;">

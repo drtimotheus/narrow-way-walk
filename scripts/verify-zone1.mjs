@@ -165,8 +165,37 @@ assert.equal(painterlyJs.includes('export function createPainterlyTexture'), tru
 assert.equal(painterlyJs.includes('export function createSkyDome'), true, 'src/painterly.js must export createSkyDome');
 assert.equal(painterlyJs.includes('export function createSeaOfGlassMaterial'), true, 'src/painterly.js must export createSeaOfGlassMaterial');
 assert.equal(painterlyJs.includes('export function createPainterlyArtDataURL'), true, 'src/painterly.js must export createPainterlyArtDataURL');
+assert.equal(painterlyJs.includes('export const STAGE_ART_MAP'), true, 'src/painterly.js must export STAGE_ART_MAP');
+assert.equal(painterlyJs.includes('export const PORTRAIT_ART_MAP'), true, 'src/painterly.js must export PORTRAIT_ART_MAP');
+assert.equal(painterlyJs.includes('export const WISDOM_ART_MAP'), true, 'src/painterly.js must export WISDOM_ART_MAP');
+assert.equal(painterlyJs.includes('export function loadArtIntoImage'), true, 'src/painterly.js must export loadArtIntoImage');
+assert.equal(painterlyJs.includes('export function loadStageArtTexture'), true, 'src/painterly.js must export loadStageArtTexture');
 assert.equal(relicsJs.includes('export function createWorldRelicPedestal'), true, 'src/relics.js must export createWorldRelicPedestal');
 assert.equal(worldJs.includes('export class WorldStageManager'), true, 'src/world.js must export WorldStageManager');
+
+// 10. Linked PNG Art & Fallback Badge Wiring Check
+const requiredArtFiles = [
+  'assets/art/sea-01-panel-04.png',
+  'assets/art/sea-01-panel-06.png',
+  'assets/art/sea-01-panel-11.png',
+  'assets/art/sea-01-panel-14.png',
+  'assets/art/sea-01-panel-35.png',
+  'assets/art/sea-01-panel-74.png',
+  'assets/art/sea-01-panel-92.png',
+  'assets/art/sea-01-cover-art.png',
+  'assets/art/sea-01-cover-preview.jpg',
+  'assets/art/elias.png',
+  'assets/art/david.png',
+  'assets/art/daniel.png',
+  'assets/art/paul.png',
+  'assets/art/esther.png',
+  'assets/art/adaeze.png'
+];
+for (const artPath of requiredArtFiles) {
+  assert.equal(fs.existsSync(artPath), true, `Linked art file must exist: ${artPath}`);
+  assert.equal(fs.statSync(artPath).size > 1000, true, `Linked art file must be non-empty: ${artPath}`);
+}
+console.log(`✓ Linked PNG art inventory verified: ${requiredArtFiles.length} files present in assets/art/ and wired via STAGE_ART_MAP, WISDOM_ART_MAP, PORTRAIT_ART_MAP, loadArtIntoImage, and loadStageArtTexture`);
 
 // DEC-05 No-Theophany Check: verify all 3D character figures created in src/world.js are strictly human companions/Mentors
 const labelMatches = [...worldJs.matchAll(/label:\s*['"]([^'"]+)['"]|name:\s*['"]([^'"]+)['"]/g)].map((m) => m[1] || m[2]);

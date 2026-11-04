@@ -18,7 +18,12 @@ import {
   STAGES
 } from './zone1-data.js';
 import { audio } from './audio.js';
-import { createPainterlyArtDataURL } from './painterly.js';
+import {
+  STAGE_ART_MAP,
+  PORTRAIT_ART_MAP,
+  WISDOM_ART_MAP,
+  loadArtIntoImage
+} from './painterly.js';
 import { loadRelicsManifest, RelicTurntableInspector } from './relics.js';
 import { WorldStageManager } from './world.js';
 
@@ -229,6 +234,16 @@ export function updateHUD() {
   setText('stage-title', stage.title);
   setText('stage-subtitle', `${stage.actLabel} · ${stage.subtitle}`);
   setText('stage-narration', stage.eliasIntro);
+  loadArtIntoImage(
+    document.getElementById('stage-art-thumb'),
+    document.getElementById('stage-art-badge'),
+    {
+      stageIdx: state.currentStageIdx,
+      pngUrl: STAGE_ART_MAP[state.currentStageIdx],
+      title: stage.title,
+      subtitle: stage.subtitle
+    }
+  );
 
   document.body.classList.toggle('large-text', Boolean(state.settings.largeText));
   document.body.classList.toggle('reduced-motion', Boolean(state.settings.reducedMotion));
@@ -311,6 +326,16 @@ export function closeAllModals() {
 
 export function openWelcomeModal() {
   showModal('welcome-modal');
+  loadArtIntoImage(
+    document.getElementById('welcome-art-img'),
+    document.getElementById('welcome-art-badge'),
+    {
+      stageIdx: 0,
+      pngUrl: PORTRAIT_ART_MAP.cover,
+      title: WORLD_CONFIG.zoneTitle,
+      subtitle: 'Book 1: The Unseen Chord'
+    }
+  );
   const rollInfo = document.getElementById('welcome-roll-preview');
   const updatePreview = () => {
     if (rollInfo) {
@@ -365,27 +390,16 @@ export function openWisdomModal(wisdomId) {
   setText('wisdom-kjv-ref', (page.verses || []).map((v) => v.ref).join(' · '));
   setText('wisdom-context', page.counselText);
   setText('wisdom-question', (page.questions || []).join('  |  '));
-  const artEl = document.getElementById('wisdom-art-img');
-  if (artEl) {
-    const panelMap = {
-      wisdom_1: './assets/art/sea-01-panel-11.png',
-      wisdom_2: './assets/art/sea-01-panel-14.png',
-      wisdom_3: './assets/art/sea-01-panel-35.png',
-      wisdom_4: './assets/art/sea-01-panel-35.png',
-      wisdom_5: './assets/art/sea-01-panel-74.png',
-      wisdom_6: './assets/art/sea-01-panel-14.png',
-      wisdom_7: './assets/art/sea-01-panel-92.png'
-    };
-    artEl.onerror = () => {
-      artEl.onerror = null;
-      artEl.src = createPainterlyArtDataURL({
-        title: page.title,
-        subtitle: page.sectionRef,
-        palette: 'glass'
-      });
-    };
-    artEl.src = panelMap[page.id] || './assets/art/sea-01-cover-preview.jpg';
-  }
+  loadArtIntoImage(
+    document.getElementById('wisdom-art-img'),
+    document.getElementById('wisdom-art-badge'),
+    {
+      stageIdx: state.currentStageIdx,
+      pngUrl: WISDOM_ART_MAP[page.id] || STAGE_ART_MAP[state.currentStageIdx],
+      title: page.title,
+      subtitle: page.sectionRef
+    }
+  );
   showModal('wisdom-modal');
 }
 
@@ -422,6 +436,16 @@ export function openWellModal(wellId) {
   setText('well-kjv-text', firstVerse ? `"${firstVerse.text}" — ${firstVerse.ref}` : '');
   setText('well-reward-banner', rewardNotice);
   setText('well-question', linkedWisdom?.questions?.[0] || 'Where has Pride asked you to wear a mask instead of resting in grace?');
+  loadArtIntoImage(
+    document.getElementById('well-art-img'),
+    document.getElementById('well-art-badge'),
+    {
+      stageIdx: well.stageIdx ?? state.currentStageIdx,
+      pngUrl: STAGE_ART_MAP[well.stageIdx ?? state.currentStageIdx],
+      title: well.title,
+      subtitle: well.subtitle
+    }
+  );
 
   const breadBtn = document.getElementById('btn-well-eat-bread');
   if (breadBtn) {
@@ -446,6 +470,16 @@ export function openTreasureModal(treasureId) {
   setText('treasure-meta', `Section ${tr.sectionNum} · ${tr.person} · Companion-POV Agency`);
   setText('treasure-narrative', tr.prompt);
   setText('treasure-give-label', tr.giveChoice.label);
+  loadArtIntoImage(
+    document.getElementById('treasure-art-img'),
+    document.getElementById('treasure-art-badge'),
+    {
+      stageIdx: tr.stageIdx ?? state.currentStageIdx,
+      pngUrl: STAGE_ART_MAP[tr.stageIdx ?? state.currentStageIdx],
+      title: tr.title,
+      subtitle: `Section ${tr.sectionNum} · ${tr.person}`
+    }
+  );
   const giveCostParts = [];
   if (tr.giveChoice.breadCost) giveCostParts.push(`${tr.giveChoice.breadCost} Bread`);
   if (tr.giveChoice.strengthDelta) giveCostParts.push(`${tr.giveChoice.strengthDelta} Strength`);
@@ -535,6 +569,16 @@ function renderStandSession() {
   setText('stand-player-courage', state.stats.courage);
   setText('stand-player-strength', `${state.stats.strength}/${state.startingStats.strength}`);
   setText('stand-player-favor', `${state.stats.favor}/${state.startingStats.favor}`);
+  loadArtIntoImage(
+    document.getElementById('stand-art-img'),
+    document.getElementById('stand-art-badge'),
+    {
+      stageIdx: st.stageIdx ?? state.currentStageIdx,
+      pngUrl: STAGE_ART_MAP[st.stageIdx ?? state.currentStageIdx],
+      title: st.title,
+      subtitle: `${st.strongholdName} · ${st.scriptureRoot}`
+    }
+  );
 
   const logEl = document.getElementById('stand-combat-log');
   if (logEl) {
@@ -885,6 +929,16 @@ export function openFinaleModal() {
   setText('finale-narrative', (ending.body || []).join('\n\n'));
   setText('finale-kjv', `"${ending.epigraphText}" — ${ending.epigraphRef}`);
   setText('finale-Benediction', 'The love of God and the love of people is the treasure of life—found not by taking, but by giving.');
+  loadArtIntoImage(
+    document.getElementById('finale-art-img'),
+    document.getElementById('finale-art-badge'),
+    {
+      stageIdx: 5,
+      pngUrl: PORTRAIT_ART_MAP.cover,
+      title: ending.title,
+      subtitle: `Section ${ending.sectionNum} · ${ending.epigraphRef}`
+    }
+  );
   const codeBox = document.getElementById('finale-nw1-code');
   if (codeBox) codeBox.value = generateNW1Code();
 
@@ -897,6 +951,16 @@ export function openGatehouseModal() {
   if (codeInput) codeInput.value = generateNW1Code();
   const statusEl = document.getElementById('gatehouse-import-status');
   if (statusEl) statusEl.textContent = '';
+  loadArtIntoImage(
+    document.getElementById('gatehouse-art-img'),
+    document.getElementById('gatehouse-art-badge'),
+    {
+      stageIdx: 5,
+      pngUrl: PORTRAIT_ART_MAP.cover,
+      title: 'Book 1: The Unseen Chord',
+      subtitle: 'Gatehouse Edition & NW1 Progress Code'
+    }
+  );
   showModal('gatehouse-modal');
 }
 
@@ -1105,7 +1169,13 @@ window.addEventListener('DOMContentLoaded', () => {
 
 window.narrowWayApp = {
   getState: () => state,
+  getWorldManager: () => worldManager,
+  STAGE_ART_MAP,
+  PORTRAIT_ART_MAP,
+  WISDOM_ART_MAP,
+  loadArtIntoImage,
   loadStage,
+  openWelcomeModal,
   openStandModal,
   openTreasureModal,
   openWellModal,
