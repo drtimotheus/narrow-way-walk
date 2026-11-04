@@ -162,3 +162,15 @@ After you review Zone 1 in local preview and approve the decisions in [`decision
 - **Fellowship / Multiplayer / Accounts / Analytics / Ads / Paywalls / Donations:** Strictly excluded (§1, §3, §5).
 - **Theophany Depiction:** Strictly zero visual or dramatic depiction of God the Father or the risen Christ in any scene, shader, or placeholder (§1, §3, Decision 17).
 - **Other Projects:** `/Users/Timotheus/Desktop/LvD Universe/` and `/Users/Timotheus/Desktop/Pilgrim Way Art World Game/` were read-only and never modified (`0` writes outside `/Users/Timotheus/Desktop/Narrow Way Walk`).
+
+---
+
+## 9. Local Git Commit Log (`branch: main`, 0 Remotes, 0 Pushes)
+
+```text
+83ca848 Add morning-report.md with full review checklist, FLAG index, and weight metrics
+12643c4 Build complete playable Zone 1 3D WebGL world, Relic Workshop, NW1 saves, and verification suite
+954ebf4 Add Zone 1 canonical data (8 Stands, 5 Wells, 5 KJV Scrolls, 7 Wisdom Spreads, 8 Treasures, 6 Stages)
+362a7e6 Add Zone 1 GLB relic models, manifest, and no-push TRELLIS/art helper scripts
+2398ab1 Step 0: Inventory, canon verification, and initial decisions log
+```
