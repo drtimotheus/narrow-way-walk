@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <!-- FLAG: OPEN-01 — Working world title pending Timothy's morning confirmation -->
+  <title>The Narrow Way — Zone I: Elias Cho &amp; The Unseen Chord</title>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <style>
+    :root {
+      --bg-deep: #070b14;
+      --bg-panel: rgba(11, 18, 32, 0.90);
+      --border-aqua: rgba(92, 200, 255, 0.45);
+      --aqua: #5cc8ff;
+      --gold: #fbbf24;
+      --emerald: #34d399;
+      --coral: #fb923c;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --font-serif: 'Georgia', 'Times New Roman', serif;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: var(--bg-deep); color: var(--text-main);
+      font-family: var(--font-sans); font-size: 15px;
+    }
+    body.large-text { font-size: 18px; }
+    #viewport-container { position: fixed; inset: 0; z-index: 1; }
+    #ui-layer {
+      position: fixed; inset: 0; z-index: 10; pointer-events: none;
+      display: flex; flex-direction: column; justify-content: space-between;
+      padding: 10px 14px;
+    }
+    .pointer-auto { pointer-events: auto; }
+    .top-hud-wrap {
+      display: flex; flex-direction: column; gap: 8px;
+      background: var(--bg-panel); border: 1px solid var(--border-aqua);
+      border-radius: 12px; padding: 10px 14px; backdrop-filter: blur(10px);
+    }
+    .hud-row {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .brand-title {
+      font-family: var(--font-serif); font-size: 1.08rem; font-weight: 700;
+      color: var(--aqua); letter-spacing: 0.02em;
+    }
+    .brand-sub { font-size: 0.8rem; color: var(--text-muted); margin-left: 8px; }
+    .stats-strip { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .hud-pill {
+      background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 8px; padding: 4px 9px; font-size: 0.82rem; display: flex; gap: 5px; align-items: center;
+    }
+    .hud-pill.treasure-pill { border-color: var(--gold); color: var(--gold); font-weight: 600; }
+    .hud-pill-label { color: var(--text-muted); }
+    .hud-pill-val { font-weight: 700; color: var(--text-main); }
+    .hud-pill-val.ready { color: var(--aqua); }
+    .hud-pill-val.spent { color: var(--coral); }
+    .hud-pill-val.muted { color: var(--text-muted); }
+    .nav-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+    button {
+      font-family: inherit; font-size: 0.83rem; cursor: pointer;
+      background: rgba(30, 41, 59, 0.92); color: var(--text-main);
+      border: 1px solid rgba(92, 200, 255, 0.4); border-radius: 8px;
+      padding: 6px 11px; transition: all 0.15s ease;
+    }
+    button:hover:not(:disabled) {
+      background: rgba(56, 189, 248, 0.22); border-color: var(--aqua);
+    }
+    button:disabled { opacity: 0.48; cursor: not-allowed; }
+    button.btn-gold {
+      background: rgba(180, 83, 9, 0.35); border-color: var(--gold); color: #fde68a; font-weight: 600;
+    }
+    button.btn-primary {
+      background: rgba(2, 132, 199, 0.45); border-color: var(--aqua); color: #fff; font-weight: 600;
+    }
+    .stage-tabs { display: flex; flex-wrap: wrap; gap: 5px; }
+    .stage-tab { font-size: 0.78rem; padding: 4px 9px; border-radius: 6px; }
+    .stage-tab.active {
+      background: rgba(56, 189, 248, 0.3); border-color: var(--aqua); color: #fff; font-weight: 700;
+    }
+    .stage-banner {
+      display: flex; flex-direction: column; gap: 4px;
+      border-top: 1px solid rgba(148, 163, 184, 0.2); padding-top: 6px;
+    }
+    .stage-banner-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; }
+    #stage-title { font-family: var(--font-serif); font-weight: 700; color: var(--aqua); font-size: 0.98rem; }
+    #stage-subtitle { font-size: 0.8rem; color: var(--gold); }
+    #stage-narration { font-size: 0.84rem; color: #cbd5e1; line-height: 1.4; }
+    #quick-node-bar { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px; }
+    .node-chip { font-size: 0.78rem; padding: 4px 9px; border-radius: 999px; }
+    .node-chip.type-well { border-color: #38bdf8; color: #bae6fd; }
+    .node-chip.type-stand { border-color: #fb923c; color: #fed7aa; }
+    .node-chip.type-treasure { border-color: #facc15; color: #fef08a; }
+    .node-chip.type-wisdom { border-color: #6ee7b7; color: #d1fae5; }
+    .node-chip.type-relic { border-color: #93c5fd; color: #dbeafe; }
+    .node-chip.type-gatehouse_finale { border-color: #fde047; background: rgba(180, 83, 9, 0.35); color: #fef9c3; }
+    .node-chip.done { border-color: var(--emerald); color: #a7f3d0; }
+
+    .bottom-hud-wrap {
+      display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
+    }
+    #joystick-zone {
+      width: 84px; height: 84px; border-radius: 50%;
+      background: rgba(15, 23, 42, 0.75); border: 2px solid rgba(92, 200, 255, 0.45);
+      display: flex; align-items: center; justify-content: center; touch-action: none;
+    }
+    #joystick-knob {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(92, 200, 255, 0.75); box-shadow: 0 0 10px rgba(92, 200, 255, 0.6);
+    }
+    #proximity-prompt-bar {
+      background: var(--bg-panel); border: 1px solid var(--gold);
+      border-radius: 10px; padding: 8px 14px;
+    }
+    .hidden { display: none !important; }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 50; pointer-events: auto;
+      background: rgba(3, 7, 18, 0.82); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-card {
+      width: 100%; max-width: 760px; max-height: 90vh; overflow-y: auto;
+      background: #0c1424; border: 1px solid var(--border-aqua);
+      border-radius: 14px; padding: 20px 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.75);
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .modal-title { font-family: var(--font-serif); font-size: 1.3rem; color: var(--aqua); }
+    .modal-meta { font-size: 0.82rem; color: var(--gold); }
+    .kjv-box {
+      background: rgba(15, 23, 42, 0.95); border-left: 4px solid var(--gold);
+      padding: 12px 14px; border-radius: 6px; font-family: var(--font-serif);
+      font-style: italic; color: #fef3c7; line-height: 1.5;
+    }
+    .narrative-p { line-height: 1.58; color: #e2e8f0; }
+    .choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 680px) { .choice-grid { grid-template-columns: 1fr; } }
+    .choice-card {
+      background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .stand-combat-log {
+      background: #060a12; border: 1px solid rgba(92, 200, 255, 0.3);
+      border-radius: 8px; padding: 10px; max-height: 170px; overflow-y: auto;
+      font-size: 0.84rem; display: flex; flex-direction: column; gap: 5px;
+    }
+    .stand-log-line { border-bottom: 1px solid rgba(148,163,184,0.12); padding-bottom: 3px; }
+    .inv-card { background: rgba(15,23,42,0.85); border: 1px solid rgba(92,200,255,0.3); border-radius: 8px; padding: 9px 12px; margin-bottom: 6px; }
+    .inv-card-head { font-weight: 700; color: var(--aqua); font-size: 0.86rem; }
+    .inv-card-body { font-family: var(--font-serif); font-size: 0.85rem; color: #e2e8f0; margin-top: 3px; }
+    #relic-turntable-canvas { width: 100%; height: 250px; background: radial-gradient(circle, #162844 0%, #070b14 100%); border-radius: 10px; border: 1px solid var(--border-aqua); touch-action: none; }
+    .code-textarea { width: 100%; min-height: 64px; background: #050811; color: var(--aqua); border: 1px solid var(--border-aqua); border-radius: 8px; padding: 8px; font-family: monospace; font-size: 0.82rem; }
+  </style>
+</head>
+<body>
+  <div id="viewport-container"></div>
+
+  <div id="ui-layer">
+    <div class="top-hud-wrap pointer-auto">
+      <div class="hud-row">
+        <div>
+          <span class="brand-title">The Narrow Way · Zone I: Elias's Seoul</span>
+          <span class="brand-sub">Book 1: The Unseen Chord · Companion-POV</span>
+        </div>
+        <div class="stats-strip" aria-label="Fellow-Traveler Stats">
+          <div class="hud-pill" title="Courage: Added to your 2d6 roll in every Stand round">
+            <span class="hud-pill-label">Courage</span>
+            <span id="hud-courage" class="hud-pill-val">10</span>
+          </div>
+          <div class="hud-pill" title="Strength: Your endurance; if 0, Grace returns you to the Last Well">
+            <span class="hud-pill-label">Strength</span>
+            <span id="hud-strength" class="hud-pill-val">20/20</span>
+          </div>
+          <div class="hud-pill" title="Favor: Roll 2d6 <= Favor to halve round loss or deal +1 damage">
+            <span class="hud-pill-label">Favor</span>
+            <span id="hud-favor" class="hud-pill-val">9/9</span>
+          </div>
+          <div class="hud-pill treasure-pill" title="Treasure: Rises ONLY when you freely Give (+1) instead of Keep (+0)">
+            <span class="hud-pill-label">★ Treasure</span>
+            <span id="hud-treasure" class="hud-pill-val">0</span>
+          </div>
+          <div class="hud-pill"><span class="hud-pill-label">Oil</span><span id="hud-oil" class="hud-pill-val">1/2</span></div>
+          <div class="hud-pill"><span class="hud-pill-label">Bread</span><span id="hud-bread" class="hud-pill-val">2/3</span></div>
+          <div class="hud-pill"><span class="hud-pill-label">Scrolls</span><span id="hud-scrolls" class="hud-pill-val">0/5</span></div>
+          <div class="hud-pill"><span class="hud-pill-label">Token</span><span id="hud-token" class="hud-pill-val muted">Unfound</span></div>
+        </div>
+      </div>
+
+      <div class="hud-row">
+        <div id="stage-tabs" class="stage-tabs"></div>
+        <div class="nav-btns">
+          <button id="btn-nav-zone-start" title="Return immediately to Stage I (Seoul Start)">↺ Zone Start</button>
+          <button id="btn-nav-inventory">Scrolls &amp; Record</button>
+          <button id="btn-nav-relics">3D Relic Workshop</button>
+          <button id="btn-nav-gatehouse" class="btn-gold">Gatehouse &amp; NW1 Save</button>
+          <button id="btn-eco-toggle">Eco: OFF</button>
+          <button id="btn-text-toggle">Aa Text</button>
+          <button id="btn-audio-toggle">Audio: On</button>
+          <button id="btn-nav-help">? Guide</button>
+        </div>
+      </div>
+
+      <div class="stage-banner">
+        <div class="stage-banner-head">
+          <span id="stage-title">Stage I</span>
+          <span id="stage-subtitle"></span>
+        </div>
+        <p id="stage-narration"></p>
+        <div id="quick-node-bar"></div>
+      </div>
+    </div>
+
+    <div class="bottom-hud-wrap">
+      <div id="joystick-zone" class="pointer-auto" title="Drag to Walk">
+        <div id="joystick-knob"></div>
+      </div>
+      <div id="proximity-prompt-bar" class="pointer-auto hidden">
+        <button id="btn-proximity-interact" class="btn-primary">Interact [E]</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WELCOME & FIRST-SIGHT STAT EXPLANATION MODAL -->
+  <div id="welcome-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 class="modal-title">The Unseen Chord · Zone I: Elias's Seoul</h2>
+          <div class="modal-meta">Companion-POV Pilgrim Walk · Book 1 (Elias Cho &amp; David the King)</div>
+        </div>
+        <button data-close-modal>✕</button>
+      </div>
+      <div class="kjv-box">
+        "Pride goeth before destruction, and an haughty spirit before a fall. Better it is to be of an humble spirit with the lowly, than to divide the spoil with the proud." — Proverbs 16:18–19 (KJV)
+      </div>
+      <p class="narrative-p">
+        <strong>Who You Are (Companion-POV Agency):</strong> You enter Seoul as the <strong>Fellow-Traveler</strong> walking beside 24-year-old session guitarist <strong>Elias Cho</strong>. You never wear Elias as a skin or speak his lines; your choices govern your own humility, your Stands in prayer, and what you freely give when no camera is watching.
+      </p>
+      <div class="choice-grid">
+        <div class="choice-card">
+          <strong>Courage &amp; Strength</strong>
+          <p class="narrative-p" style="font-size:0.84rem;"><strong>Courage (1d6+6):</strong> Added to your transparent <code>2d6</code> roll in every Stand round.<br/><strong>Strength (2d6+12):</strong> Your endurance. If it reaches 0, you never die—Grace returns you to the Last Well keeping every Scroll and Treasure.</p>
+        </div>
+        <div class="choice-card">
+          <strong>Favor &amp; Treasure</strong>
+          <p class="narrative-p" style="font-size:0.84rem;"><strong>Favor (1d6+6):</strong> Test Favor (<code>2d6 &lt;= Favor</code>) to halve a lost round or deal +1 damage.<br/><strong>★ Treasure (Starts at 0):</strong> Rises <strong>ONLY</strong> when you choose to <strong>Give (+1)</strong> at personal cost instead of <strong>Keep (+0)</strong>.</p>
+        </div>
+      </div>
+      <div id="welcome-roll-preview" style="font-weight:700; color:var(--aqua);"></div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+        <button id="btn-roll-stats">Roll Starting Stats (1d6+6 / 2d6+12)</button>
+        <button id="btn-begin-walk" class="btn-primary">Step into the Rain beside Elias →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WISDOM PAGE MODAL (KJV VERBATIM) -->
+  <div id="wisdom-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 id="wisdom-title" class="modal-title">Wisdom Page</h2>
+          <div id="wisdom-meta" class="modal-meta"></div>
+        </div>
+        <button data-close-modal>✕</button>
+      </div>
+      <!-- FLAG: DEC-07 — Procedural painterly art header -->
+      <img id="wisdom-art-img" alt="Painterly Scene Header" style="width:100%; height:140px; object-fit:cover; border-radius:8px; border:1px solid var(--border-aqua);" />
+      <div class="kjv-box">
+        <div id="wisdom-kjv-text"></div>
+        <div id="wisdom-kjv-ref" style="margin-top:6px; font-weight:700; color:var(--gold);"></div>
+      </div>
+      <p id="wisdom-context" class="narrative-p"></p>
+      <div class="choice-card">
+        <strong style="color:var(--aqua);">Selah · Reflection Question</strong>
+        <p id="wisdom-question" class="narrative-p"></p>
+      </div>
+      <div style="display:flex; justify-content:flex-end;">
+        <button data-close-modal class="btn-primary">Continue Walking</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WELL OF LIVING WATER MODAL -->
+  <div id="well-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 id="well-title" class="modal-title">Well of Living Water</h2>
+          <div id="well-meta" class="modal-meta"></div>
+        </div>
+        <button data-close-modal>✕</button>
+      </div>
+      <div id="well-reward-banner" style="background:rgba(52,211,153,0.16); border:1px solid var(--emerald); color:#a7f3d0; padding:8px 12px; border-radius:8px; font-weight:600;"></div>
+      <p id="well-narrative" class="narrative-p"></p>
+      <div id="well-kjv-text" class="kjv-box"></div>
+      <div class="choice-card">
+        <strong style="color:var(--aqua);">Well Reflection</strong>
+        <p id="well-question" class="narrative-p"></p>
+      </div>
+      <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <button id="btn-well-eat-bread">Eat 1 Bread (+2 Strength)</button>
+        <button data-close-modal class="btn-primary">Rise Refreshed from the Well</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TREASURE CHOICE MODAL (GIVE +1 vs KEEP +0) -->
+  <div id="treasure-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 id="treasure-title" class="modal-title">Treasure Choice</h2>
+          <div id="treasure-meta" class="modal-meta"></div>
+        </div>
+        <button data-close-modal>✕</button>
+      </div>
+      <p id="treasure-narrative" class="narrative-p"></p>
+      <div class="choice-grid">
+        <div class="choice-card" style="border-color:var(--gold);">
+          <strong style="color:var(--gold);">★ Give Choice (Raises Treasure +1)</strong>
+          <p id="treasure-give-label" class="narrative-p"></p>
+          <div id="treasure-give-cost" style="font-size:0.82rem; color:#fde68a;"></div>
+          <button id="btn-treasure-give" class="btn-gold">Choose to Give (+1 Treasure)</button>
+        </div>
+        <div class="choice-card">
+          <strong style="color:var(--text-muted);">Keep / Pass By (+0 Treasure)</strong>
+          <p id="treasure-keep-label" class="narrative-p"></p>
+          <div id="treasure-keep-cost" style="font-size:0.82rem; color:var(--text-muted);"></div>
+          <button id="btn-treasure-keep">Keep / Pass By (+0 Treasure)</button>
+        </div>
+      </div>
+      <div id="treasure-outcome-box" class="kjv-box hidden"></div>
+      <div style="display:flex; justify-content:flex-end;">
+        <button data-close-modal class="btn-primary">Continue Along the Narrow Way</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAND ENCOUNTER MODAL (TRANSPARENT 2d6 + COURAGE) -->
+  <div id="stand-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 id="stand-title" class="modal-title">Stand</h2>
+          <div id="stand-meta" class="modal-meta"></div>
+        </div>
+        <button data-close-modal>✕</button>
+      </div>
+      <p id="stand-narrative" class="narrative-p" style="font-size:0.86rem;"></p>
+      <div class="choice-grid">
+        <div class="choice-card">
+          <strong style="color:var(--aqua);">Fellow-Traveler (You)</strong>
+          <div>Courage: <strong id="stand-player-courage">10</strong> | Strength: <strong id="stand-player-strength">20/20</strong> | Favor: <strong id="stand-player-favor">9/9</strong></div>
+        </div>
+        <div class="choice-card" style="border-color:var(--coral);">
+          <strong id="stand-enemy-name" style="color:var(--coral);">Stronghold</strong>
+          <div>Courage: <strong id="stand-enemy-courage">8</strong> | Strength: <strong id="stand-enemy-strength">10/10</strong></div>
+        </div>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        <button id="btn-stand-victory-law" class="btn-gold">Step 1: Victory Law</button>
+        <button id="btn-stand-scroll">Speak Resonant KJV Scroll</button>
+      </div>
+      <div id="stand-combat-log" class="stand-combat-log"></div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between;">
+        <button id="btn-stand-roll" class="btn-primary" style="flex:1 1 240px;">Roll Round (2d6 + Courage)</button>
+        <button id="btn-stand-favor">Test Favor</button>
+        <button id="btn-stand-oil">Use Oil (+4 Str)</button>
+        <button id="btn-stand-token">Aquamarine Stone</button>
+        <button id="btn-stand-withdraw">Withdraw (-2 Str)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRACE RESTORATION MODAL (NO DEAD ENDS) -->
+  <div id="grace-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 id="grace-title" class="modal-title">The Well of Grace Restoration</h2>
+          <div class="modal-meta">Grace Rule · Zero Dead Ends · All Scrolls &amp; Treasure Kept</div>
+        </div>
+      </div>
+      <div id="grace-kjv" class="kjv-box"></div>
+      <p id="grace-narrative" class="narrative-p"></p>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button id="btn-grace-restore-str" class="btn-primary">Return to Last Well</button>
+        <button id="btn-grace-restore-supply" class="btn-gold">Spend 1 Bread/Oil -> Return at Full Starting Strength</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVENTORY & PILGRIM RECORD MODAL -->
+  <div id="inventory-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 class="modal-title">Pilgrim Record · KJV Scrolls &amp; Unseen Treasure</h2>
+          <div class="modal-meta">Book 1: The Unseen Chord · Max 5 Scrolls · 1 Mentor's Token</div>
+        </div>
+        <button data-close-modal>✕</button>
+      </div>
+      <div class="choice-card">
+        <strong style="color:var(--aqua);">Mentor's Token (David the King — Light Blue / Might)</strong>
+        <p id="inv-token-box" class="narrative-p" style="font-size:0.86rem;"></p>
+      </div>
+      <div>
+        <strong style="color:var(--gold); display:block; margin-bottom:6px;">★ Unseen Treasure Record (Grows Only When You Give)</strong>
+        <div id="inv-treasure-list"></div>
+      </div>
+      <div>
+        <strong style="color:var(--aqua); display:block; margin-bottom:6px;">Inscribed KJV Scrolls (Verbatim)</strong>
+        <div id="inv-scrolls-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3D RELIC WORKSHOP MODAL -->
+  <div id="relic-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 id="relic-title" class="modal-title">3D Relic Workshop</h2>
+          <div id="relic-meta" class="modal-meta"></div>
+        </div>
+        <button data-close-modal>✕</button>
+      </div>
+      <div id="relic-tabs" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+      <canvas id="relic-turntable-canvas"></canvas>
+      <div id="relic-badge" style="font-size:0.78rem; color:var(--gold);"></div>
+      <p id="relic-desc" class="narrative-p" style="font-size:0.88rem;"></p>
+      <div style="font-size:0.78rem; color:var(--text-muted);">Drag to orbit 3D GLB model · Scroll to zoom</div>
+    </div>
+  </div>
+
+  <!-- TREASURE GATE & FINALE MODAL -->
+  <div id="finale-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 id="finale-title" class="modal-title">Zone I Complete</h2>
+          <div id="finale-subtitle" class="modal-meta"></div>
+        </div>
+        <button data-close-modal>✕</button>
+      </div>
+      <p id="finale-narrative" class="narrative-p"></p>
+      <div id="finale-kjv" class="kjv-box"></div>
+      <p id="finale-Benediction" class="narrative-p" style="font-weight:600; color:var(--aqua);"></p>
+      <div>
+        <strong style="color:var(--gold); font-size:0.85rem;">Your NW1 Progress Code (Save / Export to Another Browser):</strong>
+        <textarea id="finale-nw1-code" class="code-textarea" readonly></textarea>
+      </div>
+      <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <!-- FLAG: OPEN-03 — Placeholder Gatehouse Book 1 URL pending Timothy's final shop URL -->
+        <a href="#gatehouse-book-01-placeholder" class="pointer-auto" style="color:var(--gold); font-weight:700; text-decoration:underline; align-self:center;">
+          → Visit Gatehouse: Book 1 — The Unseen Chord (Print &amp; Digital Edition)
+        </a>
+        <button data-close-modal class="btn-primary">Return to the Sea of Glass</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GATEHOUSE & NW1 PROGRESS CODE SAVE/RESTORE MODAL -->
+  <div id="gatehouse-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 class="modal-title">The Gatehouse · NW1 Save Code &amp; Book 1 Edition</h2>
+          <div class="modal-meta">Free Walk · Zero Accounts · Zero Trackers · Local + NW1 Code Persistence</div>
+        </div>
+        <button data-close-modal>✕</button>
+      </div>
+      <div class="choice-card" style="border-color:var(--gold);">
+        <strong style="color:var(--gold);">Book 1: The Unseen Chord (Elias Cho &amp; King David)</strong>
+        <p class="narrative-p" style="font-size:0.86rem;">
+          Continue the journey in the full 300-section illustrated interactive gamebook and the Light vs Darkness novels.
+        </p>
+        <!-- FLAG: OPEN-03 — Only outbound link in Zone 1 points to Gatehouse Book 1 placeholder -->
+        <a id="gatehouse-book-link" href="#gatehouse-book-01-placeholder" style="color:var(--aqua); font-weight:700;">
+          → Gatehouse Book 1 Shop Page (#gatehouse-book-01-placeholder · FLAG: OPEN-03)
+        </a>
+      </div>
+      <div>
+        <label style="font-size:0.84rem; font-weight:600; color:var(--aqua);">Export Your Current NW1 Progress Code:</label>
+        <textarea id="gatehouse-nw1-export" class="code-textarea" readonly></textarea>
+        <button id="btn-copy-nw1" class="btn-primary" style="margin-top:6px;">Copy NW1 Code</button>
+      </div>
+      <div>
+        <label style="font-size:0.84rem; font-weight:600; color:var(--gold);">Restore Progress from an NW1 Code:</label>
+        <textarea id="gatehouse-nw1-import" class="code-textarea" placeholder="Paste NW1-Z1-... code here"></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+          <button id="btn-restore-nw1" class="btn-gold">Restore NW1 Code</button>
+          <button id="btn-reset-save">Reset Walk to Start</button>
+        </div>
+        <div id="gatehouse-import-status" style="margin-top:6px; font-weight:600; color:var(--emerald);"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
