@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "world": "The Narrow Way — Zone 1 Pilot",
+  "generatedAt": "2026-11-04T07:59:30.770Z",
+  "totalBytes": 42708,
+  "models": [
+    {
+      "id": "aquamarine-tuning-stone",
+      "slot": 1,
+      "isMentorToken": true,
+      "title": "David's Aquamarine Tuning-Stone (Mentor's Token)",
+      "zone": "Zone I · Book 1: The Unseen Chord",
+      "sectionRef": "Section 48 (Well 1 — The Curb on the Sea of Glass)",
+      "kjvRef": "Proverbs 16:18–19; Isaiah 11:2 (KJV)",
+      "file": "assets/models/aquamarine-tuning-stone.glb",
+      "pipelineBadge": "FLAG: DEC-06 · Local Procedural GLB (TRELLIS script ready in scripts/)",
+      "description": "A smooth, translucent sky-blue Aquamarine stone cut from the cypress frame of King David's own harp (Light Blue — Spirit of Might, Isaiah 11:2). Given at Well 1 (Sec. 48). Once per book: treat your 2d6 Stand roll as an automatic 10, OR pass one Favor Test as Blessed without losing Favor, OR hear which learned KJV Scroll resonates against a Stronghold.",
+      "bytes": 14996
+    },
+    {
+      "id": "davids-cypress-kinnor",
+      "slot": 2,
+      "isMentorToken": false,
+      "title": "David's Crownless Cypress Harp (Kinnor)",
+      "zone": "Zone I · Book 1: The Unseen Chord",
+      "sectionRef": "Sections 43–48 & 277 (The Sea of Glass)",
+      "kjvRef": "Psalm 51:17; 2 Samuel 12:20 (KJV)",
+      "file": "assets/models/davids-cypress-kinnor.glb",
+      "pipelineBadge": "FLAG: DEC-06 · Local Procedural GLB (TRELLIS script ready in scripts/)",
+      "description": "The weathered ten-stringed Bethlehem cypress kinnor inlaid with an Aquamarine stone and carrying one snapped string from the day David shielded his brother in the dust and left his royal circlet on the ground. 'The sacrifices of God are a broken spirit: a broken and a contrite heart, O God, thou wilt not despise.' (Psalm 51:17 KJV)",
+      "bytes": 14276
+    },
+    {
+      "id": "mothers-cassette-player",
+      "slot": 3,
+      "isMentorToken": false,
+      "title": "Mother's Taped Portable Cassette Player & Four-Note Slip",
+      "zone": "Zone I · Book 1: The Unseen Chord",
+      "sectionRef": "Sections 18, 77, 93, 129, 282 & 300",
+      "kjvRef": "Isaiah 53:4; Isaiah 61:3 (KJV)",
+      "file": "assets/models/mothers-cassette-player.glb",
+      "pipelineBadge": "FLAG: DEC-06 · Local Procedural GLB (TRELLIS script ready in scripts/)",
+      "description": "Grace Mi-ran Cho's old portable tape player, its plastic door taped shut since the month before she entered the hospital two years ago, alongside the crumpled paper bearing the four unpolished, unproduced notes that Elias, Adaeze, Brother Matthias, Talia, and the Fellow-Traveler hum on the floor of the Sea of Glass to dissolve Heaviness (#20).",
+      "bytes": 13436
+    }
+  ]
+}
