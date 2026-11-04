@@ -220,13 +220,13 @@ export function updateHUD() {
   const tokenEl = document.getElementById('hud-token');
   if (tokenEl) {
     if (!state.tokenEarned) {
-      tokenEl.textContent = 'Unfound (Well 1)';
+      tokenEl.textContent = 'Unfound';
       tokenEl.className = 'hud-pill-val muted';
     } else if (state.tokenUsed) {
-      tokenEl.textContent = 'Aquamarine Stone (Spent)';
+      tokenEl.textContent = 'Spent';
       tokenEl.className = 'hud-pill-val spent';
     } else {
-      tokenEl.textContent = 'Aquamarine Stone (Ready)';
+      tokenEl.textContent = 'Ready';
       tokenEl.className = 'hud-pill-val ready';
     }
   }
@@ -1054,6 +1054,15 @@ function bindUIButtons() {
   bindClick('btn-nav-relics', () => openRelicModal('aquamarine-tuning-stone'));
   bindClick('btn-nav-gatehouse', () => openGatehouseModal());
   bindClick('btn-nav-help', () => openWelcomeModal());
+
+  bindClick('btn-toggle-story', () => {
+    const drawer = document.getElementById('stage-drawer');
+    if (drawer) drawer.classList.toggle('hidden');
+  });
+  bindClick('btn-close-story', () => {
+    const drawer = document.getElementById('stage-drawer');
+    if (drawer) drawer.classList.add('hidden');
+  });
 
   bindClick('btn-eco-toggle', () => {
     state.settings.ecoMode = !state.settings.ecoMode;

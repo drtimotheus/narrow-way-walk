@@ -39,65 +39,88 @@
     #ui-layer {
       position: fixed; inset: 0; z-index: 10; pointer-events: none;
       display: flex; flex-direction: column; justify-content: space-between;
-      padding: 10px 14px;
+      padding: 12px 16px;
     }
     .pointer-auto { pointer-events: auto; }
     .top-hud-wrap {
-      display: flex; flex-direction: column; gap: 8px;
-      background: var(--bg-panel); border: 1px solid var(--border-aqua);
-      border-radius: 12px; padding: 10px 14px; backdrop-filter: blur(10px);
+      display: flex; flex-direction: column; gap: 6px;
+      max-width: 1240px; width: 100%; margin: 0 auto;
     }
-    .hud-row {
-      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+    .hud-topbar {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+      background: rgba(8, 14, 26, 0.72); border: 1px solid rgba(92, 200, 255, 0.28);
+      border-radius: 999px; padding: 6px 14px; backdrop-filter: blur(12px);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+    }
+    .hud-brand-group {
+      display: flex; align-items: center; gap: 10px;
     }
     .brand-title {
-      font-family: var(--font-serif); font-size: 1.08rem; font-weight: 700;
-      color: var(--aqua); letter-spacing: 0.02em;
+      font-family: var(--font-serif); font-size: 0.96rem; font-weight: 700;
+      color: var(--aqua); letter-spacing: 0.02em; white-space: nowrap;
     }
-    .brand-sub { font-size: 0.8rem; color: var(--text-muted); margin-left: 8px; }
-    .stats-strip { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .brand-sub { display: none; }
+    .stats-strip { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
     .hud-pill {
-      background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.3);
-      border-radius: 8px; padding: 4px 9px; font-size: 0.82rem; display: flex; gap: 5px; align-items: center;
+      background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 999px; padding: 2px 8px; font-size: 0.76rem; display: flex; gap: 4px; align-items: center;
     }
-    .hud-pill.treasure-pill { border-color: var(--gold); color: var(--gold); font-weight: 600; }
-    .hud-pill-label { color: var(--text-muted); }
+    .hud-pill.treasure-pill { border-color: rgba(251, 191, 36, 0.6); color: var(--gold); font-weight: 600; }
+    .hud-pill-label { color: var(--text-muted); font-size: 0.72rem; }
     .hud-pill-val { font-weight: 700; color: var(--text-main); }
     .hud-pill-val.ready { color: var(--aqua); }
     .hud-pill-val.spent { color: var(--coral); }
     .hud-pill-val.muted { color: var(--text-muted); }
-    .nav-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+    .nav-btns { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
     button {
-      font-family: inherit; font-size: 0.83rem; cursor: pointer;
-      background: rgba(30, 41, 59, 0.92); color: var(--text-main);
-      border: 1px solid rgba(92, 200, 255, 0.4); border-radius: 8px;
-      padding: 6px 11px; transition: all 0.15s ease;
+      font-family: inherit; font-size: 0.78rem; cursor: pointer;
+      background: rgba(23, 35, 54, 0.82); color: var(--text-main);
+      border: 1px solid rgba(92, 200, 255, 0.3); border-radius: 999px;
+      padding: 4px 10px; transition: all 0.15s ease;
     }
     button:hover:not(:disabled) {
       background: rgba(56, 189, 248, 0.22); border-color: var(--aqua);
     }
     button:disabled { opacity: 0.48; cursor: not-allowed; }
     button.btn-gold {
-      background: rgba(180, 83, 9, 0.35); border-color: var(--gold); color: #fde68a; font-weight: 600;
+      background: rgba(180, 83, 9, 0.32); border-color: rgba(251, 191, 36, 0.65); color: #fde68a; font-weight: 600;
     }
     button.btn-primary {
-      background: rgba(2, 132, 199, 0.45); border-color: var(--aqua); color: #fff; font-weight: 600;
+      background: rgba(2, 132, 199, 0.48); border-color: var(--aqua); color: #fff; font-weight: 600;
     }
-    .stage-tabs { display: flex; flex-wrap: wrap; gap: 5px; }
-    .stage-tab { font-size: 0.78rem; padding: 4px 9px; border-radius: 6px; }
+    .hud-subbar {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 0 6px;
+    }
+    .stage-tabs {
+      display: flex; flex-wrap: wrap; gap: 4px;
+      background: rgba(8, 14, 26, 0.62); border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 999px; padding: 3px 6px; backdrop-filter: blur(8px);
+    }
+    .stage-tab {
+      font-size: 0.74rem; padding: 3px 9px; border-radius: 999px;
+      border-color: transparent; background: transparent; color: var(--text-muted);
+    }
     .stage-tab.active {
-      background: rgba(56, 189, 248, 0.3); border-color: var(--aqua); color: #fff; font-weight: 700;
+      background: rgba(56, 189, 248, 0.25); border-color: rgba(92, 200, 255, 0.55); color: #fff; font-weight: 700;
     }
-    .stage-banner {
-      display: flex; flex-direction: column; gap: 4px;
-      border-top: 1px solid rgba(148, 163, 184, 0.2); padding-top: 6px;
+    .stage-drawer {
+      background: rgba(11, 18, 32, 0.84); border: 1px solid var(--border-aqua);
+      border-radius: 12px; padding: 10px 14px; backdrop-filter: blur(12px);
+      max-width: 720px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+      display: flex; flex-direction: column; gap: 6px;
     }
-    .stage-banner-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; }
-    #stage-title { font-family: var(--font-serif); font-weight: 700; color: var(--aqua); font-size: 0.98rem; }
-    #stage-subtitle { font-size: 0.8rem; color: var(--gold); }
-    #stage-narration { font-size: 0.84rem; color: #cbd5e1; line-height: 1.4; }
-    #quick-node-bar { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px; }
-    .node-chip { font-size: 0.78rem; padding: 4px 9px; border-radius: 999px; }
+    .stage-banner-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+    #stage-title { font-family: var(--font-serif); font-weight: 700; color: var(--aqua); font-size: 0.92rem; }
+    #stage-subtitle { font-size: 0.76rem; color: var(--gold); }
+    #stage-narration { font-size: 0.8rem; color: #cbd5e1; line-height: 1.38; }
+    #quick-node-bar {
+      display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;
+      background: rgba(8, 14, 26, 0.68); border: 1px solid rgba(92, 200, 255, 0.25);
+      border-radius: 999px; padding: 5px 10px; backdrop-filter: blur(10px);
+      max-width: 920px; margin: 0 auto;
+    }
+    .node-chip { font-size: 0.74rem; padding: 3px 9px; border-radius: 999px; }
     .node-chip.type-well { border-color: #38bdf8; color: #bae6fd; }
     .node-chip.type-stand { border-color: #fb923c; color: #fed7aa; }
     .node-chip.type-treasure { border-color: #facc15; color: #fef08a; }
@@ -181,10 +204,11 @@
 
   <div id="ui-layer">
     <div class="top-hud-wrap pointer-auto">
-      <div class="hud-row">
-        <div>
-          <span class="brand-title">The Narrow Way Walk · Zone I: Elias's Seoul</span>
+      <div class="hud-topbar">
+        <div class="hud-brand-group">
+          <span class="brand-title">The Narrow Way Walk · Zone I</span>
           <span class="brand-sub">Book 1: The Unseen Chord · Companion-POV</span>
+          <button id="btn-toggle-story" title="Toggle Stage Story &amp; Scene Art">✦ Stage Story</button>
         </div>
         <div class="stats-strip" aria-label="Fellow-Traveler Stats">
           <div class="hud-pill" title="Courage: Added to your 2d6 roll in every Stand round">
@@ -208,23 +232,23 @@
           <div class="hud-pill"><span class="hud-pill-label">Scrolls</span><span id="hud-scrolls" class="hud-pill-val">0/5</span></div>
           <div class="hud-pill"><span class="hud-pill-label">Token</span><span id="hud-token" class="hud-pill-val muted">Unfound</span></div>
         </div>
-      </div>
-
-      <div class="hud-row">
-        <div id="stage-tabs" class="stage-tabs"></div>
         <div class="nav-btns">
-          <button id="btn-nav-zone-start" title="Return immediately to Stage I (Seoul Start)">↺ Zone Start</button>
-          <button id="btn-nav-inventory">Scrolls &amp; Record</button>
-          <button id="btn-nav-relics">3D Relic Workshop</button>
-          <button id="btn-nav-gatehouse" class="btn-gold">Gatehouse &amp; NW1 Save</button>
+          <button id="btn-nav-zone-start" title="Return immediately to Stage I (Seoul Start)">↺ Start</button>
+          <button id="btn-nav-inventory">Scrolls</button>
+          <button id="btn-nav-relics">3D Relics</button>
+          <button id="btn-nav-gatehouse" class="btn-gold">Save / Gatehouse</button>
           <button id="btn-eco-toggle">Eco: OFF</button>
-          <button id="btn-text-toggle">Aa Text</button>
+          <button id="btn-text-toggle" title="Toggle Large Text">Aa</button>
           <button id="btn-audio-toggle">Audio: On</button>
-          <button id="btn-nav-help">? Guide</button>
+          <button id="btn-nav-help" title="Guide &amp; Starting Stats">?</button>
         </div>
       </div>
 
-      <div class="stage-banner">
+      <div class="hud-subbar">
+        <div id="stage-tabs" class="stage-tabs"></div>
+      </div>
+
+      <div id="stage-drawer" class="stage-drawer hidden">
         <div class="stage-banner-row">
           <img id="stage-art-thumb" alt="Stage Scene Panel" />
           <div style="flex:1; min-width:0;">
@@ -235,8 +259,8 @@
             <p id="stage-narration"></p>
             <div id="stage-art-badge" class="art-fallback-badge hidden"></div>
           </div>
+          <button id="btn-close-story" title="Hide Stage Story">✕</button>
         </div>
-        <div id="quick-node-bar"></div>
       </div>
     </div>
 
@@ -244,6 +268,7 @@
       <div id="joystick-zone" class="pointer-auto" title="Drag to Walk">
         <div id="joystick-knob"></div>
       </div>
+      <div id="quick-node-bar" class="pointer-auto"></div>
       <div id="proximity-prompt-bar" class="pointer-auto hidden">
         <button id="btn-proximity-interact" class="btn-primary">Interact [E]</button>
       </div>
