@@ -32,7 +32,7 @@ function makeCompactNameTag(text, accentHex = '#5cc8ff') {
   ctx.stroke();
 
   ctx.fillStyle = '#f8fafc';
-  ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
+  ctx.font = 'bold 23px system-ui, -apple-system, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(clean, 128, 35);
@@ -50,7 +50,7 @@ function makeCompactNameTag(text, accentHex = '#5cc8ff') {
   return sprite;
 }
 
-export function getShortNodeLabel(node) {
+export function getShortNodeLabel(node, isLocked = false) {
   if (!node) return '';
   if (node.type === 'well') {
     const num = (node.wellId || '').replace('well_', '') || '1';
@@ -75,10 +75,10 @@ export function getShortNodeLabel(node) {
   }
   if (node.type === 'portal') {
     const next = (node.targetStageIdx ?? 1) + 1;
-    return `Stage ${next} →`;
+    return isLocked ? `🔒 Stage ${next}` : `Stage ${next} →`;
   }
   if (node.type === 'gatehouse_finale') {
-    return 'Treasure Gate';
+    return isLocked ? '🔒 Treasure Gate' : 'Treasure Gate';
   }
   return 'Inspect';
 }
@@ -106,17 +106,16 @@ export function createCharacterFigure({
   const skinMat = new THREE.MeshStandardMaterial({ color: skinHex, roughness: 0.55 });
   const hairMat = new THREE.MeshStandardMaterial({ color: hairHex, roughness: 0.75 });
 
-  const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 0.75, 10), hairMat);
+  const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 0.75, 8), hairMat);
   legs.position.y = 0.38;
-  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.82, 12), coatMat);
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.82, 10), coatMat);
   torso.position.y = 1.1;
-  torso.castShadow = true;
-  const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.23, 0.055, 8, 20), scarfMat);
+  const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.23, 0.055, 6, 16), scarfMat);
   scarf.rotation.x = Math.PI / 2;
   scarf.position.y = 1.48;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.21, 16, 14), skinMat);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.21, 12, 10), skinMat);
   head.position.y = 1.72;
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.58), hairMat);
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.58), hairMat);
   hair.position.y = 1.75;
   group.add(legs, torso, scarf, head, hair);
 
@@ -129,7 +128,7 @@ export function createCharacterFigure({
   }
   if (hasHarp) {
     const harpMat = new THREE.MeshStandardMaterial({ color: 0xb07c3a, roughness: 0.4 });
-    const harp = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 8, 18, Math.PI * 1.45), harpMat);
+    const harp = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 6, 14, Math.PI * 1.45), harpMat);
     harp.position.set(0.32, 1.18, 0.16);
     const gem = new THREE.Mesh(
       new THREE.OctahedronGeometry(0.06, 0),
@@ -141,12 +140,12 @@ export function createCharacterFigure({
   if (portraitKey && PORTRAIT_ART_MAP[portraitKey] && portraitKey !== 'elias') {
     const pTex = loadStageArtTexture(0, label, PORTRAIT_ART_MAP[portraitKey]);
     const disc = new THREE.Mesh(
-      new THREE.CircleGeometry(0.36, 24),
+      new THREE.CircleGeometry(0.36, 20),
       new THREE.MeshBasicMaterial({ map: pTex, side: THREE.DoubleSide })
     );
     disc.position.set(0, 2.75, 0);
     const rim = new THREE.Mesh(
-      new THREE.RingGeometry(0.36, 0.4, 24),
+      new THREE.RingGeometry(0.36, 0.4, 20),
       new THREE.MeshBasicMaterial({ color: scarfHex, side: THREE.DoubleSide })
     );
     rim.position.set(0, 2.75, 0.01);
@@ -174,19 +173,20 @@ const NODE_STYLES = {
   gatehouse_finale: { color: 0xfbbf24, hex: '#fde047' }
 };
 
-export function createNodeMonument(node, isCompleted = false) {
+export function createNodeMonument(node, isCompleted = false, isLocked = false) {
   const style = NODE_STYLES[node.type] || NODE_STYLES.wisdom;
   const group = new THREE.Group();
   group.position.set(node.pos[0], node.pos[1] || 0, node.pos[2]);
   group.userData.node = node;
 
+  const ringColor = isCompleted ? 0x34d399 : isLocked ? 0x64748b : style.color;
   const ringMat = new THREE.MeshBasicMaterial({
-    color: isCompleted ? 0x34d399 : style.color,
+    color: ringColor,
     side: THREE.DoubleSide,
     transparent: true,
     opacity: 0.78
   });
-  const baseRing = new THREE.Mesh(new THREE.RingGeometry(1.1, 1.32, 36), ringMat);
+  const baseRing = new THREE.Mesh(new THREE.RingGeometry(1.1, 1.32, 24), ringMat);
   baseRing.rotation.x = -Math.PI / 2;
   baseRing.position.y = 0.04;
   group.add(baseRing);
@@ -204,9 +204,9 @@ export function createNodeMonument(node, isCompleted = false) {
       emissiveIntensity: 0.85,
       roughness: 0.15
     });
-    const curb = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, 0.72, 20), stoneMat);
+    const curb = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, 0.72, 16), stoneMat);
     curb.position.y = 0.36;
-    const pool = new THREE.Mesh(new THREE.CylinderGeometry(0.86, 0.86, 0.66, 20), waterMat);
+    const pool = new THREE.Mesh(new THREE.CylinderGeometry(0.86, 0.86, 0.66, 16), waterMat);
     pool.position.y = 0.39;
     const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), waterMat);
     gem.position.y = 1.35;
@@ -237,19 +237,19 @@ export function createNodeMonument(node, isCompleted = false) {
     });
     const ped = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.85, 0.85), pedMat);
     ped.position.y = 0.425;
-    const crown = new THREE.Mesh(new THREE.TorusKnotGeometry(0.28, 0.08, 48, 12), goldMat);
+    const crown = new THREE.Mesh(new THREE.TorusKnotGeometry(0.28, 0.08, 32, 8), goldMat);
     crown.position.y = 1.42;
     group.add(ped, crown);
     group.userData.floatingMesh = crown;
   } else {
     const standMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.45 });
     const scrollMat = new THREE.MeshStandardMaterial({
-      color: style.color,
-      emissive: style.color,
-      emissiveIntensity: 0.48,
+      color: isLocked ? 0x64748b : style.color,
+      emissive: isLocked ? 0x334155 : style.color,
+      emissiveIntensity: isLocked ? 0.25 : 0.48,
       roughness: 0.25
     });
-    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.45, 1.0, 12), standMat);
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.45, 1.0, 10), standMat);
     pillar.position.y = 0.5;
     const tablet = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.82, 0.12), scrollMat);
     tablet.position.y = 1.45;
@@ -258,10 +258,10 @@ export function createNodeMonument(node, isCompleted = false) {
     group.userData.floatingMesh = tablet;
   }
 
-  const shortText = getShortNodeLabel(node);
+  const shortText = getShortNodeLabel(node, isLocked);
   const label = makeCompactNameTag(
     isCompleted ? `✓ ${shortText}` : shortText,
-    isCompleted ? '#34d399' : style.hex
+    isCompleted ? '#34d399' : isLocked ? '#94a3b8' : style.hex
   );
   label.position.set(0, 2.35, 0);
   label.visible = false; // Shown only when within interact range, one at a time (nearest wins)
@@ -271,26 +271,38 @@ export function createNodeMonument(node, isCompleted = false) {
 }
 
 function addWarmStreetLamps(envGroup, ecoMode = false) {
+  const poleGeo = new THREE.CylinderGeometry(0.07, 0.09, 3.6, 8);
+  const lanternGeo = new THREE.SphereGeometry(0.22, 8, 8);
+  const haloGeo = new THREE.SphereGeometry(0.55, 8, 8);
   const poleMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5, metalness: 0.4 });
   const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffe4a0 });
+  const haloMat = new THREE.MeshBasicMaterial({
+    color: 0xffcf70,
+    transparent: true,
+    opacity: 0.22,
+    depthWrite: false
+  });
   const positions = [
     [-4.8, -4],
     [4.8, -11],
     [-4.8, -18],
     [4.8, -24]
   ];
-  positions.forEach(([x, z], idx) => {
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 3.6, 8), poleMat);
+  positions.forEach(([x, z]) => {
+    const pole = new THREE.Mesh(poleGeo, poleMat);
     pole.position.set(x, 1.8, z);
-    const lantern = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 10), bulbMat);
+    const lantern = new THREE.Mesh(lanternGeo, bulbMat);
     lantern.position.set(x, 3.68, z);
-    envGroup.add(pole, lantern);
-    if (!ecoMode || idx % 2 === 0) {
-      const lampLight = new THREE.PointLight(0xffcf70, 2.2, 14, 1.4);
-      lampLight.position.set(x, 3.5, z);
-      envGroup.add(lampLight);
-    }
+    const halo = new THREE.Mesh(haloGeo, haloMat);
+    halo.position.set(x, 3.68, z);
+    envGroup.add(pole, lantern, halo);
   });
+  // Use a single central warm fill PointLight instead of 4 per-lamp PointLights to keep per-fragment lighting fast
+  if (!ecoMode) {
+    const centralWarmLight = new THREE.PointLight(0xffcf70, 2.0, 28, 1.2);
+    centralWarmLight.position.set(0, 4.5, -14);
+    envGroup.add(centralWarmLight);
+  }
 }
 
 function populateStageScenery(stageId, envGroup, ecoMode = false) {
@@ -371,7 +383,7 @@ function populateStageScenery(stageId, envGroup, ecoMode = false) {
     const counter = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.05, 1.1), wallMat);
     counter.position.set(4.5, 0.52, -3.5);
     const bottle = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.11, 0.42, 12),
+      new THREE.CylinderGeometry(0.08, 0.11, 0.42, 10),
       new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.2, transparent: true, opacity: 0.88 })
     );
     bottle.position.set(4.5, 1.26, -3.5);
@@ -409,6 +421,11 @@ export class WorldStageManager {
     this.nodeGroups = [];
     this.seaMaterial = null;
     this.particles = null;
+    this.skyDome = null;
+    this.hemiLight = null;
+    this.ambLight = null;
+    this.dirLight = null;
+    this.rimDirLight = null;
     this.eliasCompanion = createCharacterFigure({
       coatHex: 0x283852,
       scarfHex: 0x38bdf8,
@@ -421,35 +438,38 @@ export class WorldStageManager {
     this.scene.add(this.eliasCompanion);
   }
 
-  buildStage(stage, isNodeDoneFn, ecoMode = false) {
+  buildStage(stage, isNodeDoneFn, ecoMode = false, isNodeLockedFn = null) {
     while (this.stageGroup.children.length > 0) {
       this.stageGroup.remove(this.stageGroup.children[0]);
     }
     this.nodeGroups = [];
     const pal = stage.palette || {};
-    // Lighter atmospheric fog so warm street lamps, neon accents, and distant murals glow clearly
     this.scene.fog = new THREE.FogExp2(pal.fog || '#162238', 0.0115);
 
     const sky = createSkyDome(
       pal.skyTop || '#121e36',
       pal.skyHorizon || '#2e4b73'
     );
+    this.skyDome = sky;
     this.stageGroup.add(sky);
 
-    // Brightened painterly lighting pass matching the painted art
     const hemi = new THREE.HemisphereLight(0xe0f2fe, 0x3b2f26, 1.55);
     const amb = new THREE.AmbientLight(0xfffbeb, 0.9);
     const dir = new THREE.DirectionalLight(0xffe8b3, 2.25);
     dir.position.set(10, 22, 12);
     const rimDir = new THREE.DirectionalLight(pal.aquamarine || '#5cc8ff', 1.35);
     rimDir.position.set(-10, 14, -18);
+    this.hemiLight = hemi;
+    this.ambLight = amb;
+    this.dirLight = dir;
+    this.rimDirLight = rimDir;
     this.stageGroup.add(hemi, amb, dir, rimDir);
 
     const theme = stage.theme || stage.id;
     const isGlassStage = theme === 'alley_to_glass' || theme === 'sea_of_glass_climax';
     if (isGlassStage) {
       this.seaMaterial = createSeaOfGlassMaterial();
-      const floor = new THREE.Mesh(new THREE.PlaneGeometry(36, 48, 24, 24), this.seaMaterial);
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(36, 48, 16, 16), this.seaMaterial);
       floor.rotation.x = -Math.PI / 2;
       this.stageGroup.add(floor);
     } else {
@@ -495,7 +515,7 @@ export class WorldStageManager {
     this.stageGroup.add(frameMesh, canvasPlane);
     this.currentStageArtTexture = artTex;
 
-    const count = ecoMode ? 90 : 220;
+    const count = ecoMode ? 60 : 140;
     const pGeo = new THREE.BufferGeometry();
     const posArr = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
@@ -515,9 +535,61 @@ export class WorldStageManager {
 
     for (const node of stage.nodes) {
       const done = isNodeDoneFn ? isNodeDoneFn(node) : false;
-      const mon = createNodeMonument(node, done);
+      const locked = isNodeLockedFn ? isNodeLockedFn(node) : false;
+      const mon = createNodeMonument(node, done, locked);
       this.stageGroup.add(mon);
       this.nodeGroups.push(mon);
+    }
+  }
+
+  // Updates the Sea of Glass ending moment (0 <= progress <= 1)
+  updateFinaleMoment(progress, elapsed, playerMesh, camera, ecoMode = false) {
+    const t = Math.max(0, Math.min(1, progress));
+    const smooth = t * t * (3 - 2 * t);
+
+    // Move player & Elias side by side at the crystalline shore
+    const shoreZ = -23.5;
+    if (playerMesh) {
+      playerMesh.position.x += (0.85 - playerMesh.position.x) * 0.08;
+      playerMesh.position.z += (shoreZ - playerMesh.position.z) * 0.08;
+      playerMesh.rotation.y = Math.PI;
+    }
+    if (this.eliasCompanion) {
+      this.eliasCompanion.position.x += (-0.85 - this.eliasCompanion.position.x) * 0.08;
+      this.eliasCompanion.position.z += (shoreZ - this.eliasCompanion.position.z) * 0.08;
+      this.eliasCompanion.rotation.y = Math.PI;
+    }
+
+    // Brighten golden-aquamarine dawn over the Sea of Glass
+    if (this.hemiLight) {
+      this.hemiLight.intensity = 1.55 + smooth * (ecoMode ? 1.0 : 1.6);
+    }
+    if (this.dirLight) {
+      this.dirLight.intensity = 2.25 + smooth * (ecoMode ? 1.1 : 1.85);
+    }
+    if (this.ambLight) {
+      this.ambLight.intensity = 0.9 + smooth * 0.65;
+    }
+    if (this.skyDome && this.skyDome.material && this.skyDome.material.uniforms) {
+      this.skyDome.material.uniforms.uHorizonColor.value.set('#ffe49e');
+      this.skyDome.material.uniforms.uTopColor.value.set('#255c85');
+      this.skyDome.material.uniforms.uTime.value = elapsed;
+    }
+    if (this.seaMaterial && this.seaMaterial.uniforms) {
+      this.seaMaterial.uniforms.uTime.value = elapsed * 1.4;
+      this.seaMaterial.uniforms.uGlassBlend.value = 0.72 + smooth * 0.26;
+    }
+    if (this.scene.fog) {
+      this.scene.fog.density = 0.0115 * (1 - smooth * 0.55);
+    }
+
+    // Camera rises gently above the shore looking across the Sea of Glass and the four Mentors
+    if (camera) {
+      const camX = Math.sin(smooth * 0.55) * 2.2;
+      const camY = 3.4 + smooth * 4.2;
+      const camZ = shoreZ + 6.8 + smooth * 2.4;
+      camera.position.set(camX, camY, camZ);
+      camera.lookAt(0, 1.8 + smooth * 0.8, shoreZ - 5.5);
     }
   }
 

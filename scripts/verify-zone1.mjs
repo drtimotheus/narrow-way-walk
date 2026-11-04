@@ -203,3 +203,101 @@ for (const lbl of labelMatches) {
   assert.equal(/God|Father|Jesus|Christ|Lord|Throne/i.test(lbl), false, `No-Theophany violation: 3D figure label "${lbl}" must never depict a theophany`);
 }
 console.log(`✓ Morning Sign-Off checks passed (Title, Gatehouse, Favor Test rule, ES module exports, No-Theophany across ${labelMatches.length} 3D character figures: ${labelMatches.join(', ')})`);
+
+// 11. Fix Pass 3 Checks: Sequential Numbering, Unique Art Per Stage, Scroll Audit & Zero Dev Text
+const encounteredStands = [];
+const encounteredTreasures = [];
+const encounteredWells = [];
+for (const stg of STAGES) {
+  for (const n of stg.nodes) {
+    if (n.type === 'stand') encounteredStands.push(n.standId);
+    if (n.type === 'treasure') encounteredTreasures.push(n.treasureId);
+    if (n.type === 'well') encounteredWells.push(n.wellId);
+  }
+}
+assert.deepEqual(
+  encounteredStands,
+  ['stand_1', 'stand_2', 'stand_3', 'stand_4', 'stand_5', 'stand_6', 'stand_7', 'stand_8'],
+  'Stands must be numbered 1..8 sequentially across all 6 stages with no jumps'
+);
+assert.deepEqual(
+  encounteredTreasures,
+  ['treasure_1', 'treasure_2', 'treasure_3', 'treasure_4', 'treasure_5', 'treasure_6', 'treasure_7', 'treasure_8'],
+  'Treasures must be numbered 1..8 sequentially across all 6 stages with no jumps'
+);
+assert.deepEqual(
+  encounteredWells,
+  ['well_1', 'well_2', 'well_3', 'well_4', 'well_5'],
+  'Wells must be numbered 1..5 sequentially across all 6 stages with no jumps'
+);
+console.log('✓ Sequential numbering verified: Stands 1..8, Treasures 1..8, and Wells 1..5 have zero jumps across all 6 stages');
+
+assert.equal(STANDS.stand_1.resonantScrolls[0], 'scroll_1');
+assert.equal(STANDS.stand_2.resonantScrolls[0], 'scroll_5');
+assert.equal(STANDS.stand_3.resonantScrolls[0], 'scroll_3', 'Stand 3 primary scroll must be Scroll 3 (Proverbs 27:2 KJV)');
+assert.equal(STANDS.stand_4.resonantScrolls[0], 'scroll_5');
+assert.equal(STANDS.stand_5.resonantScrolls[0], 'scroll_4');
+assert.equal(STANDS.stand_6.resonantScrolls[0], 'scroll_2');
+assert.equal(STANDS.stand_7.resonantScrolls[0], 'scroll_1');
+assert.equal(STANDS.stand_8.resonantScrolls[0], 'scroll_1');
+console.log('✓ Canonical Scroll labels verified for all 8 Stands (Stand 3 -> Proverbs 27:2 KJV)');
+
+const devTerms = ['assets' + '.md', 'Scene ' + 'Study', 'Listed ' + 'in', 'FL' + 'AG', 'DEC' + '-', 'OPEN' + '-', 'place' + 'holder', 'TO' + 'DO'];
+const devRegex = new RegExp(devTerms.join('|'));
+for (const file of ['index.html', 'src/main.js', 'src/painterly.js', 'src/world.js', 'src/zone1-data.js', 'src/relics.js', 'assets/models/relics-manifest.json']) {
+  const txt = fs.readFileSync(file, 'utf8');
+  assert.equal(devRegex.test(txt), false, `Dev text found in ${file}`);
+}
+console.log('✓ Zero leftover dev text verified across index.html, src/*, and relics-manifest.json');
+
+// 12. Verify no image is reused within any stage & all mapped art files exist on disk
+const extractMapBlock = (name) => {
+  const m = painterlyJs.match(new RegExp(`export const ${name} = \\{([\\s\\S]*?)\\};`));
+  return m ? m[1] : '';
+};
+const parseUrlMap = (block) => {
+  const out = {};
+  for (const line of block.split('\n')) {
+    const m = line.match(/^\s*([a-zA-Z0-9_]+)\s*:\s*(?:\{\s*url:\s*)?['"]([^'"]+)['"]/);
+    if (m) out[m[1]] = m[2];
+  }
+  return out;
+};
+const stageArt = parseUrlMap(extractMapBlock('STAGE_ART_MAP'));
+const standArt = parseUrlMap(extractMapBlock('STAND_ART_MAP'));
+const wellArt = parseUrlMap(extractMapBlock('WELL_ART_MAP'));
+const treasureArt = parseUrlMap(extractMapBlock('TREASURE_ART_MAP'));
+const wisdomArt = parseUrlMap(extractMapBlock('WISDOM_ART_MAP'));
+const endingArt = parseUrlMap(extractMapBlock('ENDING_ART_MAP'));
+
+for (const mapObj of [stageArt, standArt, wellArt, treasureArt, wisdomArt, endingArt]) {
+  for (const [k, relUrl] of Object.entries(mapObj)) {
+    const cleanPath = relUrl.replace(/^\.\//, '');
+    assert.equal(fs.existsSync(cleanPath), true, `Missing mapped art file for ${k}: ${cleanPath}`);
+  }
+}
+
+for (const stg of STAGES) {
+  const usedInStage = new Map();
+  const bannerUrl = stageArt[String(stg.idx)];
+  usedInStage.set(bannerUrl, `Stage ${stg.idx + 1} Banner`);
+  for (const n of stg.nodes) {
+    let url = null;
+    let label = n.id;
+    if (n.type === 'stand') { url = standArt[n.standId]; label = n.standId; }
+    else if (n.type === 'well') { url = wellArt[n.wellId]; label = n.wellId; }
+    else if (n.type === 'treasure') { url = treasureArt[n.treasureId]; label = n.treasureId; }
+    else if (n.type === 'wisdom') { url = wisdomArt[n.wisdomId]; label = n.wisdomId; }
+    if (url) {
+      assert.equal(
+        usedInStage.has(url),
+        false,
+        `Stage ${stg.idx + 1} reuses image ${url} between ${usedInStage.get(url)} and ${label}`
+      );
+      usedInStage.set(url, label);
+    }
+  }
+}
+console.log('✓ Verified zero image reuse within any of the 6 stages and all 34 mapped art panels exist on disk');
+
+

@@ -3,7 +3,8 @@
 // ============================================================================
 // Implements Companion-POV agency, transparent 2d6 Stand checks, Treasure
 // choices (Give +1 / Keep +0), Grace Rule at Wells, David's Aquamarine
-// Tuning-Stone Relic Workshop, and NW1 progress codes.
+// Tuning-Stone Relic Workshop, Stage Gating, Sea of Glass Finale Payoff,
+// and NW1 progress codes.
 
 import * as THREE from 'three';
 import {
@@ -25,6 +26,7 @@ import {
   WELL_ART_MAP,
   TREASURE_ART_MAP,
   WISDOM_ART_MAP,
+  ENDING_ART_MAP,
   preloadAllZone1Art,
   loadArtIntoImage
 } from './painterly.js';
@@ -69,22 +71,169 @@ function createDefaultState() {
   };
 }
 
-let state = loadState();
+let state = createDefaultState();
 let activeStandSession = null;
 let turntable = null;
+let needsOneWorldRender = true;
+let gatingToastTimer = null;
+
+// Finale Sea of Glass Payoff state
+let finalePayoffState = {
+  active: false,
+  startTime: 0,
+  durationMs: 4200
+};
+
+// ============================================================================
+// STAGE GATING & PROGRESS VALIDATION
+// ============================================================================
+
+export function getRequiredStandsForStage(stageIdx) {
+  const stg = STAGES[stageIdx];
+  if (!stg || !Array.isArray(stg.nodes)) return [];
+  return stg.nodes
+    .filter((n) => n.type === 'stand' && n.standId)
+    .map((n) => n.standId);
+}
+
+export function getUnclearedStandsForStage(stageIdx, standsClearedArr = state.standsCleared) {
+  const req = getRequiredStandsForStage(stageIdx);
+  const clearedSet = new Set(Array.isArray(standsClearedArr) ? standsClearedArr : []);
+  return req
+    .filter((id) => !clearedSet.has(id))
+    .map((id) => STANDS[id])
+    .filter(Boolean);
+}
+
+export function isStageCleared(stageIdx, standsClearedArr = state.standsCleared) {
+  return getUnclearedStandsForStage(stageIdx, standsClearedArr).length === 0;
+}
+
+export function isStageUnlocked(stageIdx, standsClearedArr = state.standsCleared) {
+  if (stageIdx <= 0) return true;
+  for (let i = 0; i < stageIdx; i++) {
+    if (!isStageCleared(i, standsClearedArr)) return false;
+  }
+  return true;
+}
+
+export function getHighestUnlockedStageIdx(standsClearedArr = state.standsCleared) {
+  let highest = 0;
+  for (let i = 0; i < STAGES.length; i++) {
+    if (isStageUnlocked(i, standsClearedArr)) {
+      highest = i;
+    } else {
+      break;
+    }
+  }
+  return highest;
+}
+
+export function areAllRequiredStandsCleared(standsClearedArr = state.standsCleared) {
+  for (let i = 0; i < STAGES.length; i++) {
+    if (!isStageCleared(i, standsClearedArr)) return false;
+  }
+  return true;
+}
+
+export function getStageLockReason(targetStageIdx) {
+  for (let i = 0; i < targetStageIdx; i++) {
+    const missing = getUnclearedStandsForStage(i);
+    if (missing.length > 0) {
+      const names = missing.map((st) => st.title).join(' & ');
+      return `Locked — Clear ${names} in Stage ${i + 1} first`;
+    }
+  }
+  return '';
+}
+
+export function getAllMissingStandsReason() {
+  const allMissing = [];
+  for (let i = 0; i < STAGES.length; i++) {
+    const missing = getUnclearedStandsForStage(i);
+    for (const st of missing) {
+      allMissing.push(st.title);
+    }
+  }
+  if (allMissing.length === 0) return '';
+  return `Locked — Clear ${allMissing.join(', ')} first to open the Treasure Gate`;
+}
+
+// Re-locks uncleared stages on old saves that skipped ahead without crashing
+function sanitizeProgressGating(targetState) {
+  if (!targetState || typeof targetState !== 'object') return;
+  if (!Array.isArray(targetState.standsCleared)) targetState.standsCleared = [];
+  if (!Array.isArray(targetState.scrollsLearned)) targetState.scrollsLearned = [];
+  if (!Array.isArray(targetState.wellsVisited)) targetState.wellsVisited = [];
+  if (!Array.isArray(targetState.wisdomRead)) targetState.wisdomRead = [];
+  if (!Array.isArray(targetState.treasureLog)) targetState.treasureLog = [];
+  if (!targetState.treasuresChosen || typeof targetState.treasuresChosen !== 'object') {
+    targetState.treasuresChosen = {};
+  }
+
+  const maxUnlocked = getHighestUnlockedStageIdx(targetState.standsCleared);
+  const rawIdx = Number(targetState.currentStageIdx) || 0;
+  targetState.currentStageIdx = Math.max(0, Math.min(maxUnlocked, Math.min(STAGES.length - 1, rawIdx)));
+
+  const rawWellStage = Number(targetState.lastWellStageIdx) || 0;
+  targetState.lastWellStageIdx = Math.max(0, Math.min(maxUnlocked, rawWellStage));
+
+  if (targetState.stats && targetState.startingStats) {
+    targetState.stats.strength = Math.min(
+      Number(targetState.startingStats.strength) || 20,
+      Number(targetState.stats.strength) || 20
+    );
+  }
+  if (!areAllRequiredStandsCleared(targetState.standsCleared)) {
+    targetState.zone1Completed = false;
+    targetState.endingReached = null;
+  }
+}
+
+function showGatingToast(message) {
+  const el = document.getElementById('gating-toast');
+  if (!el) return;
+  el.textContent = message;
+  el.classList.remove('hidden');
+  if (gatingToastTimer) clearTimeout(gatingToastTimer);
+  gatingToastTimer = setTimeout(() => {
+    el.classList.add('hidden');
+  }, 4200);
+}
+
+function hasSavedWalk(s = state) {
+  return Boolean(
+    s.firstSightCompleted ||
+    s.currentStageIdx > 0 ||
+    (Array.isArray(s.standsCleared) && s.standsCleared.length > 0) ||
+    (Array.isArray(s.wellsVisited) && s.wellsVisited.length > 0) ||
+    (s.treasuresChosen && Object.keys(s.treasuresChosen).length > 0)
+  );
+}
 
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return createDefaultState();
     const parsed = JSON.parse(raw);
-    return { ...createDefaultState(), ...parsed, stats: { ...createDefaultState().stats, ...(parsed.stats || {}) } };
+    const merged = {
+      ...createDefaultState(),
+      ...parsed,
+      stats: { ...createDefaultState().stats, ...(parsed.stats || {}) },
+      startingStats: { ...createDefaultState().startingStats, ...(parsed.startingStats || {}) },
+      settings: { ...createDefaultState().settings, ...(parsed.settings || {}) }
+    };
+    sanitizeProgressGating(merged);
+    return merged;
   } catch {
     return createDefaultState();
   }
 }
 
+state = loadState();
+
 function saveState() {
+  sanitizeProgressGating(state);
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
@@ -171,6 +320,7 @@ export function restoreFromNW1Code(codeStr) {
     state.endingReached = p.end || null;
     state.zone1Completed = Boolean(p.done);
     state.firstSightCompleted = true;
+    sanitizeProgressGating(state);
     saveState();
     loadStage(state.currentStageIdx);
     return { ok: true };
@@ -193,22 +343,42 @@ function isNodeDone(node) {
   if (node.type === 'treasure') return Boolean(state.treasuresChosen[node.treasureId]);
   if (node.type === 'wisdom') return state.wisdomRead.includes(node.wisdomId);
   if (node.type === 'relic') return state.relicsInspected.includes(node.relicId);
+  if (node.type === 'portal') return isStageCleared(state.currentStageIdx);
   if (node.type === 'gatehouse_finale') return state.zone1Completed;
   return false;
 }
 
+function isNodeLocked(node) {
+  if (!node) return false;
+  if (node.type === 'portal') {
+    const nextIdx = node.targetStageIdx ?? state.currentStageIdx + 1;
+    return !isStageUnlocked(nextIdx);
+  }
+  if (node.type === 'gatehouse_finale') {
+    return !areAllRequiredStandsCleared();
+  }
+  return false;
+}
+
 export function loadStage(idx, customZ = 12) {
-  const safeIdx = Math.max(0, Math.min(STAGES.length - 1, idx));
-  state.currentStageIdx = safeIdx;
-  const stage = STAGES[safeIdx];
+  const requestedIdx = Math.max(0, Math.min(STAGES.length - 1, idx));
+  if (!isStageUnlocked(requestedIdx)) {
+    const reason = getStageLockReason(requestedIdx);
+    showGatingToast(reason);
+    return false;
+  }
+  state.currentStageIdx = requestedIdx;
+  const stage = STAGES[requestedIdx];
   playerPos.set(0, 0, customZ);
   cameraYaw = 0;
   if (worldManager) {
-    worldManager.buildStage(stage, isNodeDone, state.settings.ecoMode);
+    worldManager.buildStage(stage, isNodeDone, state.settings.ecoMode, isNodeLocked);
   }
+  needsOneWorldRender = true;
   saveState();
   renderStageBar();
   renderQuickNodeBar();
+  return true;
 }
 
 function setText(id, val) {
@@ -273,13 +443,38 @@ function renderStageBar() {
   if (!wrap) return;
   wrap.innerHTML = '';
   STAGES.forEach((stg, idx) => {
+    const unlocked = isStageUnlocked(idx);
+    const cleared = isStageCleared(idx);
+    const shortTitle = stg.title.replace(/^Stage [IVX]+ [—·] /, '');
     const btn = document.createElement('button');
-    btn.className = `stage-tab ${idx === state.currentStageIdx ? 'active' : ''}`;
-    btn.textContent = `${idx + 1}. ${stg.title.replace(/^Stage [IVX]+ [—·] /, '')}`;
-    btn.addEventListener('click', () => {
-      audio.playChime('step');
-      loadStage(idx);
-    });
+    const classes = ['stage-tab'];
+    if (idx === state.currentStageIdx) classes.push('active');
+    if (cleared) classes.push('cleared');
+    if (!unlocked) classes.push('locked');
+    btn.className = classes.join(' ');
+
+    if (!unlocked) {
+      const reason = getStageLockReason(idx);
+      btn.textContent = `🔒 ${idx + 1}. ${shortTitle}`;
+      btn.title = reason;
+      btn.dataset.tooltip = reason;
+      btn.setAttribute('aria-disabled', 'true');
+      btn.addEventListener('click', () => {
+        audio.playChime('grace');
+        document.querySelectorAll('.stage-tab.locked').forEach((b) => b.classList.remove('tooltip-active'));
+        btn.classList.add('tooltip-active');
+        showGatingToast(reason);
+      });
+    } else {
+      btn.textContent = `${cleared ? '✓ ' : ''}${idx + 1}. ${shortTitle}`;
+      btn.title = cleared
+        ? `${stg.title} (Completed — Click to Replay)`
+        : stg.title;
+      btn.addEventListener('click', () => {
+        audio.playChime('step');
+        loadStage(idx);
+      });
+    }
     wrap.appendChild(btn);
   });
 }
@@ -292,12 +487,22 @@ function renderQuickNodeBar() {
   stage.nodes.forEach((node) => {
     const btn = document.createElement('button');
     const done = isNodeDone(node);
-    const shortLbl = getShortNodeLabel(node);
-    btn.className = `node-chip type-${node.type} ${done ? 'done' : ''}`;
-    btn.textContent = `${done ? '✓ ' : ''}${shortLbl}`;
-    btn.title = node.label;
+    const locked = isNodeLocked(node);
+    const shortLbl = getShortNodeLabel(node, locked);
+    btn.className = `node-chip type-${node.type} ${done ? 'done' : ''} ${locked ? 'locked-node' : ''}`;
+    btn.textContent = `${done && !locked ? '✓ ' : ''}${shortLbl}`;
+    if (locked) {
+      const lockMsg =
+        node.type === 'gatehouse_finale'
+          ? getAllMissingStandsReason()
+          : getStageLockReason(node.targetStageIdx ?? state.currentStageIdx + 1);
+      btn.title = lockMsg;
+    } else {
+      btn.title = node.label;
+    }
     btn.addEventListener('click', () => {
       playerPos.set(node.pos[0], 0, node.pos[2] + 1.8);
+      needsOneWorldRender = true;
       openNodeInteraction(node);
     });
     wrap.appendChild(btn);
@@ -319,10 +524,31 @@ export function openNodeInteraction(node) {
   } else if (node.type === 'relic') {
     openRelicModal(node.relicId);
   } else if (node.type === 'portal') {
-    openStageCompleteModal(node.targetStageIdx ?? state.currentStageIdx + 1);
+    const nextIdx = node.targetStageIdx ?? state.currentStageIdx + 1;
+    if (!isStageCleared(state.currentStageIdx) || !isStageUnlocked(nextIdx)) {
+      const reason = getStageLockReason(nextIdx);
+      audio.playChime('grace');
+      showGatingToast(reason);
+      return;
+    }
+    openStageCompleteModal(nextIdx);
   } else if (node.type === 'gatehouse_finale') {
-    openFinaleModal();
+    if (!areAllRequiredStandsCleared()) {
+      const reason = getAllMissingStandsReason();
+      audio.playChime('grace');
+      showGatingToast(reason);
+      return;
+    }
+    triggerEndingSequence();
   }
+}
+
+export function isAnyModalOpen() {
+  const modals = document.querySelectorAll('.modal-backdrop');
+  for (let i = 0; i < modals.length; i++) {
+    if (!modals[i].classList.contains('hidden')) return true;
+  }
+  return false;
 }
 
 function showModal(id) {
@@ -335,10 +561,91 @@ export function closeAllModals() {
   document.querySelectorAll('.modal-backdrop').forEach((m) => m.classList.add('hidden'));
   if (turntable) turntable.stop();
   if (worldManager) {
-    worldManager.buildStage(STAGES[state.currentStageIdx], isNodeDone, state.settings.ecoMode);
+    worldManager.buildStage(
+      STAGES[state.currentStageIdx],
+      isNodeDone,
+      state.settings.ecoMode,
+      isNodeLocked
+    );
   }
+  needsOneWorldRender = true;
+  renderStageBar();
   renderQuickNodeBar();
   updateHUD();
+}
+
+// ============================================================================
+// REAL TITLE SCREEN (BEFORE INTRO / STATS MODAL)
+// ============================================================================
+
+export function openTitleModal() {
+  showModal('title-modal');
+  const savedExists = hasSavedWalk(state);
+
+  const summaryEl = document.getElementById('title-save-summary');
+  if (summaryEl) {
+    summaryEl.classList.toggle('hidden', !savedExists);
+    if (savedExists) {
+      summaryEl.textContent = `Saved Walk Found: Stage ${state.currentStageIdx + 1} of ${STAGES.length} · Stands Cleared: ${state.standsCleared.length}/8 · Treasure: ${state.stats.treasure}`;
+    }
+  }
+
+  const btnCont = document.getElementById('btn-title-continue');
+  if (btnCont) {
+    btnCont.classList.toggle('hidden', !savedExists);
+    btnCont.textContent = `Continue Walk (Stage ${state.currentStageIdx + 1} of ${STAGES.length}) →`;
+    btnCont.onclick = () => {
+      audio.init();
+      audio.playKinnorChord();
+      state.firstSightCompleted = true;
+      saveState();
+      closeAllModals();
+    };
+  }
+
+  const btnStart = document.getElementById('btn-title-start');
+  if (btnStart) {
+    btnStart.textContent = savedExists ? 'Start / Roll Stats →' : 'Start Walk →';
+    btnStart.onclick = () => {
+      audio.init();
+      audio.playChime('step');
+      openWelcomeModal();
+    };
+  }
+
+  const confirmBox = document.getElementById('title-reset-confirm');
+  if (confirmBox) confirmBox.classList.add('hidden');
+
+  const btnReset = document.getElementById('btn-title-reset');
+  if (btnReset) {
+    btnReset.classList.toggle('hidden', !savedExists);
+    btnReset.onclick = () => {
+      if (confirmBox) confirmBox.classList.remove('hidden');
+    };
+  }
+
+  const btnResetYes = document.getElementById('btn-title-reset-yes');
+  if (btnResetYes) {
+    btnResetYes.onclick = () => {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // Ignore
+      }
+      state = createDefaultState();
+      saveState();
+      loadStage(0);
+      if (confirmBox) confirmBox.classList.add('hidden');
+      openTitleModal();
+    };
+  }
+
+  const btnResetNo = document.getElementById('btn-title-reset-no');
+  if (btnResetNo) {
+    btnResetNo.onclick = () => {
+      if (confirmBox) confirmBox.classList.add('hidden');
+    };
+  }
 }
 
 export function openWelcomeModal() {
@@ -348,7 +655,7 @@ export function openWelcomeModal() {
     document.getElementById('welcome-art-badge'),
     {
       stageIdx: 0,
-      pngUrl: PORTRAIT_ART_MAP.cover,
+      pngUrl: STAGE_ART_MAP[0],
       title: WORLD_CONFIG.worldTitle,
       subtitle: 'Book 1: The Unseen Chord'
     }
@@ -361,16 +668,11 @@ export function openWelcomeModal() {
   };
   updatePreview();
 
-  const hasSavedProgress =
-    state.firstSightCompleted ||
-    state.currentStageIdx > 0 ||
-    state.standsCleared.length > 0 ||
-    state.wellsVisited.length > 0 ||
-    Object.keys(state.treasuresChosen).length > 0;
+  const savedExists = hasSavedWalk(state);
 
   const btnContinue = document.getElementById('btn-continue-walk');
   if (btnContinue) {
-    btnContinue.classList.toggle('hidden', !hasSavedProgress);
+    btnContinue.classList.toggle('hidden', !savedExists);
     btnContinue.textContent = `Continue Walk (Stage ${state.currentStageIdx + 1} of ${STAGES.length}) →`;
     btnContinue.onclick = () => {
       audio.init();
@@ -405,13 +707,13 @@ export function openWelcomeModal() {
 
   const btnBegin = document.getElementById('btn-begin-walk');
   if (btnBegin) {
-    btnBegin.textContent = hasSavedProgress
+    btnBegin.textContent = savedExists
       ? 'Start Fresh Walk (Stage 1) →'
-      : 'Start Walk beside Elias →';
+      : 'Begin Walk beside Elias →';
     btnBegin.onclick = () => {
       audio.init();
       audio.playKinnorChord();
-      if (hasSavedProgress) {
+      if (savedExists) {
         const startStats = { ...state.startingStats };
         state = createDefaultState();
         state.startingStats = startStats;
@@ -432,11 +734,17 @@ export function openGuideModal() {
   showModal('guide-modal');
   const btnTitle = document.getElementById('btn-guide-to-title');
   if (btnTitle) {
-    btnTitle.onclick = () => openWelcomeModal();
+    btnTitle.onclick = () => openTitleModal();
   }
 }
 
 export function openStageCompleteModal(nextStageIdx) {
+  if (!isStageCleared(state.currentStageIdx)) {
+    const reason = getStageLockReason(nextStageIdx ?? state.currentStageIdx + 1);
+    showGatingToast(reason);
+    return;
+  }
+
   const curStage = STAGES[state.currentStageIdx] || STAGES[0];
   const targetIdx = Math.max(0, Math.min(STAGES.length - 1, nextStageIdx));
   const nextStage = STAGES[targetIdx] || STAGES[0];
@@ -448,7 +756,7 @@ export function openStageCompleteModal(nextStageIdx) {
   );
   setText(
     'stage-complete-summary',
-    `You and Elias have walked through ${curStage.title}. Ahead lies ${nextStage.title} (${nextStage.actLabel}).`
+    `You and Elias have cleared every Stand in ${curStage.title}. Ahead lies ${nextStage.title} (${nextStage.actLabel}).`
   );
   loadArtIntoImage(
     document.getElementById('stage-complete-art-img'),
@@ -616,7 +924,10 @@ export function openTreasureModal(treasureId) {
           state.bread = Math.max(0, state.bread - tr.giveChoice.breadCost);
         }
         if (tr.giveChoice.strengthDelta) {
-          state.stats.strength = Math.max(2, state.stats.strength + tr.giveChoice.strengthDelta);
+          state.stats.strength = Math.min(
+            state.startingStats.strength,
+            Math.max(2, state.stats.strength + tr.giveChoice.strengthDelta)
+          );
         }
         state.stats.treasure += tr.giveChoice.treasureDelta;
         state.treasuresChosen[tr.id] = 'give';
@@ -652,11 +963,13 @@ export function openStandModal(standId) {
     enemyStrength: st.baseStrength,
     maxEnemyStrength: st.baseStrength,
     enemyCourage: st.baseCourage,
+    baseEnemyCourage: st.baseCourage,
     round: 0,
     victoryLawApplied: false,
     scrollApplied: false,
     tokenAuto10Next: false,
     lastRoundLost: false,
+    isWon: false,
     showStrongholdDef: isFirstStronghold || st.id === 'stand_1',
     log: [
       `Stand entered: ${st.title} (${st.strongholdName} · Courage ${st.baseCourage}, Strength ${st.baseStrength}).`,
@@ -678,8 +991,29 @@ function renderStandSession() {
   setText('stand-meta', `Section ${st.sectionNum} · ${st.strongholdName} · ${st.scriptureRoot}`);
   setText('stand-narrative', st.whisper);
   setText('stand-enemy-name', st.strongholdName);
-  setText('stand-enemy-courage', s.enemyCourage);
-  setText('stand-enemy-strength', `${s.enemyStrength}/${s.maxEnemyStrength}`);
+
+  // Show both Courage and Strength with explicit before->after indicator when reduced by Step 1 / Scroll
+  const eCourageEl = document.getElementById('stand-enemy-courage');
+  if (eCourageEl) {
+    if (s.enemyCourage < s.baseEnemyCourage) {
+      eCourageEl.textContent = `${s.enemyCourage}/${s.baseEnemyCourage} (${s.baseEnemyCourage}→${s.enemyCourage})`;
+      eCourageEl.className = 'stat-reduced';
+    } else {
+      eCourageEl.textContent = `${s.enemyCourage}/${s.baseEnemyCourage}`;
+      eCourageEl.className = '';
+    }
+  }
+  const eStrengthEl = document.getElementById('stand-enemy-strength');
+  if (eStrengthEl) {
+    if (s.enemyStrength < s.maxEnemyStrength) {
+      eStrengthEl.textContent = `${s.enemyStrength}/${s.maxEnemyStrength} (${s.maxEnemyStrength}→${s.enemyStrength})`;
+      eStrengthEl.className = 'stat-reduced';
+    } else {
+      eStrengthEl.textContent = `${s.enemyStrength}/${s.maxEnemyStrength}`;
+      eStrengthEl.className = '';
+    }
+  }
+
   setText('stand-player-courage', state.stats.courage);
   setText('stand-player-strength', `${state.stats.strength}/${state.startingStats.strength}`);
   setText('stand-player-favor', `${state.stats.favor}/${state.startingStats.favor}`);
@@ -690,7 +1024,18 @@ function renderStandSession() {
   }
   const coachEl = document.getElementById('stand-coach-tip');
   if (coachEl) {
-    coachEl.classList.toggle('hidden', !(st.id === 'stand_1' && s.round === 0));
+    coachEl.classList.toggle('hidden', !(st.id === 'stand_1' && s.round === 0 && !s.isWon));
+  }
+
+  const vicBanner = document.getElementById('stand-victory-banner');
+  if (vicBanner) {
+    if (s.isWon) {
+      vicBanner.innerHTML = `<strong style="color:var(--gold);">✓ Victory in ${st.title}:</strong> ${st.victoryText}`;
+      vicBanner.classList.remove('hidden');
+    } else {
+      vicBanner.textContent = '';
+      vicBanner.classList.add('hidden');
+    }
   }
 
   const artCfg = STAND_ART_MAP[st.id] || { url: STAGE_ART_MAP[st.stageIdx ?? state.currentStageIdx], motif: 'mirror', stageIdx: st.stageIdx ?? 0 };
@@ -714,15 +1059,21 @@ function renderStandSession() {
 
   const btnLaw = document.getElementById('btn-stand-victory-law');
   if (btnLaw) {
-    btnLaw.disabled = s.victoryLawApplied || s.round > 0 || st.isRiggedBait;
+    btnLaw.disabled = s.victoryLawApplied || s.round > 0 || st.isRiggedBait || s.isWon;
+    btnLaw.classList.toggle('btn-applied', Boolean(s.victoryLawApplied));
     btnLaw.textContent = s.victoryLawApplied
-      ? `✓ Victory Law Applied`
+      ? 'Step 1: Victory Law — Applied ✓'
       : `Step 1: Apply Victory Law (${st.victoryLawEffect?.note || 'Humility before Round 1'})`;
     btnLaw.onclick = () => {
+      if (s.victoryLawApplied || s.round > 0 || st.isRiggedBait || s.isWon) return;
+      const prevC = s.enemyCourage;
+      const prevS = s.enemyStrength;
       s.victoryLawApplied = true;
       s.enemyCourage = Math.max(4, s.enemyCourage + (st.victoryLawEffect?.courageDelta || 0));
       s.enemyStrength = Math.max(1, s.enemyStrength + (st.victoryLawEffect?.strengthDelta || 0));
-      s.log.push(`Victory Law chosen before Round 1! ${st.victoryLawEffect?.note || ''}`);
+      s.log.push(
+        `Step 1 (Victory Law) Applied ✓: ${st.victoryLawEffect?.note || ''} [Stronghold Courage ${prevC}→${s.enemyCourage}, Strength ${prevS}→${s.enemyStrength}]`
+      );
       audio.playChime('stand_win');
       renderStandSession();
     };
@@ -731,21 +1082,39 @@ function renderStandSession() {
   const btnScroll = document.getElementById('btn-stand-scroll');
   if (btnScroll) {
     const resIds = st.resonantScrolls || [];
-    const learnedId = resIds.find((id) => state.scrollsLearned.includes(id));
-    const firstId = learnedId || resIds[0];
-    const scObj = firstId ? SCROLLS[firstId] : null;
-    btnScroll.disabled = !learnedId || s.scrollApplied || s.round > 0 || st.isRiggedBait;
+    // Always display the Stand's primary canonical Scroll reference (resIds[0])
+    const primaryId = resIds[0];
+    const primaryScroll = primaryId ? SCROLLS[primaryId] : null;
+    const learnedMatchId = resIds.find((id) => state.scrollsLearned.includes(id));
+    // Stand 3 explicitly calls for speaking Proverbs 27:2 (KJV) in its prompt even before Well 2
+    const canSpeakScroll = Boolean(learnedMatchId || st.id === 'stand_3');
+    btnScroll.disabled = !canSpeakScroll || s.scrollApplied || s.round > 0 || st.isRiggedBait || s.isWon;
+    btnScroll.classList.toggle('btn-applied', Boolean(s.scrollApplied));
     btnScroll.textContent = s.scrollApplied
-      ? `✓ Resonant Scroll Spoken`
-      : scObj
-        ? `Speak KJV Scroll: ${scObj.ref} (${learnedId ? 'Learned' : 'Find at Well first'})`
-        : `No Specific Scroll Required`;
+      ? `Speak KJV Scroll (${primaryScroll ? primaryScroll.ref : 'KJV'}) — Applied ✓`
+      : primaryScroll
+        ? `Speak KJV Scroll: ${primaryScroll.ref}`
+        : 'Speak Resonant KJV Scroll';
     btnScroll.onclick = () => {
-      if (!learnedId || !scObj) return;
+      if (!canSpeakScroll || s.scrollApplied || s.round > 0 || st.isRiggedBait || s.isWon) return;
+      const scObj = primaryScroll || (learnedMatchId ? SCROLLS[learnedMatchId] : null);
+      if (!scObj) return;
       s.scrollApplied = true;
-      s.enemyCourage = Math.max(4, s.enemyCourage + (st.scrollLawEffect?.courageDelta || 0));
-      s.enemyStrength = Math.max(1, s.enemyStrength + (st.scrollLawEffect?.strengthDelta || 0));
-      s.log.push(`Spoke KJV Scroll verbatim: "${scObj.text}" (${scObj.ref}) -> ${st.scrollLawEffect?.note || ''}`);
+      // If Step 1 already applied the same pre-round Scripture reduction on Stand 2 or Stand 3, avoid double-subtracting below canonical floor
+      const alreadyReducedByStep1 =
+        s.victoryLawApplied &&
+        (st.id === 'stand_2' || st.id === 'stand_3' || st.id === 'stand_5' || st.id === 'stand_6');
+      if (!alreadyReducedByStep1) {
+        const prevC = s.enemyCourage;
+        const prevS = s.enemyStrength;
+        s.enemyCourage = Math.max(4, s.enemyCourage + (st.scrollLawEffect?.courageDelta || 0));
+        s.enemyStrength = Math.max(1, s.enemyStrength + (st.scrollLawEffect?.strengthDelta || 0));
+        s.log.push(
+          `Spoke KJV Scroll verbatim: "${scObj.text}" (${scObj.ref}) -> ${st.scrollLawEffect?.note || ''} [Courage ${prevC}→${s.enemyCourage}, Strength ${prevS}→${s.enemyStrength}]`
+        );
+      } else {
+        s.log.push(`Spoke KJV Scroll verbatim: "${scObj.text}" (${scObj.ref}) — Standing firm on God's Word!`);
+      }
       audio.playKinnorChord();
       renderStandSession();
     };
@@ -753,10 +1122,11 @@ function renderStandSession() {
 
   const btnRoll = document.getElementById('btn-stand-roll');
   if (btnRoll) {
-    if (st.isRiggedBait) {
+    btnRoll.classList.toggle('btn-claim-victory', Boolean(s.isWon));
+    if (s.isWon) {
+      btnRoll.textContent = 'Claim Victory ✓';
+    } else if (st.isRiggedBait) {
       btnRoll.textContent = 'Walk Out of the Trap in Wisdom (Sec. 145 -> Sec. 158 · Learn Scroll 5)';
-    } else if (s.enemyStrength <= 0) {
-      btnRoll.textContent = '✓ Stand Cleared — Claim Victory & Continue';
     } else {
       btnRoll.textContent = s.tokenAuto10Next
         ? `Roll Round ${s.round + 1} (Aquamarine Stone Auto-10 + Courage ${state.stats.courage})`
@@ -771,20 +1141,27 @@ function handleStandRollRound() {
   const s = activeStandSession;
   const st = s.stand;
 
-  if (st.isRiggedBait) {
-    if (!state.standsCleared.includes(st.id)) state.standsCleared.push(st.id);
-    if (!state.scrollsLearned.includes('scroll_5')) state.scrollsLearned.push('scroll_5');
-    state.stats.courage += 1;
-    state.stats.strength = Math.min(state.startingStats.strength, state.stats.strength + 1);
-    saveState();
+  // If the Stand has already been won, clicking "Claim Victory ✓" closes the modal
+  if (s.isWon) {
     closeAllModals();
     return;
   }
 
-  if (s.enemyStrength <= 0) {
+  // Stand 4 (Rigged Bait at Hannam-dong): walking away in wisdom achieves victory and shows the victory text + Claim Victory button first
+  if (st.isRiggedBait) {
+    s.isWon = true;
+    s.enemyStrength = 0;
     if (!state.standsCleared.includes(st.id)) state.standsCleared.push(st.id);
+    if (!state.scrollsLearned.includes('scroll_5')) state.scrollsLearned.push('scroll_5');
+    state.stats.courage += 1;
+    state.stats.strength = Math.min(state.startingStats.strength, state.stats.strength + 1);
+    s.log.push(`Victory: ${st.victoryText}`);
+    audio.playChime('stand_win');
     saveState();
-    closeAllModals();
+    renderStageBar();
+    renderQuickNodeBar();
+    renderStandSession();
+    bindStandAuxButtons();
     return;
   }
 
@@ -807,9 +1184,15 @@ function handleStandRollRound() {
     );
     audio.playChime('stand_win');
     if (s.enemyStrength <= 0) {
+      s.isWon = true;
       s.log.push(`Victory: ${st.victoryText}`);
       if (!state.standsCleared.includes(st.id)) state.standsCleared.push(st.id);
+      if (st.id === 'stand_6') {
+        state.oil = Math.min(2, state.oil + 1);
+      }
       saveState();
+      renderStageBar();
+      renderQuickNodeBar();
     }
   } else if (eTotal > pTotal) {
     state.stats.strength = Math.max(0, state.stats.strength - 2);
@@ -839,12 +1222,12 @@ function bindStandAuxButtons() {
 
   const btnFavor = document.getElementById('btn-stand-favor');
   if (btnFavor) {
-    btnFavor.disabled = !s.lastRoundLost || state.stats.favor <= 0 || s.enemyStrength <= 0;
+    btnFavor.disabled = !s.lastRoundLost || state.stats.favor <= 0 || s.isWon;
     btnFavor.textContent = s.lastRoundLost
       ? `Test Favor (2d6 <= ${state.stats.favor})`
-      : `Test Favor`;
+      : 'Test Favor';
     btnFavor.onclick = () => {
-      if (!s.lastRoundLost || state.stats.favor <= 0) return;
+      if (!s.lastRoundLost || state.stats.favor <= 0 || s.isWon) return;
       const d1 = rollDie();
       const d2 = rollDie();
       const sum = d1 + d2;
@@ -866,10 +1249,10 @@ function bindStandAuxButtons() {
 
   const btnOil = document.getElementById('btn-stand-oil');
   if (btnOil) {
-    btnOil.disabled = state.oil <= 0 || state.stats.strength >= state.startingStats.strength;
+    btnOil.disabled = state.oil <= 0 || state.stats.strength >= state.startingStats.strength || s.isWon;
     btnOil.textContent = `Use Oil (+4 Str · ${state.oil})`;
     btnOil.onclick = () => {
-      if (state.oil <= 0) return;
+      if (state.oil <= 0 || s.isWon) return;
       state.oil -= 1;
       state.stats.strength = Math.min(state.startingStats.strength, state.stats.strength + 4);
       s.log.push(`Anointed with Oil: +4 Strength restored (now ${state.stats.strength}/${state.startingStats.strength}).`);
@@ -882,14 +1265,14 @@ function bindStandAuxButtons() {
 
   const btnToken = document.getElementById('btn-stand-token');
   if (btnToken) {
-    btnToken.disabled = !state.tokenEarned || state.tokenUsed || s.tokenAuto10Next;
+    btnToken.disabled = !state.tokenEarned || state.tokenUsed || s.tokenAuto10Next || s.isWon;
     btnToken.textContent = !state.tokenEarned
       ? 'Token (Well 1)'
       : state.tokenUsed
         ? 'Token (Used)'
         : 'Use Token (Auto-10)';
     btnToken.onclick = () => {
-      if (!state.tokenEarned || state.tokenUsed) return;
+      if (!state.tokenEarned || state.tokenUsed || s.isWon) return;
       state.tokenUsed = true;
       state.tokenSpentInCurrentStand = true;
       s.tokenAuto10Next = true;
@@ -903,7 +1286,9 @@ function bindStandAuxButtons() {
 
   const btnWithdraw = document.getElementById('btn-stand-withdraw');
   if (btnWithdraw) {
+    btnWithdraw.disabled = Boolean(s.isWon);
     btnWithdraw.onclick = () => {
+      if (s.isWon) return;
       state.stats.strength = Math.max(0, state.stats.strength - 2);
       saveState();
       if (state.stats.strength <= 0) {
@@ -936,7 +1321,7 @@ export function triggerGraceFall() {
       state.stats.strength = newStr;
       state.stats.favor = state.startingStats.favor;
       saveState();
-      loadStage(state.lastWellStageIdx || 1);
+      loadStage(state.lastWellStageIdx || 0);
       closeAllModals();
     };
   }
@@ -947,14 +1332,14 @@ export function triggerGraceFall() {
     btnSupply.disabled = !hasSupply;
     btnSupply.textContent = hasSupply
       ? `Spend 1 Bread/Oil -> Return at Full Starting Strength (${state.startingStats.strength})`
-      : `Spend 1 Bread/Oil (None Remaining)`;
+      : 'Spend 1 Bread/Oil (None Remaining)';
     btnSupply.onclick = () => {
       if (state.bread > 0) state.bread -= 1;
       else if (state.oil > 0) state.oil -= 1;
       state.stats.strength = state.startingStats.strength;
       state.stats.favor = state.startingStats.favor;
       saveState();
-      loadStage(state.lastWellStageIdx || 1);
+      loadStage(state.lastWellStageIdx || 0);
       closeAllModals();
     };
   }
@@ -1042,7 +1427,60 @@ export async function openRelicModal(defaultRelicId = 'aquamarine-tuning-stone')
   selectRelic(initial);
 }
 
+// ============================================================================
+// SEA OF GLASS FINALE MOMENT & ENDING MODAL (§299 vs §300)
+// ============================================================================
+
+export function triggerEndingSequence() {
+  if (!areAllRequiredStandsCleared()) {
+    const reason = getAllMissingStandsReason();
+    showGatingToast(reason);
+    return false;
+  }
+
+  closeAllModals();
+  if (state.currentStageIdx !== 5) {
+    loadStage(5, -22);
+  }
+  playerPos.set(0.85, 0, -23.5);
+  finalePayoffState.active = true;
+  finalePayoffState.startTime = performance.now();
+  finalePayoffState.durationMs = state.settings.ecoMode ? 2400 : 4200;
+
+  const bar = document.getElementById('sea-of-glass-payoff-bar');
+  if (bar) bar.classList.remove('hidden');
+
+  const skipBtn = document.getElementById('btn-skip-payoff');
+  if (skipBtn) {
+    skipBtn.onclick = () => finishSeaOfGlassPayoff();
+  }
+
+  audio.init();
+  audio.playKinnorChord();
+  return true;
+}
+
+export function finishSeaOfGlassPayoff() {
+  finalePayoffState.active = false;
+  const bar = document.getElementById('sea-of-glass-payoff-bar');
+  if (bar) bar.classList.add('hidden');
+  openFinaleModal();
+}
+
 export function openFinaleModal() {
+  if (!areAllRequiredStandsCleared()) {
+    const reason = getAllMissingStandsReason();
+    showGatingToast(reason);
+    return false;
+  }
+
+  const bar = document.getElementById('sea-of-glass-payoff-bar');
+  if (bar) bar.classList.add('hidden');
+  finalePayoffState.active = false;
+
+  // Book 1 Section 298/299/300 rules:
+  // 0-3 Treasure -> Section 299 (The Good Ending — The Honest Recovery Road)
+  // 4-8 Treasure -> Section 300 (The True Ending — The Unseen Chord)
   const isTrue = state.stats.treasure >= 4;
   const ending = isTrue ? ENDINGS.true_ending : ENDINGS.good_ending;
   state.zone1Completed = true;
@@ -1050,7 +1488,10 @@ export function openFinaleModal() {
   saveState();
 
   setText('finale-title', ending.title);
-  setText('finale-subtitle', `Section ${ending.sectionNum} · Your Treasure: ${state.stats.treasure}`);
+  setText(
+    'finale-subtitle',
+    `Section ${ending.sectionNum} · Your Treasure: ${state.stats.treasure} (${isTrue ? '4–8 Treasure · True Ending' : '0–3 Treasure · Good Ending'})`
+  );
   setText('finale-narrative', (ending.body || []).join('\n\n'));
   setText('finale-kjv', `"${ending.epigraphText}" — ${ending.epigraphRef}`);
   setText('finale-Benediction', 'The love of God and the love of people is the treasure of life—found not by taking, but by giving.');
@@ -1059,7 +1500,7 @@ export function openFinaleModal() {
     document.getElementById('finale-art-badge'),
     {
       stageIdx: 5,
-      pngUrl: PORTRAIT_ART_MAP.cover,
+      pngUrl: ENDING_ART_MAP[ending.id] || STAGE_ART_MAP[5],
       title: ending.title,
       subtitle: `Section ${ending.sectionNum} · ${ending.epigraphRef}`
     }
@@ -1074,6 +1515,7 @@ export function openFinaleModal() {
 
   audio.playKinnorChord();
   showModal('finale-modal');
+  return true;
 }
 
 export function openGatehouseModal() {
@@ -1081,6 +1523,8 @@ export function openGatehouseModal() {
   if (codeInput) codeInput.value = generateNW1Code();
   const statusEl = document.getElementById('gatehouse-import-status');
   if (statusEl) statusEl.textContent = '';
+  const confirmEl = document.getElementById('gatehouse-reset-confirm');
+  if (confirmEl) confirmEl.classList.add('hidden');
 
   const shopLink = document.getElementById('gatehouse-book-link');
   if (shopLink) {
@@ -1097,7 +1541,7 @@ export function openGatehouseModal() {
     document.getElementById('gatehouse-art-badge'),
     {
       stageIdx: 5,
-      pngUrl: PORTRAIT_ART_MAP.cover,
+      pngUrl: PORTRAIT_ART_MAP.gatehouseBanner,
       title: 'Book 1: The Unseen Chord',
       subtitle: 'Gatehouse Edition & NW1 Progress Code'
     }
@@ -1105,10 +1549,19 @@ export function openGatehouseModal() {
   showModal('gatehouse-modal');
 }
 
+function getEffectivePixelRatio() {
+  if (state.settings.ecoMode) return 1.0;
+  return Math.min(window.devicePixelRatio || 1, 1.5);
+}
+
 function initThreeWorld() {
   const container = document.getElementById('viewport-container');
-  renderer = new THREE.WebGLRenderer({ antialias: !state.settings.ecoMode, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(state.settings.ecoMode ? 1 : Math.min(window.devicePixelRatio || 1, 2));
+  renderer = new THREE.WebGLRenderer({
+    antialias: !state.settings.ecoMode,
+    powerPreference: 'high-performance'
+  });
+  renderer.shadowMap.enabled = false;
+  renderer.setPixelRatio(getEffectivePixelRatio());
   renderer.setSize(window.innerWidth, window.innerHeight);
   if (container) container.appendChild(renderer.domElement);
 
@@ -1119,12 +1572,14 @@ function initThreeWorld() {
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+    renderer.setPixelRatio(getEffectivePixelRatio());
     renderer.setSize(window.innerWidth, window.innerHeight);
+    needsOneWorldRender = true;
   });
 
   window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
-    if (e.code === 'KeyE' || e.code === 'Enter') {
+    if ((e.code === 'KeyE' || e.code === 'Enter') && !isAnyModalOpen() && !finalePayoffState.active) {
       const near = worldManager.getNearestNode(playerPos, 4.2);
       if (near) openNodeInteraction(near);
     }
@@ -1139,6 +1594,7 @@ function initThreeWorld() {
     (e) => {
       e.preventDefault();
       cameraDistance = Math.max(3.0, Math.min(9.0, cameraDistance + e.deltaY * 0.004));
+      needsOneWorldRender = true;
     },
     { passive: false }
   );
@@ -1168,7 +1624,7 @@ function initThreeWorld() {
     dragging = false;
     // Tap / Click picking on pointerup only (zero per-frame ReadPixels / zero GPU stall)
     const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
-    if (moved < 6 && e.target === renderer.domElement && worldManager && camera) {
+    if (moved < 6 && e.target === renderer.domElement && worldManager && camera && !isAnyModalOpen()) {
       const rect = renderer.domElement.getBoundingClientRect();
       pointerNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       pointerNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -1228,7 +1684,7 @@ function bindUIButtons() {
     if (el) el.addEventListener('click', fn);
   };
 
-  bindClick('btn-nav-zone-start', () => openWelcomeModal());
+  bindClick('btn-nav-zone-start', () => openTitleModal());
   bindClick('btn-nav-inventory', () => openInventoryModal());
   bindClick('btn-nav-relics', () => openRelicModal('aquamarine-tuning-stone'));
   bindClick('btn-nav-gatehouse', () => openGatehouseModal());
@@ -1250,7 +1706,7 @@ function bindUIButtons() {
 
   bindClick('btn-eco-toggle', () => {
     state.settings.ecoMode = !state.settings.ecoMode;
-    if (renderer) renderer.setPixelRatio(state.settings.ecoMode ? 1 : Math.min(window.devicePixelRatio || 1, 2));
+    if (renderer) renderer.setPixelRatio(getEffectivePixelRatio());
     saveState();
     loadStage(state.currentStageIdx, playerPos.z);
   });
@@ -1282,28 +1738,82 @@ function bindUIButtons() {
   });
 
   bindClick('btn-reset-save', () => {
+    const confirmBox = document.getElementById('gatehouse-reset-confirm');
+    if (confirmBox) confirmBox.classList.remove('hidden');
+  });
+
+  bindClick('btn-gatehouse-reset-yes', () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignore
+    }
     state = createDefaultState();
     saveState();
     loadStage(0);
-    openWelcomeModal();
+    openTitleModal();
+  });
+
+  bindClick('btn-gatehouse-reset-no', () => {
+    const confirmBox = document.getElementById('gatehouse-reset-confirm');
+    if (confirmBox) confirmBox.classList.add('hidden');
   });
 }
 
 let lastTime = performance.now();
+let fpsFrames = 0;
+let fpsWindowStart = performance.now();
+let currentFps = 60;
+let renderPausedByModal = false;
+
 function animate(now) {
   requestAnimationFrame(animate);
   const dt = Math.min(0.1, (now - lastTime) / 1000);
   lastTime = now;
   const elapsed = now / 1000;
 
+  fpsFrames += 1;
+  if (now - fpsWindowStart >= 500) {
+    currentFps = Math.round((fpsFrames * 1000) / (now - fpsWindowStart));
+    fpsFrames = 0;
+    fpsWindowStart = now;
+  }
+
+  // Handle Sea of Glass Finale Payoff moment (under 10s, skippable)
+  if (finalePayoffState.active) {
+    renderPausedByModal = false;
+    const progress = (now - finalePayoffState.startTime) / finalePayoffState.durationMs;
+    if (worldManager && camera) {
+      worldManager.updateFinaleMoment(progress, elapsed, null, camera, state.settings.ecoMode);
+    }
+    if (renderer && scene && camera) {
+      renderer.render(scene, camera);
+    }
+    if (progress >= 1.0) {
+      finishSeaOfGlassPayoff();
+    }
+    return;
+  }
+
+  // Pause 3D rendering while any modal is open (after 1 initial background frame)
+  const modalOpen = isAnyModalOpen();
+  if (modalOpen && !needsOneWorldRender) {
+    renderPausedByModal = true;
+    return;
+  }
+  renderPausedByModal = false;
+  needsOneWorldRender = false;
+
   let moveForward = 0;
   let moveRight = 0;
-  if (keys.KeyW || keys.ArrowUp) moveForward += 1;
-  if (keys.KeyS || keys.ArrowDown) moveForward -= 1;
-  if (keys.KeyD || keys.ArrowRight) moveRight += 1;
-  if (keys.KeyA || keys.ArrowLeft) moveRight -= 1;
-  moveForward -= joyDelta.y;
-  moveRight += joyDelta.x;
+  if (!modalOpen) {
+    if (keys.KeyW || keys.ArrowUp) moveForward += 1;
+    if (keys.KeyS || keys.ArrowDown) moveForward -= 1;
+    if (keys.KeyD || keys.ArrowRight) moveRight += 1;
+    if (keys.KeyA || keys.ArrowLeft) moveRight -= 1;
+    moveForward -= joyDelta.y;
+    moveRight += joyDelta.x;
+  }
 
   if (moveForward !== 0 || moveRight !== 0) {
     const speed = 6.2 * dt;
@@ -1336,8 +1846,9 @@ function animate(now) {
     const promptBtn = document.getElementById('btn-proximity-interact');
     if (promptBar && promptBtn) {
       if (near) {
+        const locked = isNodeLocked(near);
         promptBar.classList.remove('hidden');
-        promptBtn.textContent = `Interact [E / Tap]: ${getShortNodeLabel(near)}`;
+        promptBtn.textContent = `Interact [E / Tap]: ${getShortNodeLabel(near, locked)}`;
         promptBtn.onclick = () => openNodeInteraction(near);
       } else {
         promptBar.classList.add('hidden');
@@ -1356,9 +1867,7 @@ window.addEventListener('DOMContentLoaded', () => {
   bindUIButtons();
   loadStage(state.currentStageIdx);
   updateHUD();
-  if (!state.firstSightCompleted) {
-    openWelcomeModal();
-  }
+  openTitleModal();
   requestAnimationFrame(animate);
 });
 
@@ -1366,19 +1875,43 @@ window.narrowWayApp = {
   getState: () => state,
   getWorldManager: () => worldManager,
   getPlayerPos: () => playerPos,
+  getRenderer: () => renderer,
+  getPerformanceMetrics: () => ({
+    fps: currentFps,
+    pixelRatio: renderer ? renderer.getPixelRatio() : 1,
+    renderPausedByModal,
+    pointLightsInStage: scene
+      ? (() => {
+          let c = 0;
+          scene.traverse((o) => {
+            if (o.isPointLight) c += 1;
+          });
+          return c;
+        })()
+      : 0
+  }),
   setCameraDistance: (d) => {
     cameraDistance = Math.max(3.0, Math.min(9.0, Number(d) || 4.6));
+    needsOneWorldRender = true;
     return cameraDistance;
   },
   getCameraDistance: () => cameraDistance,
+  getRequiredStandsForStage,
+  getUnclearedStandsForStage,
+  isStageCleared,
+  isStageUnlocked,
+  getHighestUnlockedStageIdx,
+  areAllRequiredStandsCleared,
   STAGE_ART_MAP,
   PORTRAIT_ART_MAP,
   STAND_ART_MAP,
   WELL_ART_MAP,
   TREASURE_ART_MAP,
   WISDOM_ART_MAP,
+  ENDING_ART_MAP,
   loadArtIntoImage,
   loadStage,
+  openTitleModal,
   openWelcomeModal,
   openGuideModal,
   openStageCompleteModal,
@@ -1387,6 +1920,8 @@ window.narrowWayApp = {
   openWellModal,
   openWisdomModal,
   openRelicModal,
+  triggerEndingSequence,
+  finishSeaOfGlassPayoff,
   openFinaleModal,
   openGatehouseModal,
   generateNW1Code,

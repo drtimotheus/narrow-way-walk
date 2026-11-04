@@ -382,7 +382,7 @@ export const STANDS = {
     baseStrength: 6,
     crackTarget: 3,
     isRiggedBait: false,
-    resonantScrolls: ['scroll_1', 'scroll_5'],
+    resonantScrolls: ['scroll_5', 'scroll_1'],
     whisper:
       '“You gave two thousand people everything you had tonight, Elias. Nobody at church knows how loud the hospital machines still sound in your head. You don’t have to quit forever—just get through tonight. Usual spot, twenty minutes.”',
     victoryLawPrompt:
@@ -406,13 +406,13 @@ export const STANDS = {
     baseStrength: 8,
     crackTarget: 4,
     isRiggedBait: false,
-    resonantScrolls: ['scroll_1', 'scroll_3'],
+    resonantScrolls: ['scroll_3', 'scroll_1'],
     whisper:
       '“Look how easily the doors open for that younger singer in Busan while you bleed for every note. If you let your streaming numbers slip this month, everyone will forget your name. Watch them. Measure yourself against them.”',
     victoryLawPrompt:
       'Step 1 (The Victory Law): Pray aloud with Elias for the younger worship leader in Busan to be blessed, or speak Proverbs 27:2 (KJV).',
     victoryLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Jealousy cannot breathe where another’s good is celebrated! Courage drops from 8 to 7, Strength from 8 to 6.' },
-    scrollLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Speaking Proverbs 27:2 / 16:18 cracks the jaundiced lens (-1 Courage, -2 Strength)!' },
+    scrollLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Speaking Proverbs 27:2 (KJV) cracks the jaundiced lens (-1 Courage, -2 Strength)!' },
     victoryText:
       '“Lord, bless that brother’s songs in Busan,” Elias says out loud, his voice rough at first and then genuinely warm. “If kids are meeting You there, what does it matter whose name is on the poster?” The jaundiced green-gold lens cracks across the middle and dissolves like smoke in sunlight.',
     withdrawText:
@@ -430,7 +430,7 @@ export const STANDS = {
     baseStrength: 12,
     crackTarget: 0,
     isRiggedBait: true, // Walking away is the canonical Victory!
-    resonantScrolls: ['scroll_1', 'scroll_5'],
+    resonantScrolls: ['scroll_5', 'scroll_1'],
     whisper:
       '“What’s the matter? Are you two afraid of a room? Step inside Tae-yang’s green room for ten minutes and prove how strong your recovery is. If you walk away now, everyone at the party will say you’re still weak.”',
     victoryLawPrompt:
@@ -455,13 +455,13 @@ export const STANDS = {
     baseStrength: 8,
     crackTarget: 0, // Demolish target 0
     isRiggedBait: false,
-    resonantScrolls: ['scroll_2', 'scroll_4'],
+    resonantScrolls: ['scroll_4', 'scroll_2'],
     whisper:
       '“Keep your chin up before the brass plate. Bow for ten seconds, say something spiritual, and walk out to the car before your sister Yuna sees you cry. If you let the dam break, you will never stop.”',
     victoryLawPrompt:
       'Step 1 (The Victory Law): Speak Psalm 51:17 or Isaiah 53:4 aloud, or tell Elias gently, “You don’t have to hold it together here, brother; Yuna and I are right beside you.”',
     victoryLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Honest lament lowers The Curated Sorrow’s COURAGE from 8 to 7 and STRENGTH from 8 to 6!' },
-    scrollLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Speaking Psalm 51:17 / Isaiah 53:4 shatters the shell of refused comfort (-1 Courage, -2 Strength)!' },
+    scrollLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Speaking Isaiah 53:4 / Psalm 51:17 shatters the shell of refused comfort (-1 Courage, -2 Strength)!' },
     victoryText:
       'The cold stone shell of refused comfort shatters into nothing. Standing before the small brass plate of Grace Mi-ran Cho, with Yuna’s hand on his left arm and you standing on his right, Elias weeps for his mother in the daylight—and after ten unhurried minutes, wipes his eyes and stands back up without pretending he didn’t cry.',
     withdrawText:
@@ -479,7 +479,7 @@ export const STANDS = {
     baseStrength: 8,
     crackTarget: 4,
     isRiggedBait: false,
-    resonantScrolls: ['scroll_1', 'scroll_2', 'scroll_4', 'scroll_5'],
+    resonantScrolls: ['scroll_2', 'scroll_1', 'scroll_4', 'scroll_5'],
     whisper:
       '“Your body is spent and your nerves are frayed. Stay in the windowless rehearsal booth. Cancel on Yuna. Tell her you have vocal fatigue. Bind yourself where nobody can ask anything of you.”',
     victoryLawPrompt:
@@ -1093,18 +1093,10 @@ export const STAGES = [
       'In the studio control booth, 20-year-old intern Hoon faces termination over a wiped backing track. Across town, a brass-framed mirror outside the 40-person youth Q&A tempts Elias to give a polished, fake testimony—and three days after he tells the truth, two church conferences cancel his bookings, leading to the midnight kitchen floor beside an untouched green bottle.',
     nodes: [
       {
-        id: 'node_t6_hoon',
-        type: 'treasure',
-        treasureId: 'treasure_6',
-        pos: [-3.6, 0, -7.5],
-        label: '✦ Treasure Choice #6: Studio Intern Hoon & the Erased Master Stem (Sec. 218)',
-        color: '#ffd166'
-      },
-      {
         id: 'node_stand7_mirror',
         type: 'stand',
         standId: 'stand_7',
-        pos: [0, 0, -12.5],
+        pos: [0, 0, -7.5],
         label: '⚔ Stand 7: The Mirror-Guard of Pride — Stronghold Pride #15 (Basement Door, Sec. 114)',
         color: '#e76f51'
       },
@@ -1112,7 +1104,7 @@ export const STAGES = [
         id: 'node_wisdom6',
         type: 'wisdom',
         wisdomId: 'wisdom_6',
-        pos: [3.6, 0, -16.0],
+        pos: [3.6, 0, -11.5],
         label: '📜 Read KJV Wisdom Page 6: Proverbs 12:19 & 2 Corinthians 12:9 (Sec. 189)',
         color: '#f9c74f'
       },
@@ -1120,8 +1112,16 @@ export const STAGES = [
         id: 'node_t5_soojin',
         type: 'treasure',
         treasureId: 'treasure_5',
-        pos: [-3.6, 0, -18.5],
+        pos: [-3.6, 0, -14.5],
         label: '✦ Treasure Choice #5: 19-Year-Old Violinist Soo-jin on the Concrete Steps (Sec. 189)',
+        color: '#ffd166'
+      },
+      {
+        id: 'node_t6_hoon',
+        type: 'treasure',
+        treasureId: 'treasure_6',
+        pos: [3.6, 0, -18.5],
+        label: '✦ Treasure Choice #6: Studio Intern Hoon & the Erased Master Stem (Sec. 218)',
         color: '#ffd166'
       },
       {

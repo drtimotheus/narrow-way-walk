@@ -3,7 +3,7 @@
 // Adapts Pilgrim Walk's painterly oil-on-linen & crystal water shaders for
 // Elias Cho's Seoul and the Sea of Glass (Rev 4:6; 15:2).
 // Preloads approved paintings at startup and provides distinct scene art
-// mappings for every Stage, Stand, Well, Treasure, and Wisdom Page.
+// mappings for every Stage, Stand, Well, Treasure, Wisdom Page, and Ending.
 // ============================================================================
 
 import * as THREE_NS from 'three';
@@ -55,8 +55,6 @@ export class PainterlyEngine {
     return tex;
   }
 
-  // Generates a bespoke painterly scene illustration on a 2D canvas when a
-  // specific scene has no separate file yet (listed in assets.md)
   createSceneCanvasDataUrl(stageIdx = 0, title = 'The Unseen Chord', motif = 'mirror') {
     const canvas = document.createElement('canvas');
     canvas.width = 640;
@@ -80,7 +78,6 @@ export class PainterlyEngine {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 640, 400);
 
-    // Warm horizon glow
     const rad = ctx.createRadialGradient(320, 195, 16, 320, 195, 250);
     rad.addColorStop(0, 'rgba(255, 244, 214, 0.88)');
     rad.addColorStop(0.48, 'rgba(92, 214, 255, 0.35)');
@@ -88,121 +85,15 @@ export class PainterlyEngine {
     ctx.fillStyle = rad;
     ctx.fillRect(0, 0, 640, 400);
 
-    if (motif === 'mirror') {
-      // Gilded VIP lounge mirror with fracture lines (Stand 1: The Applause Echo)
-      ctx.strokeStyle = '#fbbf24';
-      ctx.lineWidth = 5;
-      ctx.strokeRect(210, 52, 220, 246);
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
-      ctx.fillRect(216, 58, 208, 234);
-      ctx.strokeStyle = 'rgba(125, 211, 252, 0.78)';
-      ctx.lineWidth = 2;
+    for (let i = 0; i < 36; i++) {
+      const x = 30 + (i / 35) * 580;
+      const y = 185 + Math.sin(i * 1.7) * 14;
+      ctx.fillStyle = 'rgba(255, 222, 148, 0.72)';
       ctx.beginPath();
-      ctx.moveTo(320, 60);
-      ctx.lineTo(285, 165);
-      ctx.lineTo(355, 225);
-      ctx.lineTo(310, 290);
-      ctx.moveTo(285, 165);
-      ctx.lineTo(222, 195);
-      ctx.moveTo(355, 225);
-      ctx.lineTo(418, 190);
-      ctx.stroke();
-    } else if (motif === 'dawn_window') {
-      // Apartment window at dawn with two steaming mugs of barley tea (Well 2)
-      ctx.strokeStyle = '#94a3b8';
-      ctx.lineWidth = 4;
-      ctx.strokeRect(180, 44, 280, 190);
-      ctx.beginPath();
-      ctx.moveTo(320, 44);
-      ctx.lineTo(320, 234);
-      ctx.moveTo(180, 139);
-      ctx.lineTo(460, 139);
-      ctx.stroke();
-      ctx.fillStyle = '#78350f';
-      ctx.fillRect(140, 250, 360, 24);
-      ctx.fillStyle = '#fde68a';
-      ctx.fillRect(255, 218, 34, 32);
-      ctx.fillRect(350, 218, 34, 32);
-    } else if (motif === 'comparison_lens') {
-      // Jaundiced green-gold lens cracking in sunlight (Stand 3: The Comparison Lens)
-      ctx.strokeStyle = '#eab308';
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.arc(320, 175, 92, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(132, 204, 22, 0.22)';
+      ctx.arc(x, y, 2.5 + (i % 3), 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#fef08a';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(240, 135);
-      ctx.lineTo(320, 175);
-      ctx.lineTo(402, 210);
-      ctx.moveTo(320, 175);
-      ctx.lineTo(295, 260);
-      ctx.stroke();
-    } else if (motif === 'hannam_door') {
-      // Velvet rope doorway opening into clean midnight street air (Stand 4)
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
-      ctx.fillRect(235, 58, 170, 240);
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(235, 58, 170, 240);
-      ctx.strokeStyle = '#f43f5e';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(235, 195);
-      ctx.quadraticCurveTo(320, 225, 405, 195);
-      ctx.stroke();
-    } else if (motif === 'columbarium_bench') {
-      // Red-gold autumn maples & bamboo water basin outside Hall C (Well 3)
-      ctx.fillStyle = 'rgba(217, 119, 6, 0.55)';
-      for (let i = 0; i < 18; i++) {
-        ctx.beginPath();
-        ctx.arc(120 + i * 24, 95 + (i % 3) * 18, 26, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.fillStyle = '#475569';
-      ctx.fillRect(250, 215, 140, 55);
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillRect(264, 224, 112, 24);
-    } else if (motif === 'iron_collar') {
-      // Snapping iron collar & acoustic guitar case in rehearsal booth (Stand 6)
-      ctx.strokeStyle = '#94a3b8';
-      ctx.lineWidth = 7;
-      ctx.beginPath();
-      ctx.arc(275, 175, 55, 0.3, Math.PI * 1.35);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(365, 175, 55, Math.PI * 1.65, Math.PI * 0.7);
-      ctx.stroke();
-      ctx.fillStyle = '#fbbf24';
-      ctx.beginPath();
-      ctx.arc(320, 175, 14, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (motif === 'pastor_office') {
-      // Twelve folding chairs & steaming kettle in Pastor Ji's basement office (Well 4)
-      ctx.strokeStyle = '#7dd3fc';
-      ctx.lineWidth = 2;
-      for (let i = 0; i < 12; i++) {
-        const a = (i / 12) * Math.PI * 2;
-        const x = 320 + Math.cos(a) * 110;
-        const y = 195 + Math.sin(a) * 52;
-        ctx.strokeRect(x - 12, y - 12, 24, 24);
-      }
-    } else {
-      // Cloud of Witnesses warm amber points along the horizon (Rev 4:6; Heb 12:1)
-      for (let i = 0; i < 36; i++) {
-        const x = 30 + (i / 35) * 580;
-        const y = 185 + Math.sin(i * 1.7) * 14;
-        ctx.fillStyle = 'rgba(255, 222, 148, 0.72)';
-        ctx.beginPath();
-        ctx.arc(x, y, 2.5 + (i % 3), 0, Math.PI * 2);
-        ctx.fill();
-      }
     }
 
-    // Crystal reflection lines on the Sea of Glass floor
     ctx.strokeStyle = 'rgba(124, 232, 255, 0.38)';
     ctx.lineWidth = 1.5;
     for (let r = 0; r < 6; r++) {
@@ -213,22 +104,18 @@ export class PainterlyEngine {
       ctx.stroke();
     }
 
-    // Clean title caption bar at bottom
     ctx.fillStyle = 'rgba(10, 16, 28, 0.84)';
     ctx.fillRect(0, 344, 640, 56);
     ctx.fillStyle = '#ffd166';
     ctx.font = 'bold 16px Georgia, serif';
-    ctx.fillText(title, 20, 370);
-    ctx.fillStyle = '#93c5fd';
-    ctx.font = '12px system-ui, sans-serif';
-    ctx.fillText('The Narrow Way Walk · Zone I Scene Study', 20, 390);
+    ctx.fillText(title, 20, 375);
 
     return canvas.toDataURL('image/png');
   }
 }
 
 export function createPainterlySkyDome(THREE, radius = 180) {
-  const geo = new THREE.SphereGeometry(radius, 32, 24);
+  const geo = new THREE.SphereGeometry(radius, 24, 16);
   const mat = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: false,
@@ -309,14 +196,14 @@ export function createSeaOfGlassMaterial(THREE = THREE_NS, deepHex = '#1a3f60', 
 
 const defaultPainterly = new PainterlyEngine(THREE_NS);
 
-// Canonical mapping of the 15 approved assets/art/ files
+// Canonical mapping of the 6 Stage banners (each unique to its Stage)
 export const STAGE_ART_MAP = {
-  0: './assets/art/sea-01-panel-06.png', // Stage I: 2,000-Seat Venue & Loading Bay Rain
-  1: './assets/art/sea-01-panel-11.png', // Stage II: Neon Alley & Sea of Glass
-  2: './assets/art/sea-01-panel-14.png', // Stage III: Rehearsal, Apartment & Hannam-dong
-  3: './assets/art/sea-01-panel-35.png', // Stage IV: Seoul Columbarium Steps & Hall C
-  4: './assets/art/sea-01-panel-74.png', // Stage V: Studio, Basement Youth Q&A & Kitchen Floor
-  5: './assets/art/sea-01-panel-92.png'  // Stage VI: Sea of Glass Climax & Thursday Circle
+  0: './assets/art/sea-01-panel-05.png', // Stage I: 2,000-Seat Venue Stage Lights & VIP Exit
+  1: './assets/art/sea-01-panel-11.png', // Stage II: Neon Alley & Sea of Glass Threshold
+  2: './assets/art/sea-01-panel-35.png', // Stage III: Rehearsal, Apartment & Hannam-dong
+  3: './assets/art/sea-01-panel-42.png', // Stage IV: Seoul Columbarium Steps & Hall C
+  4: './assets/art/sea-01-panel-65.png', // Stage V: 40-Person Church Basement & Studio
+  5: './assets/art/sea-01-panel-85.png'  // Stage VI: Dawn over the Sea of Glass & Four Mentors
 };
 
 export const PORTRAIT_ART_MAP = {
@@ -328,50 +215,57 @@ export const PORTRAIT_ART_MAP = {
   adaeze: './assets/art/adaeze.png',
   cover: './assets/art/sea-01-cover-art.png',
   coverPreview: './assets/art/sea-01-cover-preview.jpg',
+  gatehouseBanner: './assets/art/sea-01-panel-98.png',
   panel04: './assets/art/sea-01-panel-04.png'
 };
 
-// Dedicated art mapping for each of the 8 Stands (never reuses Mr. Park's alley image for Stand 1)
+// Dedicated painted panel for each of the 8 Stands (every Stand has its own unique painted panel)
 export const STAND_ART_MAP = {
-  stand_1: { url: null, motif: 'mirror', stageIdx: 0 }, // Stand 1: The Applause Echo (VIP Lounge Gilded Mirror)
-  stand_2: { url: './assets/art/sea-01-panel-06.png', motif: 'alley', stageIdx: 1 }, // Stand 2: The Patient Whisper (Back Alley)
-  stand_3: { url: null, motif: 'comparison_lens', stageIdx: 2 }, // Stand 3: The Comparison Lens
-  stand_4: { url: null, motif: 'hannam_door', stageIdx: 2 }, // Stand 4: The Back-Room Boast at Hannam-dong
-  stand_5: { url: './assets/art/sea-01-panel-11.png', motif: 'grief', stageIdx: 3 }, // Stand 5: The Curated Sorrow
-  stand_6: { url: null, motif: 'iron_collar', stageIdx: 3 }, // Stand 6: The Iron Collar of Burnout
-  stand_7: { url: './assets/art/sea-01-panel-92.png', motif: 'mirror', stageIdx: 4 }, // Stand 7: The Mirror-Guard of Pride
-  stand_8: { url: './assets/art/sea-01-panel-74.png', motif: 'climax', stageIdx: 5 }  // Stand 8: The Obsidian Crown & Fig-Leaf Door
+  stand_1: { url: './assets/art/sea-01-panel-53.png', motif: 'mirror', stageIdx: 0 },          // Stand 1: The Applause Echo (Backstage Lighted Mirror)
+  stand_2: { url: './assets/art/sea-01-panel-08.png', motif: 'alley', stageIdx: 1 },           // Stand 2: The Patient Whisper (Addictions #23 in Back Alley)
+  stand_3: { url: './assets/art/sea-01-panel-30.png', motif: 'comparison_lens', stageIdx: 2 }, // Stand 3: The Comparison Lens (Jealousy #27 Viral Clips)
+  stand_4: { url: './assets/art/sea-01-panel-38.png', motif: 'hannam_door', stageIdx: 2 },     // Stand 4: The Back-Room Boast at Hannam-dong
+  stand_5: { url: './assets/art/sea-01-panel-52.png', motif: 'grief', stageIdx: 3 },           // Stand 5: The Curated Sorrow (Weeping at Hall C)
+  stand_6: { url: './assets/art/sea-01-panel-43.png', motif: 'iron_collar', stageIdx: 3 },     // Stand 6: The Iron Collar of Burnout (Infirmity #19)
+  stand_7: { url: './assets/art/sea-01-panel-66.png', motif: 'mirror', stageIdx: 4 },          // Stand 7: The Mirror-Guard of Pride (Youth Room Mic)
+  stand_8: { url: './assets/art/sea-01-panel-81.png', motif: 'climax', stageIdx: 5 }           // Stand 8: The Obsidian Crown & Fig-Leaf Door (Climax Stand)
 };
 
-// Dedicated art mapping for each of the 5 Wells (Well 1 uses David on the Sea of Glass panel-04)
+// Dedicated painted panel for each of the 5 Wells (every Well has its own unique painted panel)
 export const WELL_ART_MAP = {
-  well_1: { url: './assets/art/sea-01-panel-04.png', motif: 'sea_of_glass', stageIdx: 1 },
-  well_2: { url: null, motif: 'dawn_window', stageIdx: 2 },
-  well_3: { url: null, motif: 'columbarium_bench', stageIdx: 3 },
-  well_4: { url: null, motif: 'pastor_office', stageIdx: 3 },
-  well_5: { url: './assets/art/sea-01-panel-35.png', motif: 'sea_of_glass', stageIdx: 4 }
+  well_1: { url: './assets/art/sea-01-panel-04.png', motif: 'sea_of_glass', stageIdx: 1 },      // Well 1: King David & Kinnor on the Sea of Glass
+  well_2: { url: './assets/art/sea-01-panel-39.png', motif: 'dawn_window', stageIdx: 2 },       // Well 2: Clean Night Air & Dawn Window
+  well_3: { url: './assets/art/sea-01-panel-49.png', motif: 'columbarium_bench', stageIdx: 3 }, // Well 3: Columbarium Bench with David
+  well_4: { url: './assets/art/sea-01-panel-62.png', motif: 'pastor_office', stageIdx: 3 },     // Well 4: Pastor Ji's Basement Office
+  well_5: { url: './assets/art/sea-01-panel-74.png', motif: 'sea_of_glass', stageIdx: 4 }       // Well 5: Kitchen Floor Tilting into the Sea of Glass
 };
 
-// Dedicated art mapping for each of the 8 Treasures
+// Dedicated painted panel for each of the 8 Treasures (zero overlap within any stage)
 export const TREASURE_ART_MAP = {
-  treasure_1: './assets/art/sea-01-panel-06.png', // Mr. Park in the Loading-Bay Rain
-  treasure_2: './assets/art/elias.png',           // Elias coaching Min-jun on acoustic guitar
-  treasure_3: './assets/art/sea-01-cover-art.png',// Pouring Rain under the Mapo-gu Overpass
-  treasure_4: './assets/art/sea-01-panel-35.png', // Columbarium Stone Staircase
-  treasure_5: './assets/art/sea-01-panel-92.png', // Listening on the Floor with Soo-jin
-  treasure_6: './assets/art/sea-01-panel-14.png', // Standing up for Intern Hoon
-  treasure_7: './assets/art/adaeze.png',          // Shielding Adaeze & Clasping Talia's Hand
-  treasure_8: './assets/art/sea-01-panel-11.png'  // Chair #7 in Pastor Ji's Thursday Basement Circle
+  treasure_1: './assets/art/sea-01-panel-06.png', // Stage I: Mr. Park in the Loading-Bay Rain
+  treasure_2: './assets/art/sea-01-panel-28.png', // Stage III: Midnight Rehearsal Room with Min-jun
+  treasure_3: './assets/art/sea-01-panel-31.png', // Stage III: Stepping Out from the Apartment into the Rainy Avenue
+  treasure_4: './assets/art/sea-01-panel-45.png', // Stage IV: Columbarium Hill Steps
+  treasure_5: './assets/art/sea-01-panel-69.png', // Stage V: Concrete Steps After the 40-Person Youth Q&A
+  treasure_6: './assets/art/sea-01-panel-95.png', // Stage V: Studio Control Booth Mixing Board with Hoon
+  treasure_7: './assets/art/sea-01-panel-76.png', // Stage VI: Shielding Adaeze & Clasping Talia's Hand on the Glass
+  treasure_8: './assets/art/sea-01-panel-94.png'  // Stage VI: Honest Recovery Clause at the Contract Table
 };
 
+// Dedicated painted panel for each of the 7 Wisdom Pages (zero overlap within any stage)
 export const WISDOM_ART_MAP = {
-  wisdom_1: './assets/art/sea-01-panel-04.png',
-  wisdom_2: './assets/art/sea-01-panel-14.png',
-  wisdom_3: './assets/art/sea-01-panel-11.png',
-  wisdom_4: './assets/art/david.png',
-  wisdom_5: './assets/art/sea-01-panel-74.png',
-  wisdom_6: './assets/art/sea-01-panel-92.png',
-  wisdom_7: './assets/art/sea-01-panel-35.png'
+  wisdom_1: './assets/art/sea-01-panel-14.png', // Stage II: David's Unvarnished Honesty on the Sea of Glass
+  wisdom_2: './assets/art/sea-01-panel-41.png', // Stage III: Unbranded Walk Home from Hannam-dong
+  wisdom_3: './assets/art/sea-01-panel-47.png', // Stage IV: The Gatehouse at Mahanaim
+  wisdom_4: './assets/art/sea-01-panel-64.png', // Stage IV: Quiet Evening After Pastor Ji's Office
+  wisdom_5: './assets/art/sea-01-panel-89.png', // Stage V: Kitchen Floor Beside the Untouched Bottle
+  wisdom_6: './assets/art/sea-01-panel-67.png', // Stage V: 40-Chair Youth Basement Relief
+  wisdom_7: './assets/art/sea-01-panel-86.png'  // Stage VI: Four Mentors Behind the Four Champions
+};
+
+export const ENDING_ART_MAP = {
+  good_ending: './assets/art/sea-01-panel-96.png', // Section 299: The Honest Recovery Road
+  true_ending: './assets/art/sea-01-panel-100.png' // Section 300: The Unseen Chord
 };
 
 // Image preloader cache so modal paintings display without flicker
@@ -383,6 +277,7 @@ export function preloadAllZone1Art() {
     ...Object.values(PORTRAIT_ART_MAP),
     ...Object.values(TREASURE_ART_MAP),
     ...Object.values(WISDOM_ART_MAP),
+    ...Object.values(ENDING_ART_MAP),
     ...Object.values(STAND_ART_MAP).map((x) => x.url).filter(Boolean),
     ...Object.values(WELL_ART_MAP).map((x) => x.url).filter(Boolean)
   ]);
@@ -412,62 +307,61 @@ export function createPainterlyArtDataURL({ stageIdx = 0, title = 'The Unseen Ch
   return defaultPainterly.createSceneCanvasDataUrl(stageIdx, subtitle ? `${title} · ${subtitle}` : title, motif);
 }
 
-// Loads a linked PNG or bespoke scene study into a modal <img> with a styled
-// loading state (soft gradient + spinner) so broken-image icons never appear.
+// Loads a linked PNG into a modal <img> with a styled loading state (soft gradient + spinner)
+// so broken-image icons never appear.
 export function loadArtIntoImage(imgEl, badgeEl, { stageIdx = 0, pngUrl, title = 'The Unseen Chord', subtitle = '', motif = 'mirror' } = {}) {
   if (!imgEl) return;
   const wrap = imgEl.closest('.modal-art-frame');
-  if (wrap) wrap.classList.add('is-loading');
+  if (badgeEl) {
+    badgeEl.textContent = '';
+    badgeEl.classList.add('hidden');
+  }
 
   if (!pngUrl) {
     imgEl.src = createPainterlyArtDataURL({ stageIdx, title, subtitle, motif });
-    imgEl.dataset.artSource = 'scene-study';
-    imgEl.dataset.loadedUrl = `scene-study:${motif}`;
+    imgEl.dataset.artSource = 'canvas-art';
+    imgEl.dataset.loadedUrl = `canvas:${motif}`;
     if (wrap) wrap.classList.remove('is-loading');
-    if (badgeEl) {
-      badgeEl.textContent = 'Illustrated Scene Study · Painted Panel Listed in assets.md';
-      badgeEl.classList.remove('hidden');
-    }
     return;
   }
 
-  const applySuccess = () => {
+  const cached = preloadedImageCache.get(pngUrl);
+  if (cached && cached.complete && cached.naturalWidth > 0) {
+    imgEl.onload = null;
+    imgEl.onerror = null;
     imgEl.src = pngUrl;
     imgEl.dataset.artSource = 'linked-png';
     imgEl.dataset.loadedUrl = pngUrl;
     if (wrap) wrap.classList.remove('is-loading');
-    if (badgeEl) {
-      badgeEl.textContent = '';
-      badgeEl.classList.add('hidden');
-    }
-  };
-
-  const cached = preloadedImageCache.get(pngUrl);
-  if (cached && cached.complete && cached.naturalWidth > 0) {
-    applySuccess();
     return;
   }
 
-  const probe = cached || new Image();
-  probe.onload = () => applySuccess();
-  probe.onerror = () => {
-    imgEl.src = createPainterlyArtDataURL({ stageIdx, title, subtitle, motif });
-    imgEl.dataset.artSource = 'scene-study';
-    imgEl.dataset.loadedUrl = `scene-study:${motif}`;
+  if (wrap) wrap.classList.add('is-loading');
+
+  imgEl.onload = () => {
+    imgEl.dataset.artSource = 'linked-png';
+    imgEl.dataset.loadedUrl = pngUrl;
     if (wrap) wrap.classList.remove('is-loading');
-    if (badgeEl) {
-      badgeEl.textContent = 'Illustrated Scene Study · Painted Panel Listed in assets.md';
-      badgeEl.classList.remove('hidden');
-    }
   };
+  imgEl.onerror = () => {
+    imgEl.onload = null;
+    imgEl.src = createPainterlyArtDataURL({ stageIdx, title, subtitle, motif });
+    imgEl.dataset.artSource = 'canvas-art';
+    imgEl.dataset.loadedUrl = `canvas:${motif}`;
+    if (wrap) wrap.classList.remove('is-loading');
+  };
+  imgEl.src = pngUrl;
+
   if (!cached) {
-    probe.src = pngUrl;
-    preloadedImageCache.set(pngUrl, probe);
+    const pre = new Image();
+    pre.decoding = 'async';
+    pre.src = pngUrl;
+    preloadedImageCache.set(pngUrl, pre);
   }
 }
 
 // Loads a stage or portrait PNG into a Three.js Texture first; falls back to
-// the painterly canvas study if absent.
+// the painterly canvas if absent.
 export function loadStageArtTexture(stageIdx = 0, title = 'The Unseen Chord', customUrl = null) {
   const targetUrl = customUrl || STAGE_ART_MAP[stageIdx] || STAGE_ART_MAP[0];
   const initCanvas = document.createElement('canvas');
@@ -488,8 +382,8 @@ export function loadStageArtTexture(stageIdx = 0, title = 'The Unseen Chord', cu
     const fbImg = new Image();
     fbImg.onload = () => {
       tex.image = fbImg;
-      tex.userData.artSource = 'scene-study';
-      tex.userData.url = 'scene-study';
+      tex.userData.artSource = 'canvas-art';
+      tex.userData.url = 'canvas-art';
       tex.needsUpdate = true;
     };
     fbImg.src = createPainterlyArtDataURL({ stageIdx, title });

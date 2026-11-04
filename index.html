@@ -92,9 +92,24 @@
     button.btn-primary {
       background: rgba(2, 132, 199, 0.52); border-color: var(--aqua); color: #fff; font-weight: 600;
     }
+    button.btn-applied, button.btn-applied:disabled {
+      background: rgba(5, 150, 105, 0.32) !important;
+      border-color: var(--emerald) !important;
+      color: #a7f3d0 !important;
+      font-weight: 700 !important;
+      opacity: 1 !important;
+      cursor: default;
+    }
+    button.btn-claim-victory {
+      background: linear-gradient(90deg, rgba(5, 150, 105, 0.85), rgba(2, 132, 199, 0.85)) !important;
+      border-color: #6ee7b7 !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+      box-shadow: 0 0 16px rgba(52, 211, 153, 0.45);
+    }
     .hud-subbar {
       display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
-      padding: 0 4px;
+      padding: 0 4px; position: relative;
     }
     .stage-tabs {
       display: flex; flex-wrap: wrap; gap: 3px;
@@ -102,11 +117,33 @@
       border-radius: 999px; padding: 3px 6px; backdrop-filter: blur(8px);
     }
     .stage-tab {
+      position: relative;
       font-size: 0.73rem; padding: 3px 8px; border-radius: 999px;
       border-color: transparent; background: transparent; color: var(--text-muted);
     }
     .stage-tab.active {
       background: rgba(56, 189, 248, 0.28); border-color: rgba(92, 200, 255, 0.58); color: #fff; font-weight: 700;
+    }
+    .stage-tab.cleared:not(.active) {
+      color: #a7f3d0; border-color: rgba(52, 211, 153, 0.32);
+    }
+    .stage-tab.locked {
+      color: #64748b; background: rgba(15, 23, 42, 0.45);
+      border-color: rgba(100, 116, 139, 0.25); cursor: not-allowed;
+    }
+    .stage-tab.locked:hover::after,
+    .stage-tab.locked.tooltip-active::after {
+      content: attr(data-tooltip);
+      position: absolute; top: calc(100% + 7px); left: 50%; transform: translateX(-50%);
+      background: rgba(8, 14, 26, 0.96); border: 1px solid var(--gold);
+      color: #fde68a; padding: 5px 10px; border-radius: 8px; font-size: 0.72rem;
+      white-space: nowrap; z-index: 40; pointer-events: none;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.65);
+    }
+    .gating-toast {
+      background: rgba(120, 53, 15, 0.92); border: 1px solid var(--gold);
+      color: #fef3c7; border-radius: 999px; padding: 5px 14px; font-size: 0.78rem;
+      font-weight: 600; align-self: flex-start; box-shadow: 0 6px 20px rgba(0,0,0,0.55);
     }
     .controls-hint-card {
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -144,6 +181,7 @@
     .node-chip.type-relic { border-color: #93c5fd; color: #dbeafe; }
     .node-chip.type-gatehouse_finale { border-color: #fde047; background: rgba(180, 83, 9, 0.35); color: #fef9c3; }
     .node-chip.done { border-color: var(--emerald); color: #a7f3d0; }
+    .node-chip.locked-node { border-color: rgba(100, 116, 139, 0.45); color: #94a3b8; opacity: 0.78; }
 
     .bottom-hud-wrap {
       display: flex; align-items: flex-end; justify-content: space-between; gap: 10px;
@@ -163,6 +201,17 @@
     }
     .hidden { display: none !important; }
 
+    /* Sea of Glass Finale Payoff Overlay */
+    #sea-of-glass-payoff-bar {
+      position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+      z-index: 45; width: min(680px, 92vw);
+      background: rgba(8, 18, 34, 0.90); border: 1px solid var(--gold);
+      border-radius: 14px; padding: 14px 18px; backdrop-filter: blur(12px);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      pointer-events: auto;
+    }
+
     .modal-backdrop {
       position: fixed; inset: 0; z-index: 50; pointer-events: auto;
       background: rgba(3, 7, 18, 0.82); backdrop-filter: blur(6px);
@@ -174,9 +223,30 @@
       border-radius: 14px; padding: 18px 22px; box-shadow: 0 20px 50px rgba(0,0,0,0.75);
       display: flex; flex-direction: column; gap: 10px;
     }
+    /* Title screen layout */
+    .title-screen-card {
+      max-width: 680px; text-align: center; align-items: center;
+      background: radial-gradient(circle at 50% 0%, #172d4d 0%, #0a1222 70%);
+      border: 1px solid rgba(251, 191, 36, 0.55); padding: 22px 26px;
+    }
+    .title-cover-showcase {
+      width: 100%; max-width: 560px; height: 240px; border-radius: 12px;
+      overflow: hidden; position: relative; border: 1px solid rgba(92, 200, 255, 0.45);
+      background: #070d19; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.65);
+    }
+    .title-cover-bg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; opacity: 0.38; filter: blur(3px);
+    }
+    .title-cover-fg {
+      position: relative; z-index: 2; height: 92%; width: auto;
+      border-radius: 6px; border: 1px solid rgba(251, 191, 36, 0.65);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8); object-fit: contain;
+    }
     /* Fixed-height Stand modal layout so the Roll button never moves across rounds */
     .stand-card-fixed {
-      height: min(670px, 92vh);
+      height: min(680px, 92vh);
       max-height: 92vh;
       overflow: hidden;
       display: flex;
@@ -193,9 +263,14 @@
     .stand-combat-log {
       background: #060a12; border: 1px solid rgba(92, 200, 255, 0.3);
       border-radius: 8px; padding: 9px 11px;
-      height: 120px; min-height: 120px; max-height: 120px;
+      height: 112px; min-height: 112px; max-height: 112px;
       overflow-y: auto; font-size: 0.81rem;
       display: flex; flex-direction: column; gap: 4px; flex-shrink: 0;
+    }
+    .stand-victory-banner {
+      background: rgba(5, 150, 105, 0.22); border: 1px solid var(--emerald);
+      border-radius: 8px; padding: 7px 10px; font-size: 0.8rem; color: #d1fae5;
+      line-height: 1.38; max-height: 68px; overflow-y: auto; flex-shrink: 0;
     }
     .stand-bottom-actions {
       display: grid;
@@ -212,6 +287,7 @@
       height: 32px; font-size: 0.72rem; padding: 2px 6px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
+    .stat-reduced { color: var(--emerald); font-weight: 700; }
     .stronghold-def-banner {
       background: rgba(251, 191, 36, 0.12); border-left: 3px solid var(--gold);
       padding: 5px 10px; border-radius: 6px; font-size: 0.77rem; color: #fde68a;
@@ -241,13 +317,9 @@
     .inv-card-body { font-family: var(--font-serif); font-size: 0.85rem; color: #e2e8f0; margin-top: 3px; }
     #relic-turntable-canvas { width: 100%; height: 240px; background: radial-gradient(circle, #162844 0%, #070b14 100%); border-radius: 10px; border: 1px solid var(--border-aqua); touch-action: none; }
     .code-textarea { width: 100%; min-height: 60px; background: #050811; color: var(--aqua); border: 1px solid var(--border-aqua); border-radius: 8px; padding: 8px; font-family: monospace; font-size: 0.8rem; }
-    .art-fallback-badge {
-      font-size: 0.72rem; color: var(--gold); background: rgba(180, 83, 9, 0.22);
-      border: 1px dashed rgba(251, 191, 36, 0.6); border-radius: 6px; padding: 3px 8px;
-    }
     /* Reserved aspect ratio + soft gradient + spinner while loading so nothing jumps */
     .modal-art-frame {
-      position: relative; width: 100%; height: 124px; aspect-ratio: 16 / 9;
+      position: relative; width: 100%; height: 128px; aspect-ratio: 16 / 9;
       border-radius: 8px; overflow: hidden; flex-shrink: 0;
       border: 1px solid var(--border-aqua);
       background: linear-gradient(135deg, #0d1b30 0%, #1d3557 50%, #0f172a 100%);
@@ -260,7 +332,7 @@
     }
     @keyframes artSpin { to { transform: rotate(360deg); } }
     .modal-art-img {
-      width: 100%; height: 100%; object-fit: cover; display: block;
+      width: 100%; height: 100%; object-fit: cover; object-position: 50% 26%; display: block;
     }
     .stage-banner-row { display: flex; gap: 12px; align-items: center; }
     #stage-art-thumb {
@@ -274,6 +346,7 @@
       .guide-grid { grid-template-columns: 1fr; }
       .stand-card-fixed { height: 94vh; }
       .modal-art-frame { height: 96px; }
+      .title-cover-showcase { height: 190px; }
     }
   </style>
 </head>
@@ -312,7 +385,7 @@
           <div class="hud-pill"><span class="hud-pill-label">Token</span><span id="hud-token" class="hud-pill-val muted">Unfound</span></div>
         </div>
         <div class="nav-btns">
-          <button id="btn-nav-zone-start" title="Open Title Screen or Return to Stage I">↺ Start</button>
+          <button id="btn-nav-zone-start" title="Open Title Screen">↺ Title</button>
           <button id="btn-nav-inventory">Scrolls</button>
           <button id="btn-nav-relics">3D Relics</button>
           <button id="btn-nav-gatehouse" class="btn-gold">Save / Gatehouse</button>
@@ -332,6 +405,8 @@
         </div>
       </div>
 
+      <div id="gating-toast" class="gating-toast hidden" role="status" aria-live="polite"></div>
+
       <div id="stage-drawer" class="stage-drawer hidden">
         <div class="stage-banner-row">
           <img id="stage-art-thumb" alt="Stage Scene Panel" />
@@ -341,7 +416,7 @@
               <span id="stage-subtitle"></span>
             </div>
             <p id="stage-narration"></p>
-            <div id="stage-art-badge" class="art-fallback-badge hidden"></div>
+            <div id="stage-art-badge" class="hidden"></div>
           </div>
           <button id="btn-close-story" title="Hide Stage Story">✕</button>
         </div>
@@ -359,7 +434,67 @@
     </div>
   </div>
 
-  <!-- TITLE SCREEN & FIRST-SIGHT STAT EXPLANATION MODAL -->
+  <!-- SEA OF GLASS FINALE MOMENT BAR (UNDER 10s, SKIPPABLE) -->
+  <div id="sea-of-glass-payoff-bar" class="hidden">
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      <strong style="color:var(--gold); font-family:var(--font-serif); font-size:0.98rem;">
+        ✦ Dawn Breaks Over the Sea of Glass (Revelation 15:2 KJV)
+      </strong>
+      <p id="sea-of-glass-payoff-text" class="narrative-p" style="font-size:0.82rem;">
+        The crystal shore brightens with golden fire as Elias and you stand together before David, Daniel, Paul, and Esther…
+      </p>
+    </div>
+    <button id="btn-skip-payoff" class="btn-gold" style="flex-shrink:0;">Skip →</button>
+  </div>
+
+  <!-- REAL TITLE SCREEN MODAL (APPEARS BEFORE INTRO / STATS MODAL) -->
+  <div id="title-modal" class="modal-backdrop hidden">
+    <div class="modal-card title-screen-card">
+      <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
+        <div style="font-size:0.76rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--gold); font-weight:700;">
+          The Narrow Way · Interactive 3D Companion Gamebook
+        </div>
+        <h1 class="modal-title" style="font-size:1.65rem; color:#fff;">The Narrow Way Walk</h1>
+        <div class="modal-meta" style="font-size:0.9rem; color:var(--aqua);">
+          Zone I · Book 1: The Unseen Chord (Elias Cho &amp; David the King)
+        </div>
+      </div>
+
+      <div class="title-cover-showcase">
+        <img id="title-bg-img" class="title-cover-bg" src="./assets/art/sea-01-panel-98.png" alt="" />
+        <img id="title-cover-img" class="title-cover-fg" src="./assets/art/sea-01-cover-preview.jpg" alt="Book 1: The Unseen Chord Cover Art" />
+      </div>
+
+      <p class="narrative-p" style="font-size:0.84rem; max-width:560px; color:#cbd5e1;">
+        Walk beside 24-year-old session guitarist Elias Cho from the rain-slicked neon alleys of Seoul onto the crystalline Sea of Glass. Stand against Strongholds with KJV Scripture, rest at the Wells of Living Water, and discover the Unseen Treasure that grows only when you give.
+      </p>
+
+      <div id="title-save-summary" class="hidden" style="font-size:0.8rem; color:#fde68a; background:rgba(180,83,9,0.22); border:1px solid rgba(251,191,36,0.5); padding:5px 14px; border-radius:999px;"></div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center; width:100%;">
+        <button id="btn-title-continue" class="btn-gold hidden" style="padding:8px 18px; font-size:0.88rem;">
+          Continue Walk →
+        </button>
+        <button id="btn-title-start" class="btn-primary" style="padding:8px 20px; font-size:0.88rem;">
+          Start Walk →
+        </button>
+        <button id="btn-title-reset" class="hidden" style="padding:7px 14px; font-size:0.8rem; border-color:rgba(248,113,113,0.5); color:#fca5a5;">
+          Reset Walk
+        </button>
+      </div>
+
+      <div id="title-reset-confirm" class="choice-card hidden" style="border-color:#f87171; max-width:460px; width:100%; text-align:center;">
+        <strong style="color:#fca5a5; font-size:0.84rem;">Reset your saved walk and start fresh from Stage I?</strong>
+        <p class="narrative-p" style="font-size:0.78rem;">This clears your current local save so you can begin a brand-new walk from Stage I.</p>
+        <div style="display:flex; gap:8px; justify-content:center; margin-top:4px;">
+          <button id="btn-title-reset-yes" style="background:rgba(185,28,28,0.65); border-color:#f87171; color:#fff; font-weight:700;">Yes, Reset Walk</button>
+          <button id="btn-title-reset-no">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTRO & FIRST-SIGHT STAT EXPLANATION MODAL -->
   <div id="welcome-modal" class="modal-backdrop hidden">
     <div class="modal-card">
       <div class="modal-head">
@@ -370,9 +505,9 @@
         <button data-close-modal>✕</button>
       </div>
       <div class="modal-art-frame">
-        <img id="welcome-art-img" class="modal-art-img" alt="Book 1 Cover Art" />
+        <img id="welcome-art-img" class="modal-art-img" alt="Book 1 Scene Art" />
       </div>
-      <div id="welcome-art-badge" class="art-fallback-badge hidden"></div>
+      <div id="welcome-art-badge" class="hidden"></div>
       <div class="kjv-box">
         "Pride goeth before destruction, and an haughty spirit before a fall. Better it is to be of an humble spirit with the lowly, than to divide the spoil with the proud." — Proverbs 16:18–19 (KJV)
       </div>
@@ -397,7 +532,7 @@
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button id="btn-continue-walk" class="btn-gold hidden">Continue Saved Walk →</button>
-          <button id="btn-begin-walk" class="btn-primary">Start New Walk beside Elias →</button>
+          <button id="btn-begin-walk" class="btn-primary">Begin Walk in Stage I →</button>
         </div>
       </div>
     </div>
@@ -427,7 +562,7 @@
         <div class="choice-card">
           <strong style="color:var(--coral);">2. Stands, Dice &amp; Victory Law</strong>
           <p class="narrative-p" style="font-size:0.8rem;">
-            Before Round 1, apply <strong>Step 1: The Victory Law</strong> (humility/confession) and speak a resonant <strong>KJV Scroll</strong> to lower the Stronghold's Courage &amp; Strength. Each round rolls transparent <code>2d6 + Courage</code> vs the Stronghold's <code>2d6 + Courage</code>. Higher total reduces the other side's Strength by 2.
+            Before Round 1, apply <strong>Step 1: The Victory Law</strong> (humility/confession) and speak a resonant <strong>KJV Scroll</strong> to lower the Stronghold's Courage &amp; Strength. Each round rolls transparent <code>2d6 + Courage</code> vs the Stronghold's <code>2d6 + Courage</code>. Higher total reduces the other side's Strength by 2. Clear every Stand in a stage to unlock the next stage.
           </p>
         </div>
         <div class="choice-card">
@@ -447,7 +582,7 @@
         </div>
       </div>
       <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-        <button id="btn-guide-to-title">Open Title Screen &amp; Stats</button>
+        <button id="btn-guide-to-title">Open Title Screen</button>
         <button data-close-modal class="btn-primary">Back to the Walk</button>
       </div>
     </div>
@@ -466,7 +601,7 @@
       <div class="modal-art-frame">
         <img id="stage-complete-art-img" class="modal-art-img" alt="Stage Transition Art" />
       </div>
-      <div id="stage-complete-art-badge" class="art-fallback-badge hidden"></div>
+      <div id="stage-complete-art-badge" class="hidden"></div>
       <p id="stage-complete-summary" class="narrative-p"></p>
       <div class="choice-card" style="border-color:var(--gold);">
         <strong style="color:var(--gold);">Book 1: The Unseen Chord · Interactive Gamebook Edition</strong>
@@ -494,7 +629,7 @@
       <div class="modal-art-frame">
         <img id="wisdom-art-img" class="modal-art-img" alt="Wisdom Scene Panel" />
       </div>
-      <div id="wisdom-art-badge" class="art-fallback-badge hidden"></div>
+      <div id="wisdom-art-badge" class="hidden"></div>
       <div class="kjv-box">
         <div id="wisdom-kjv-text"></div>
         <div id="wisdom-kjv-ref" style="margin-top:6px; font-weight:700; color:var(--gold);"></div>
@@ -523,7 +658,7 @@
       <div class="modal-art-frame">
         <img id="well-art-img" class="modal-art-img" alt="Well Scene Panel" />
       </div>
-      <div id="well-art-badge" class="art-fallback-badge hidden"></div>
+      <div id="well-art-badge" class="hidden"></div>
       <div id="well-reward-banner" style="background:rgba(52,211,153,0.16); border:1px solid var(--emerald); color:#a7f3d0; padding:8px 12px; border-radius:8px; font-weight:600; font-size:0.84rem;"></div>
       <p id="well-narrative" class="narrative-p"></p>
       <div id="well-kjv-text" class="kjv-box"></div>
@@ -551,7 +686,7 @@
       <div class="modal-art-frame">
         <img id="treasure-art-img" class="modal-art-img" alt="Treasure Scene Panel" />
       </div>
-      <div id="treasure-art-badge" class="art-fallback-badge hidden"></div>
+      <div id="treasure-art-badge" class="hidden"></div>
       <p id="treasure-narrative" class="narrative-p"></p>
       <div class="choice-grid">
         <div class="choice-card" style="border-color:var(--gold);">
@@ -588,7 +723,7 @@
         <div class="modal-art-frame">
           <img id="stand-art-img" class="modal-art-img" alt="Stand Scene Panel" />
         </div>
-        <div id="stand-art-badge" class="art-fallback-badge hidden"></div>
+        <div id="stand-art-badge" class="hidden"></div>
         <div id="stand-stronghold-def" class="stronghold-def-banner">
           <strong>Stronghold:</strong> A Stronghold is a spiritual lie or habit you stand against with God's Word.
         </div>
@@ -598,7 +733,7 @@
       </div>
 
       <div class="stand-middle-section">
-        <p id="stand-narrative" class="narrative-p" style="font-size:0.81rem; max-height:46px; overflow-y:auto;"></p>
+        <p id="stand-narrative" class="narrative-p" style="font-size:0.81rem; max-height:44px; overflow-y:auto;"></p>
         <div class="choice-grid" style="gap:8px;">
           <div class="choice-card" style="padding:7px 10px;">
             <strong style="color:var(--aqua); font-size:0.81rem;">Fellow-Traveler (You)</strong>
@@ -613,6 +748,7 @@
           <button id="btn-stand-victory-law" class="btn-gold">Step 1: Victory Law</button>
           <button id="btn-stand-scroll">Speak Resonant KJV Scroll</button>
         </div>
+        <div id="stand-victory-banner" class="stand-victory-banner hidden"></div>
         <div id="stand-combat-log" class="stand-combat-log"></div>
       </div>
 
@@ -700,7 +836,7 @@
       <div class="modal-art-frame">
         <img id="finale-art-img" class="modal-art-img" alt="Finale Scene Panel" />
       </div>
-      <div id="finale-art-badge" class="art-fallback-badge hidden"></div>
+      <div id="finale-art-badge" class="hidden"></div>
       <p id="finale-narrative" class="narrative-p"></p>
       <div id="finale-kjv" class="kjv-box"></div>
       <p id="finale-Benediction" class="narrative-p" style="font-weight:600; color:var(--aqua);"></p>
@@ -726,17 +862,20 @@
         <button data-close-modal>✕</button>
       </div>
       <div class="modal-art-frame">
-        <img id="gatehouse-art-img" class="modal-art-img" alt="Book 1 Cover Art" />
+        <img id="gatehouse-art-img" class="modal-art-img" src="./assets/art/sea-01-panel-98.png" alt="Four Mentors on the Sea of Glass" />
       </div>
-      <div id="gatehouse-art-badge" class="art-fallback-badge hidden"></div>
-      <div class="choice-card" style="border-color:var(--gold);">
-        <strong style="color:var(--gold);">Book 1: The Unseen Chord (Elias Cho &amp; King David)</strong>
-        <p class="narrative-p" style="font-size:0.84rem;">
-          Continue the journey in the full 300-section illustrated interactive gamebook and the Light vs Darkness novels. Your NW1 progress code below preserves every Scroll, Stand, and Unseen Treasure from Zone I.
-        </p>
-        <a id="gatehouse-book-link" href="#gatehouse-edition" class="hidden" style="color:var(--aqua); font-weight:700;">
-          Book 1: The Unseen Chord Edition
-        </a>
+      <div id="gatehouse-art-badge" class="hidden"></div>
+      <div class="choice-card" style="border-color:var(--gold); flex-direction:row; align-items:center; gap:14px;">
+        <img src="./assets/art/sea-01-cover-preview.jpg" alt="Book 1 Cover" style="width:68px; height:102px; object-fit:cover; border-radius:6px; border:1px solid var(--gold); flex-shrink:0;" />
+        <div style="display:flex; flex-direction:column; gap:5px;">
+          <strong style="color:var(--gold);">Book 1: The Unseen Chord (Elias Cho &amp; King David)</strong>
+          <p class="narrative-p" style="font-size:0.84rem;">
+            Continue the journey in the full 300-section illustrated interactive gamebook and the Light vs Darkness novels. Your NW1 progress code below preserves every Scroll, Stand, and Unseen Treasure from Zone I.
+          </p>
+          <a id="gatehouse-book-link" href="#gatehouse-edition" class="hidden" style="color:var(--aqua); font-weight:700;">
+            Book 1: The Unseen Chord Edition
+          </a>
+        </div>
       </div>
       <div>
         <label for="gatehouse-nw1-export" style="font-size:0.84rem; font-weight:600; color:var(--aqua);">Export Your Current NW1 Progress Code:</label>
@@ -746,9 +885,16 @@
       <div>
         <label for="gatehouse-nw1-import" style="font-size:0.84rem; font-weight:600; color:var(--gold);">Restore Progress from an NW1 Code (paste NW1-Z1-... below):</label>
         <textarea id="gatehouse-nw1-import" class="code-textarea" aria-label="Paste NW1 code here"></textarea>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; flex-wrap:wrap; gap:8px;">
           <button id="btn-restore-nw1" class="btn-gold">Restore NW1 Code</button>
-          <button id="btn-reset-save">Reset Walk to Start</button>
+          <button id="btn-reset-save" style="border-color:rgba(248,113,113,0.5); color:#fca5a5;">Reset Walk to Start</button>
+        </div>
+        <div id="gatehouse-reset-confirm" class="choice-card hidden" style="border-color:#f87171; margin-top:8px;">
+          <strong style="color:#fca5a5; font-size:0.82rem;">Are you sure you want to reset your saved walk to Stage I?</strong>
+          <div style="display:flex; gap:8px; margin-top:4px;">
+            <button id="btn-gatehouse-reset-yes" style="background:rgba(185,28,28,0.65); border-color:#f87171; color:#fff; font-weight:700;">Confirm Reset</button>
+            <button id="btn-gatehouse-reset-no">Cancel</button>
+          </div>
         </div>
         <div id="gatehouse-import-status" style="margin-top:6px; font-weight:600; color:var(--emerald);"></div>
       </div>
