@@ -80,7 +80,9 @@
       font-family: inherit; font-size: 0.77rem; cursor: pointer;
       background: rgba(23, 35, 54, 0.85); color: var(--text-main);
       border: 1px solid rgba(92, 200, 255, 0.32); border-radius: 999px;
-      padding: 4px 10px; transition: all 0.15s ease;
+      padding: 6px 12px; min-height: 44px; min-width: 44px;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: all 0.15s ease;
     }
     button:hover:not(:disabled) {
       background: rgba(56, 189, 248, 0.22); border-color: var(--aqua);
@@ -112,14 +114,17 @@
       padding: 0 4px; position: relative;
     }
     .stage-tabs {
-      display: flex; flex-wrap: wrap; gap: 3px;
+      display: flex; flex-wrap: wrap; gap: 4px; align-items: stretch;
       background: rgba(8, 14, 26, 0.68); border: 1px solid rgba(148, 163, 184, 0.22);
-      border-radius: 999px; padding: 3px 6px; backdrop-filter: blur(8px);
+      border-radius: 26px; padding: 2px 4px; backdrop-filter: blur(8px);
     }
     .stage-tab {
-      position: relative;
-      font-size: 0.73rem; padding: 3px 8px; border-radius: 999px;
-      border-color: transparent; background: transparent; color: var(--text-muted);
+      position: relative; z-index: 2;
+      font-size: 0.75rem; padding: 8px 13px; min-height: 44px; min-width: 44px;
+      border-radius: 999px;
+      border: 1px solid transparent; background: transparent; color: var(--text-muted);
+      display: inline-flex; align-items: center; justify-content: center;
+      pointer-events: auto; user-select: none;
     }
     .stage-tab.active {
       background: rgba(56, 189, 248, 0.28); border-color: rgba(92, 200, 255, 0.58); color: #fff; font-weight: 700;
@@ -148,7 +153,7 @@
     .controls-hint-card {
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
       background: rgba(12, 22, 38, 0.88); border: 1px solid rgba(251, 191, 36, 0.55);
-      border-radius: 999px; padding: 5px 14px; font-size: 0.78rem; color: #fef3c7;
+      border-radius: 999px; padding: 3px 6px 3px 14px; font-size: 0.78rem; color: #fef3c7;
       backdrop-filter: blur(10px); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
       align-self: flex-start;
     }
@@ -170,10 +175,13 @@
     #quick-node-bar {
       display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;
       background: rgba(8, 14, 26, 0.72); border: 1px solid rgba(92, 200, 255, 0.28);
-      border-radius: 16px; padding: 5px 10px; backdrop-filter: blur(10px);
+      border-radius: 24px; padding: 4px 8px; backdrop-filter: blur(10px);
       max-width: 900px; margin: 0 auto;
     }
-    .node-chip { font-size: 0.74rem; padding: 3px 9px; border-radius: 999px; }
+    .node-chip {
+      font-size: 0.75rem; padding: 7px 12px; min-height: 44px; min-width: 44px;
+      border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
+    }
     .node-chip.type-well { border-color: #38bdf8; color: #bae6fd; }
     .node-chip.type-stand { border-color: #fb923c; color: #fed7aa; }
     .node-chip.type-treasure { border-color: #facc15; color: #fef08a; }
@@ -246,31 +254,80 @@
     }
     /* Fixed-height Stand modal layout so the Roll button never moves across rounds */
     .stand-card-fixed {
-      height: min(680px, 92vh);
+      height: min(690px, 92vh);
       max-height: 92vh;
       overflow: hidden;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      gap: 8px;
+      gap: 7px;
     }
     .stand-top-section {
-      display: flex; flex-direction: column; gap: 7px; flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
     }
     .stand-middle-section {
-      display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto; min-height: 0;
+      display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto; min-height: 0; overflow: hidden;
     }
+    .stand-step-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 0.95fr;
+      gap: 7px;
+      flex-shrink: 0;
+    }
+    .stand-step-grid button {
+      border-radius: 10px;
+      padding: 6px 11px;
+      min-height: 44px;
+      line-height: 1.26;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 2px;
+      white-space: normal;
+      word-break: break-word;
+    }
+    .step-btn-title {
+      font-weight: 700;
+      font-size: 0.77rem;
+      display: block;
+    }
+    .step-btn-sub {
+      font-weight: 500;
+      font-size: 0.71rem;
+      opacity: 0.94;
+      display: block;
+    }
+    .stand-cleared-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(5, 150, 105, 0.28);
+      border: 1px solid var(--emerald);
+      color: #a7f3d0;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    /* Single scroll area inside #stand-modal with nothing cut off */
     .stand-combat-log {
       background: #060a12; border: 1px solid rgba(92, 200, 255, 0.3);
       border-radius: 8px; padding: 9px 11px;
-      height: 112px; min-height: 112px; max-height: 112px;
+      flex: 1 1 auto;
+      min-height: 92px;
       overflow-y: auto; font-size: 0.81rem;
-      display: flex; flex-direction: column; gap: 4px; flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 5px;
     }
     .stand-victory-banner {
+      display: none !important;
+    }
+    .stand-log-victory-card {
       background: rgba(5, 150, 105, 0.22); border: 1px solid var(--emerald);
-      border-radius: 8px; padding: 7px 10px; font-size: 0.8rem; color: #d1fae5;
-      line-height: 1.38; max-height: 68px; overflow-y: auto; flex-shrink: 0;
+      border-radius: 8px; padding: 8px 10px; font-size: 0.81rem; color: #d1fae5;
+      line-height: 1.44;
     }
     .stand-bottom-actions {
       display: grid;
@@ -280,11 +337,13 @@
     }
     .stand-bottom-actions #btn-stand-roll {
       grid-column: 1 / -1;
-      height: 36px;
+      min-height: 40px;
+      height: 40px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .stand-bottom-actions button:not(#btn-stand-roll) {
-      height: 32px; font-size: 0.72rem; padding: 2px 6px;
+      min-height: 36px;
+      height: 36px; font-size: 0.72rem; padding: 2px 6px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .stat-reduced { color: var(--emerald); font-weight: 700; }
@@ -311,13 +370,13 @@
       background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(148, 163, 184, 0.3);
       border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;
     }
-    .stand-log-line { border-bottom: 1px solid rgba(148,163,184,0.12); padding-bottom: 3px; }
+    .stand-log-line { border-bottom: 1px solid rgba(148,163,184,0.12); padding-bottom: 3px; line-height: 1.38; }
     .inv-card { background: rgba(15,23,42,0.85); border: 1px solid rgba(92,200,255,0.3); border-radius: 8px; padding: 9px 12px; margin-bottom: 6px; }
     .inv-card-head { font-weight: 700; color: var(--aqua); font-size: 0.86rem; }
     .inv-card-body { font-family: var(--font-serif); font-size: 0.85rem; color: #e2e8f0; margin-top: 3px; }
     #relic-turntable-canvas { width: 100%; height: 240px; background: radial-gradient(circle, #162844 0%, #070b14 100%); border-radius: 10px; border: 1px solid var(--border-aqua); touch-action: none; }
     .code-textarea { width: 100%; min-height: 60px; background: #050811; color: var(--aqua); border: 1px solid var(--border-aqua); border-radius: 8px; padding: 8px; font-family: monospace; font-size: 0.8rem; }
-    /* Reserved aspect ratio + soft gradient + spinner while loading so nothing jumps */
+    /* Reserved aspect ratio + soft gradient + spinner while loading + smooth fade-in */
     .modal-art-frame {
       position: relative; width: 100%; height: 128px; aspect-ratio: 16 / 9;
       border-radius: 8px; overflow: hidden; flex-shrink: 0;
@@ -332,20 +391,29 @@
     }
     @keyframes artSpin { to { transform: rotate(360deg); } }
     .modal-art-img {
-      width: 100%; height: 100%; object-fit: cover; object-position: 50% 26%; display: block;
+      width: 100%; height: 100%; object-fit: cover; object-position: 50% 38%; display: block;
+      opacity: 0; transition: opacity 0.26s ease-out;
+    }
+    .modal-art-img.is-loaded {
+      opacity: 1;
     }
     .stage-banner-row { display: flex; gap: 12px; align-items: center; }
     #stage-art-thumb {
       width: 112px; height: 64px; object-fit: cover; border-radius: 8px;
       border: 1px solid var(--border-aqua); flex-shrink: 0; background: #060a12;
+      opacity: 0; transition: opacity 0.26s ease-out;
+    }
+    #stage-art-thumb.is-loaded {
+      opacity: 1;
     }
     .guide-grid {
       display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
     }
     @media (max-width: 680px) {
       .guide-grid { grid-template-columns: 1fr; }
-      .stand-card-fixed { height: 94vh; }
-      .modal-art-frame { height: 96px; }
+      .stand-step-grid { grid-template-columns: 1fr; gap: 5px; }
+      .stand-card-fixed { height: 95vh; max-height: 95vh; padding: 12px 14px; gap: 5px; }
+      .modal-art-frame { height: 84px; }
       .title-cover-showcase { height: 190px; }
     }
   </style>
@@ -401,7 +469,7 @@
         <div id="controls-hint-card" class="controls-hint-card">
           <span class="hint-desktop">WASD / arrows to walk · drag to look · scroll to zoom · E or tap to interact</span>
           <span class="hint-phone">joystick to walk · tap to interact</span>
-          <button id="btn-dismiss-hint" title="Dismiss controls hint" style="padding:1px 7px; font-size:0.72rem;">✕</button>
+          <button id="btn-dismiss-hint" title="Dismiss controls hint">✕</button>
         </div>
       </div>
 
@@ -709,13 +777,16 @@
     </div>
   </div>
 
-  <!-- STAND ENCOUNTER MODAL (FIXED HEIGHT + ANCHORED ROLL BUTTON) -->
+  <!-- STAND ENCOUNTER MODAL (FIXED HEIGHT + ANCHORED ROLL BUTTON + SINGLE SCROLL LOG) -->
   <div id="stand-modal" class="modal-backdrop hidden">
     <div class="modal-card stand-card-fixed">
       <div class="stand-top-section">
         <div class="modal-head">
           <div>
-            <h2 id="stand-title" class="modal-title">Stand</h2>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <h2 id="stand-title" class="modal-title">Stand</h2>
+              <span id="stand-cleared-badge" class="stand-cleared-badge hidden">Cleared ✓</span>
+            </div>
             <div id="stand-meta" class="modal-meta"></div>
           </div>
           <button data-close-modal>✕</button>
@@ -733,20 +804,20 @@
       </div>
 
       <div class="stand-middle-section">
-        <p id="stand-narrative" class="narrative-p" style="font-size:0.81rem; max-height:44px; overflow-y:auto;"></p>
-        <div class="choice-grid" style="gap:8px;">
-          <div class="choice-card" style="padding:7px 10px;">
-            <strong style="color:var(--aqua); font-size:0.81rem;">Fellow-Traveler (You)</strong>
-            <div style="font-size:0.8rem;">Courage: <strong id="stand-player-courage">10</strong> | Strength: <strong id="stand-player-strength">20/20</strong> | Favor: <strong id="stand-player-favor">9/9</strong></div>
+        <p id="stand-narrative" class="narrative-p" style="font-size:0.80rem; line-height:1.36; flex-shrink:0;"></p>
+        <div class="choice-grid" style="gap:7px; flex-shrink:0;">
+          <div class="choice-card" style="padding:6px 10px;">
+            <strong style="color:var(--aqua); font-size:0.80rem;">Fellow-Traveler (You)</strong>
+            <div style="font-size:0.79rem;">Courage: <strong id="stand-player-courage">10</strong> | Strength: <strong id="stand-player-strength">20/20</strong> | Favor: <strong id="stand-player-favor">9/9</strong></div>
           </div>
-          <div class="choice-card" style="border-color:var(--coral); padding:7px 10px;">
-            <strong id="stand-enemy-name" style="color:var(--coral); font-size:0.81rem;">Stronghold</strong>
-            <div style="font-size:0.8rem;">Courage: <strong id="stand-enemy-courage">8</strong> | Strength: <strong id="stand-enemy-strength">10/10</strong></div>
+          <div class="choice-card" style="border-color:var(--coral); padding:6px 10px;">
+            <strong id="stand-enemy-name" style="color:var(--coral); font-size:0.80rem;">Stronghold</strong>
+            <div style="font-size:0.79rem;">Courage: <strong id="stand-enemy-courage">8</strong> | Strength: <strong id="stand-enemy-strength">10/10</strong></div>
           </div>
         </div>
-        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+        <div id="stand-step-actions" class="stand-step-grid">
           <button id="btn-stand-victory-law" class="btn-gold">Step 1: Victory Law</button>
-          <button id="btn-stand-scroll">Speak Resonant KJV Scroll</button>
+          <button id="btn-stand-scroll">Speak Proverbs 16:18 (KJV)</button>
         </div>
         <div id="stand-victory-banner" class="stand-victory-banner hidden"></div>
         <div id="stand-combat-log" class="stand-combat-log"></div>

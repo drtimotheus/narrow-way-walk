@@ -362,15 +362,140 @@ function populateStageScenery(stageId, envGroup, ecoMode = false) {
       envGroup.add(tower, glassWindow);
     }
   } else if (stageId === 'columbarium_autumn') {
-    const stoneWall = new THREE.Mesh(new THREE.BoxGeometry(18, 5.5, 1.2), wallMat);
-    stoneWall.position.set(0, 2.75, -14.5);
-    envGroup.add(stoneWall);
+    // Stage IV: Chuseok Morning at the Seoul Memorial Columbarium (Hall C) & Autumn Maple Steps
+    const marbleWallMat = new THREE.MeshStandardMaterial({
+      map: createPainterlyTexture('#2e3846', '#5a4638'),
+      roughness: 0.55,
+      metalness: 0.18
+    });
+    const rosewoodBeamMat = new THREE.MeshStandardMaterial({
+      color: 0x4a2c22,
+      roughness: 0.42,
+      metalness: 0.25
+    });
+    const stoneWall = new THREE.Mesh(new THREE.BoxGeometry(19.2, 6.2, 1.15), marbleWallMat);
+    stoneWall.position.set(0, 3.1, -14.6);
+    const topCornice = new THREE.Mesh(new THREE.BoxGeometry(19.8, 0.36, 1.45), rosewoodBeamMat);
+    topCornice.position.set(0, 6.28, -14.55);
+    const basePlinth = new THREE.Mesh(new THREE.BoxGeometry(19.6, 0.48, 1.55), rosewoodBeamMat);
+    basePlinth.position.set(0, 0.24, -14.45);
+    envGroup.add(stoneWall, topCornice, basePlinth);
+
+    // Existing painted panels from Book 1 assets mounted inside the memorial niches
+    const nichePanelUrls = [
+      './assets/art/sea-01-panel-52.png', // Elias & Yuna before Grace Mi-ran Cho's brass plate
+      './assets/art/sea-01-panel-49.png', // Columbarium bench & David
+      './assets/art/sea-01-panel-45.png', // Columbarium steps
+      './assets/art/sea-01-panel-47.png', // Gatehouse at Mahanaim
+      './assets/art/sea-01-panel-62.png', // Pastor Ji's basement counsel
+      './assets/art/sea-01-panel-64.png', // Quiet evening reflection
+      './assets/art/sea-01-panel-42.png'  // Morning window before Hall C
+    ];
+    const nicheTextures = nichePanelUrls.map((url, idx) =>
+      loadStageArtTexture(3, `Columbarium Panel ${idx + 1}`, url)
+    );
+    const framePalettes = [
+      { color: 0xd4af37, emissive: 0x78530d }, // Burnished brass (Grace Mi-ran Cho center)
+      { color: 0x8b5a3c, emissive: 0x3b2112 }, // Warm rosewood
+      { color: 0x4b6b78, emissive: 0x16303d }, // Jade slate
+      { color: 0xc27838, emissive: 0x5c310e }, // Autumn amber bronze
+      { color: 0x64748b, emissive: 0x1e293b }  // Weathered silver-slate
+    ];
+    const frameMaterials = framePalettes.map(
+      (fp) =>
+        new THREE.MeshStandardMaterial({
+          color: fp.color,
+          emissive: fp.emissive,
+          emissiveIntensity: 0.35,
+          roughness: 0.34,
+          metalness: 0.62
+        })
+    );
+    const panelMaterials = nicheTextures.map(
+      (tex) =>
+        new THREE.MeshBasicMaterial({
+          map: tex
+        })
+    );
+    const blossomMatWhite = new THREE.MeshStandardMaterial({
+      color: 0xfef3c7,
+      emissive: 0xfde68a,
+      emissiveIntensity: 0.35,
+      roughness: 0.5
+    });
+    const blossomMatRose = new THREE.MeshStandardMaterial({
+      color: 0xfda4af,
+      emissive: 0xf43f5e,
+      emissiveIntensity: 0.28,
+      roughness: 0.5
+    });
+
+    const frameGeo = new THREE.BoxGeometry(1.78, 1.16, 0.14);
+    const artGeo = new THREE.PlaneGeometry(1.56, 0.96);
+    const ledgeGeo = new THREE.BoxGeometry(1.86, 0.08, 0.28);
+    const flowerGeo = new THREE.SphereGeometry(0.11, 7, 6);
+
     for (let r = 0; r < 3; r++) {
       for (let c = -3; c <= 3; c++) {
-        const plaque = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.55, 0.08), warmMat);
-        plaque.position.set(c * 1.6, 1.4 + r * 1.1, -13.85);
-        envGroup.add(plaque);
+        const idx = (r * 7 + (c + 3));
+        const isMotherCenter = r === 1 && c === 0;
+        const fMat = isMotherCenter
+          ? frameMaterials[0]
+          : frameMaterials[(idx + r) % frameMaterials.length];
+        const pMat = isMotherCenter
+          ? panelMaterials[0]
+          : panelMaterials[idx % panelMaterials.length];
+
+        const x = c * 2.35;
+        const y = 1.48 + r * 1.56;
+        const frame = new THREE.Mesh(frameGeo, fMat);
+        frame.position.set(x, y, -13.96);
+        const artPlane = new THREE.Mesh(artGeo, pMat);
+        artPlane.position.set(x, y, -13.87);
+        const ledge = new THREE.Mesh(ledgeGeo, rosewoodBeamMat);
+        ledge.position.set(x, y - 0.58, -13.88);
+        envGroup.add(frame, artPlane, ledge);
+
+        if ((c + r) % 2 === 0 || isMotherCenter) {
+          const fl = new THREE.Mesh(
+            flowerGeo,
+            isMotherCenter || c % 2 === 0 ? blossomMatWhite : blossomMatRose
+          );
+          fl.position.set(x - 0.58, y - 0.46, -13.82);
+          envGroup.add(fl);
+        }
       }
+    }
+
+    // Autumn crimson & gold maple trees flanking the columbarium courtyard
+    const trunkGeo = new THREE.CylinderGeometry(0.16, 0.24, 2.6, 7);
+    const crownGeo = new THREE.DodecahedronGeometry(1.45, 1);
+    const crimsonMapleMat = new THREE.MeshStandardMaterial({
+      color: 0xd9483b,
+      emissive: 0x7f1d1d,
+      emissiveIntensity: 0.28,
+      roughness: 0.65
+    });
+    const goldGinkgoMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      emissive: 0x92400e,
+      emissiveIntensity: 0.32,
+      roughness: 0.62
+    });
+    const treePositions = [
+      [-6.8, -5.5, crimsonMapleMat],
+      [6.8, -5.5, goldGinkgoMat],
+      [-7.2, -12.0, goldGinkgoMat],
+      [7.2, -12.0, crimsonMapleMat],
+      [-6.6, -20.5, crimsonMapleMat],
+      [6.6, -20.5, goldGinkgoMat]
+    ];
+    for (const [tx, tz, leafMat] of treePositions) {
+      const trunk = new THREE.Mesh(trunkGeo, rosewoodBeamMat);
+      trunk.position.set(tx, 1.3, tz);
+      const crown = new THREE.Mesh(crownGeo, leafMat);
+      crown.position.set(tx, 3.2, tz);
+      envGroup.add(trunk, crown);
     }
   } else if (stageId === 'basement_kitchen') {
     for (let i = 0; i < 12; i++) {
@@ -453,11 +578,20 @@ export class WorldStageManager {
     this.skyDome = sky;
     this.stageGroup.add(sky);
 
-    const hemi = new THREE.HemisphereLight(0xe0f2fe, 0x3b2f26, 1.55);
-    const amb = new THREE.AmbientLight(0xfffbeb, 0.9);
-    const dir = new THREE.DirectionalLight(0xffe8b3, 2.25);
-    dir.position.set(10, 22, 12);
-    const rimDir = new THREE.DirectionalLight(pal.aquamarine || '#5cc8ff', 1.35);
+    const theme = stage.theme || stage.id;
+    const isAutumnStage = theme === 'columbarium_autumn';
+    const hemi = new THREE.HemisphereLight(
+      isAutumnStage ? 0xfff3d6 : 0xe0f2fe,
+      isAutumnStage ? 0x5c3624 : 0x3b2f26,
+      isAutumnStage ? 1.72 : 1.55
+    );
+    const amb = new THREE.AmbientLight(isAutumnStage ? 0xffedd5 : 0xfffbeb, isAutumnStage ? 1.02 : 0.9);
+    const dir = new THREE.DirectionalLight(isAutumnStage ? 0xffcf78 : 0xffe8b3, isAutumnStage ? 2.55 : 2.25);
+    dir.position.set(isAutumnStage ? 14 : 10, 22, 12);
+    const rimDir = new THREE.DirectionalLight(
+      isAutumnStage ? '#f59e0b' : pal.aquamarine || '#5cc8ff',
+      isAutumnStage ? 1.55 : 1.35
+    );
     rimDir.position.set(-10, 14, -18);
     this.hemiLight = hemi;
     this.ambLight = amb;
@@ -465,7 +599,6 @@ export class WorldStageManager {
     this.rimDirLight = rimDir;
     this.stageGroup.add(hemi, amb, dir, rimDir);
 
-    const theme = stage.theme || stage.id;
     const isGlassStage = theme === 'alley_to_glass' || theme === 'sea_of_glass_climax';
     if (isGlassStage) {
       this.seaMaterial = createSeaOfGlassMaterial();
@@ -525,8 +658,8 @@ export class WorldStageManager {
     }
     pGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
     const pMat = new THREE.PointsMaterial({
-      color: isGlassStage ? 0xfde047 : 0x93c5fd,
-      size: isGlassStage ? 0.14 : 0.09,
+      color: isGlassStage ? 0xfde047 : isAutumnStage ? 0xf59e0b : 0x93c5fd,
+      size: isGlassStage ? 0.14 : isAutumnStage ? 0.12 : 0.09,
       transparent: true,
       opacity: 0.72
     });
@@ -593,7 +726,50 @@ export class WorldStageManager {
     }
   }
 
-  update(dt, elapsed, playerPos) {
+  // Clamps nameplate screen pixel size (76px..124px) and fades/hides any nameplate within ~2 units of the camera
+  _applyNameplateScreenClamp(sprite, worldX, worldY, worldZ, camera, shouldShow = true) {
+    if (!sprite) return;
+    if (!shouldShow) {
+      sprite.visible = false;
+      return;
+    }
+    if (!camera) {
+      sprite.visible = true;
+      sprite.scale.set(1.48, 0.39, 1);
+      return;
+    }
+    const camDist = Math.hypot(
+      camera.position.x - worldX,
+      camera.position.y - worldY,
+      camera.position.z - worldZ
+    );
+    sprite.userData.camDist = Number(camDist.toFixed(2));
+    // Hide or fade any nameplate within ~2 units of the camera
+    if (camDist <= 1.95) {
+      sprite.visible = false;
+      if (sprite.material) sprite.material.opacity = 0;
+      sprite.userData.screenPxWidth = 0;
+      return;
+    }
+    sprite.visible = true;
+    if (sprite.material) {
+      sprite.material.opacity = camDist < 2.55 ? Math.max(0.15, (camDist - 1.95) / 0.6) : 1.0;
+    }
+    const fovRad = ((camera.fov || 58) * Math.PI) / 180;
+    const worldHeightAtDist = 2 * Math.tan(fovRad * 0.5) * camDist;
+    const vh = Math.max(360, window.innerHeight || 800);
+    const naturalWorldW = 1.48;
+    const projectedPxW = (naturalWorldW / worldHeightAtDist) * vh;
+    const minPx = 76;
+    const maxPx = 124;
+    const clampedPxW = Math.max(minPx, Math.min(maxPx, projectedPxW));
+    const clampedWorldW = (clampedPxW / vh) * worldHeightAtDist;
+    const clampedWorldH = clampedWorldW * (68 / 256);
+    sprite.scale.set(clampedWorldW, clampedWorldH, 1);
+    sprite.userData.screenPxWidth = Math.round(clampedPxW);
+  }
+
+  update(dt, elapsed, playerPos, camera = null) {
     if (this.seaMaterial && this.seaMaterial.uniforms) {
       this.seaMaterial.uniforms.uTime.value = elapsed;
     }
@@ -622,7 +798,14 @@ export class WorldStageManager {
         mon.userData.haloRing.scale.set(s, s, 1);
       }
       if (mon.userData.labelSprite) {
-        mon.userData.labelSprite.visible = mon === nearestMon;
+        this._applyNameplateScreenClamp(
+          mon.userData.labelSprite,
+          mon.position.x,
+          (mon.position.y || 0) + 2.35,
+          mon.position.z,
+          camera,
+          mon === nearestMon
+        );
       }
     }
 
@@ -632,6 +815,17 @@ export class WorldStageManager {
     this.eliasCompanion.position.x += (targetX - this.eliasCompanion.position.x) * Math.min(1, dt * 4.5);
     this.eliasCompanion.position.z += (targetZ - this.eliasCompanion.position.z) * Math.min(1, dt * 4.5);
     this.eliasCompanion.position.y = Math.abs(Math.sin(elapsed * 3.2)) * 0.04;
+
+    if (this.eliasCompanion.userData.nameTag) {
+      this._applyNameplateScreenClamp(
+        this.eliasCompanion.userData.nameTag,
+        this.eliasCompanion.position.x,
+        this.eliasCompanion.position.y + 2.22,
+        this.eliasCompanion.position.z,
+        camera,
+        true
+      );
+    }
   }
 
   getNearestNode(playerPos, maxDist = 4.2) {

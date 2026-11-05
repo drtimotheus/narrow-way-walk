@@ -268,8 +268,108 @@ export const ENDING_ART_MAP = {
   true_ending: './assets/art/sea-01-panel-100.png' // Section 300: The Unseen Chord
 };
 
+// Per-panel focal points (object-position) so wide modal banners always frame the painted subject and faces,
+// never cropping to a dark ceiling or sky strip.
+export const ART_FOCAL_POINT_MAP = {
+  './assets/art/sea-01-panel-04.png': '50% 36%',
+  './assets/art/sea-01-panel-05.png': '50% 22%',
+  './assets/art/sea-01-panel-06.png': '50% 44%',
+  './assets/art/sea-01-panel-08.png': '50% 38%',
+  './assets/art/sea-01-panel-11.png': '50% 52%',
+  './assets/art/sea-01-panel-14.png': '50% 42%',
+  './assets/art/sea-01-panel-28.png': '50% 42%',
+  './assets/art/sea-01-panel-30.png': '50% 38%',
+  './assets/art/sea-01-panel-31.png': '50% 42%',
+  './assets/art/sea-01-panel-35.png': '50% 32%',
+  './assets/art/sea-01-panel-38.png': '50% 38%',
+  './assets/art/sea-01-panel-39.png': '50% 42%',
+  './assets/art/sea-01-panel-41.png': '50% 42%',
+  './assets/art/sea-01-panel-42.png': '50% 36%',
+  './assets/art/sea-01-panel-43.png': '50% 38%',
+  './assets/art/sea-01-panel-45.png': '50% 34%',
+  './assets/art/sea-01-panel-47.png': '50% 40%',
+  './assets/art/sea-01-panel-49.png': '50% 42%',
+  './assets/art/sea-01-panel-52.png': '50% 38%',
+  './assets/art/sea-01-panel-53.png': '50% 36%',
+  './assets/art/sea-01-panel-62.png': '50% 42%',
+  './assets/art/sea-01-panel-64.png': '50% 42%',
+  './assets/art/sea-01-panel-65.png': '50% 54%',
+  './assets/art/sea-01-panel-66.png': '50% 38%',
+  './assets/art/sea-01-panel-67.png': '50% 44%',
+  './assets/art/sea-01-panel-69.png': '50% 42%',
+  './assets/art/sea-01-panel-74.png': '50% 44%',
+  './assets/art/sea-01-panel-76.png': '50% 42%',
+  './assets/art/sea-01-panel-81.png': '50% 40%',
+  './assets/art/sea-01-panel-85.png': '50% 42%',
+  './assets/art/sea-01-panel-86.png': '50% 42%',
+  './assets/art/sea-01-panel-89.png': '50% 44%',
+  './assets/art/sea-01-panel-94.png': '50% 42%',
+  './assets/art/sea-01-panel-95.png': '50% 42%',
+  './assets/art/sea-01-panel-96.png': '50% 42%',
+  './assets/art/sea-01-panel-98.png': '50% 56%',
+  './assets/art/sea-01-panel-100.png': '50% 42%'
+};
+
+export function getArtFocalPoint(pngUrl) {
+  if (!pngUrl) return '50% 38%';
+  return ART_FOCAL_POINT_MAP[pngUrl] || '50% 38%';
+}
+
 // Image preloader cache so modal paintings display without flicker
 const preloadedImageCache = new Map();
+const preloadedStageSet = new Set();
+
+function preloadAndDecodeUrl(url) {
+  if (!url) return;
+  let img = preloadedImageCache.get(url);
+  if (!img) {
+    img = new Image();
+    img.decoding = 'async';
+    img.src = url;
+    preloadedImageCache.set(url, img);
+  }
+  if (typeof img.decode === 'function') {
+    img.decode().catch(() => {});
+  }
+}
+
+export function preloadStageArt(stageIdx) {
+  const idx = Number(stageIdx);
+  if (Number.isNaN(idx) || idx < 0 || idx > 5) return 0;
+  const urls = new Set();
+  if (STAGE_ART_MAP[idx]) urls.add(STAGE_ART_MAP[idx]);
+  if (STAGE_ART_MAP[idx + 1]) urls.add(STAGE_ART_MAP[idx + 1]);
+  for (const cfg of Object.values(STAND_ART_MAP)) {
+    if (cfg.stageIdx === idx && cfg.url) urls.add(cfg.url);
+  }
+  for (const cfg of Object.values(WELL_ART_MAP)) {
+    if (cfg.stageIdx === idx && cfg.url) urls.add(cfg.url);
+  }
+  if (idx === 3) {
+    // Stage 4 world columbarium niche panels
+    [
+      './assets/art/sea-01-panel-42.png',
+      './assets/art/sea-01-panel-45.png',
+      './assets/art/sea-01-panel-47.png',
+      './assets/art/sea-01-panel-49.png',
+      './assets/art/sea-01-panel-52.png',
+      './assets/art/sea-01-panel-62.png',
+      './assets/art/sea-01-panel-64.png'
+    ].forEach((u) => urls.add(u));
+  }
+  if (idx >= 4) {
+    Object.values(ENDING_ART_MAP).forEach((u) => urls.add(u));
+  }
+  for (const u of urls) {
+    preloadAndDecodeUrl(u);
+  }
+  preloadedStageSet.add(idx);
+  return urls.size;
+}
+
+export function isStageArtPreloaded(stageIdx) {
+  return preloadedStageSet.has(Number(stageIdx));
+}
 
 export function preloadAllZone1Art() {
   const allUrls = new Set([
@@ -282,13 +382,10 @@ export function preloadAllZone1Art() {
     ...Object.values(WELL_ART_MAP).map((x) => x.url).filter(Boolean)
   ]);
   for (const url of allUrls) {
-    if (!preloadedImageCache.has(url)) {
-      const img = new Image();
-      img.decoding = 'async';
-      img.src = url;
-      preloadedImageCache.set(url, img);
-    }
+    preloadAndDecodeUrl(url);
   }
+  preloadStageArt(0);
+  preloadStageArt(1);
   return allUrls.size;
 }
 
@@ -308,8 +405,8 @@ export function createPainterlyArtDataURL({ stageIdx = 0, title = 'The Unseen Ch
 }
 
 // Loads a linked PNG into a modal <img> with a styled loading state (soft gradient + spinner)
-// so broken-image icons never appear.
-export function loadArtIntoImage(imgEl, badgeEl, { stageIdx = 0, pngUrl, title = 'The Unseen Chord', subtitle = '', motif = 'mirror' } = {}) {
+// and smooth fade-in transition so broken-image icons or jarring pop-ins never appear.
+export function loadArtIntoImage(imgEl, badgeEl, { stageIdx = 0, pngUrl, title = 'The Unseen Chord', subtitle = '', motif = 'mirror', focalPoint = null } = {}) {
   if (!imgEl) return;
   const wrap = imgEl.closest('.modal-art-frame');
   if (badgeEl) {
@@ -317,10 +414,15 @@ export function loadArtIntoImage(imgEl, badgeEl, { stageIdx = 0, pngUrl, title =
     badgeEl.classList.add('hidden');
   }
 
+  const targetFocal = focalPoint || getArtFocalPoint(pngUrl);
+  imgEl.style.objectPosition = targetFocal;
+
   if (!pngUrl) {
     imgEl.src = createPainterlyArtDataURL({ stageIdx, title, subtitle, motif });
     imgEl.dataset.artSource = 'canvas-art';
     imgEl.dataset.loadedUrl = `canvas:${motif}`;
+    imgEl.dataset.focalPoint = targetFocal;
+    imgEl.classList.add('is-loaded');
     if (wrap) wrap.classList.remove('is-loading');
     return;
   }
@@ -329,18 +431,31 @@ export function loadArtIntoImage(imgEl, badgeEl, { stageIdx = 0, pngUrl, title =
   if (cached && cached.complete && cached.naturalWidth > 0) {
     imgEl.onload = null;
     imgEl.onerror = null;
-    imgEl.src = pngUrl;
+    if (imgEl.dataset.loadedUrl !== pngUrl) {
+      imgEl.classList.remove('is-loaded');
+      imgEl.src = pngUrl;
+      requestAnimationFrame(() => {
+        imgEl.classList.add('is-loaded');
+      });
+    } else {
+      imgEl.src = pngUrl;
+      imgEl.classList.add('is-loaded');
+    }
     imgEl.dataset.artSource = 'linked-png';
     imgEl.dataset.loadedUrl = pngUrl;
+    imgEl.dataset.focalPoint = targetFocal;
     if (wrap) wrap.classList.remove('is-loading');
     return;
   }
 
+  imgEl.classList.remove('is-loaded');
   if (wrap) wrap.classList.add('is-loading');
 
   imgEl.onload = () => {
     imgEl.dataset.artSource = 'linked-png';
     imgEl.dataset.loadedUrl = pngUrl;
+    imgEl.dataset.focalPoint = targetFocal;
+    imgEl.classList.add('is-loaded');
     if (wrap) wrap.classList.remove('is-loading');
   };
   imgEl.onerror = () => {
@@ -348,22 +463,29 @@ export function loadArtIntoImage(imgEl, badgeEl, { stageIdx = 0, pngUrl, title =
     imgEl.src = createPainterlyArtDataURL({ stageIdx, title, subtitle, motif });
     imgEl.dataset.artSource = 'canvas-art';
     imgEl.dataset.loadedUrl = `canvas:${motif}`;
+    imgEl.dataset.focalPoint = targetFocal;
+    imgEl.classList.add('is-loaded');
     if (wrap) wrap.classList.remove('is-loading');
   };
   imgEl.src = pngUrl;
 
   if (!cached) {
-    const pre = new Image();
-    pre.decoding = 'async';
-    pre.src = pngUrl;
-    preloadedImageCache.set(pngUrl, pre);
+    preloadAndDecodeUrl(pngUrl);
   }
 }
 
-// Loads a stage or portrait PNG into a Three.js Texture first; falls back to
-// the painterly canvas if absent.
+// Loads a stage or portrait PNG into a Three.js Texture first; uses preloaded cache when ready.
 export function loadStageArtTexture(stageIdx = 0, title = 'The Unseen Chord', customUrl = null) {
   const targetUrl = customUrl || STAGE_ART_MAP[stageIdx] || STAGE_ART_MAP[0];
+  const cached = preloadedImageCache.get(targetUrl);
+  if (cached && cached.complete && cached.naturalWidth > 0) {
+    const tex = new THREE_NS.Texture(cached);
+    tex.colorSpace = THREE_NS.SRGBColorSpace;
+    tex.userData = { artSource: 'linked-png', url: targetUrl };
+    tex.needsUpdate = true;
+    return tex;
+  }
+
   const initCanvas = document.createElement('canvas');
   initCanvas.width = 640;
   initCanvas.height = 400;
@@ -377,6 +499,7 @@ export function loadStageArtTexture(stageIdx = 0, title = 'The Unseen Chord', cu
     tex.userData.artSource = 'linked-png';
     tex.userData.url = targetUrl;
     tex.needsUpdate = true;
+    preloadedImageCache.set(targetUrl, probe);
   };
   probe.onerror = () => {
     const fbImg = new Image();
