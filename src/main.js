@@ -465,13 +465,21 @@ export function getDetailedInteractLabel(node, isLocked = false) {
 // Returns a deterministic safe spawn position in the clear central corridor in front of a node
 export function getSafeNodeSpawn(node) {
   if (!node || !Array.isArray(node.pos)) {
-    return { x: 0, y: 0, z: -5.5 };
+    return { x: 0, y: 0, z: -5.5, yaw: 0, dist: 4.6 };
+  }
+  // Nudge Well 4 (and Wisdom 4 across the aisle) toward the center corridor with an angled view
+  // so Well 3's floating crystal prop at (-3.4, 1.95, -19.0) never fills the corner of the screen.
+  if (node.wellId === 'well_4' || node.id === 'node_well4_pastorji') {
+    return { x: -1.85, y: 0, z: -21.95, yaw: 0.20, dist: 3.95 };
+  }
+  if (node.wisdomId === 'wisdom_4' || node.id === 'node_wisdom4') {
+    return { x: 1.85, y: 0, z: -21.95, yaw: -0.20, dist: 3.95 };
   }
   const nx = Number(node.pos[0]) || 0;
   const nz = Number(node.pos[2]) || -7.5;
   const safeX = Math.abs(nx) > 1.0 ? Number((nx * 0.68).toFixed(2)) : 0;
   const safeZ = Number((nz + 1.85).toFixed(2));
-  return { x: safeX, y: 0, z: safeZ };
+  return { x: safeX, y: 0, z: safeZ, yaw: 0, dist: 4.6 };
 }
 
 // Returns the default safe spawn point for a stage (in front of the first uncleared Stand or primary node)
@@ -485,8 +493,10 @@ export function getDefinedStageSpawn(stageIdx) {
   return getSafeNodeSpawn(targetNode);
 }
 
-export function syncCameraAndWorldImmediate() {
-  cameraYaw = 0;
+export function syncCameraAndWorldImmediate(preserveCameraYaw = false) {
+  if (!preserveCameraYaw) {
+    cameraYaw = 0;
+  }
   cameraDistance = Math.max(3.0, Math.min(9.0, cameraDistance || 4.6));
   if (worldManager && worldManager.eliasCompanion) {
     worldManager.eliasCompanion.position.set(playerPos.x - 1.75, 0, playerPos.z - 1.15);
@@ -608,16 +618,18 @@ export function loadStage(idx, customZ = null) {
   const stage = STAGES[requestedIdx];
   if (customZ !== null && customZ !== undefined) {
     playerPos.set(0, 0, Number(customZ));
+    cameraYaw = 0;
+    cameraDistance = 4.6;
   } else {
     const sp = getDefinedStageSpawn(requestedIdx);
     playerPos.set(sp.x, sp.y, sp.z);
+    cameraYaw = sp.yaw ?? 0;
+    cameraDistance = sp.dist ?? 4.6;
   }
-  cameraYaw = 0;
-  cameraDistance = 4.6;
   if (worldManager) {
     worldManager.buildStage(stage, isNodeDone, state.settings.ecoMode, isNodeLocked);
   }
-  syncCameraAndWorldImmediate();
+  syncCameraAndWorldImmediate(true);
   refreshProximityInteract(true);
   saveState();
   renderStageBar();
@@ -706,9 +718,20 @@ function renderStageBar() {
     if (!unlocked) classes.push('locked');
     btn.className = classes.join(' ');
 
+    const slotSpan = document.createElement('span');
+    slotSpan.className = 'chip-status-slot';
+    slotSpan.setAttribute('aria-hidden', 'true');
+    slotSpan.textContent = !unlocked ? '🔒' : cleared ? '✓' : '';
+
+    const lblSpan = document.createElement('span');
+    lblSpan.className = 'chip-label-text';
+    lblSpan.textContent = `${idx + 1}. ${shortTitle}`;
+
+    btn.appendChild(slotSpan);
+    btn.appendChild(lblSpan);
+
     if (!unlocked) {
       const reason = getStageLockReason(idx);
-      btn.textContent = `🔒 ${idx + 1}. ${shortTitle}`;
       btn.title = reason;
       btn.dataset.tooltip = reason;
       btn.setAttribute('aria-disabled', 'true');
@@ -719,7 +742,6 @@ function renderStageBar() {
         showGatingToast(reason);
       });
     } else {
-      btn.textContent = `${cleared ? '✓ ' : ''}${idx + 1}. ${shortTitle}`;
       btn.title = cleared
         ? `${stg.title} (Completed — Click to Replay)`
         : stg.title;
@@ -730,15 +752,40 @@ function renderStageBar() {
     }
     wrap.appendChild(btn);
   });
+
+  // Auto-scroll current active stage chip into view inside horizontal chip bar
+  const scrollActiveIntoView = () => {
+    const activeBtn = wrap.querySelector('.stage-tab.active');
+    if (activeBtn && wrap.scrollWidth > wrap.clientWidth) {
+      const targetLeft = Math.max(
+        0,
+        activeBtn.offsetLeft - wrap.clientWidth / 2 + activeBtn.offsetWidth / 2
+      );
+      wrap.scrollLeft = targetLeft;
+    }
+  };
+  scrollActiveIntoView();
+  requestAnimationFrame(scrollActiveIntoView);
 }
 
 export function teleportToNode(node, openModalAfter = true) {
   if (!node) return;
   const sp = getSafeNodeSpawn(node);
   playerPos.set(sp.x, sp.y, sp.z);
-  cameraDistance = 4.6;
-  syncCameraAndWorldImmediate();
+  cameraYaw = sp.yaw ?? 0;
+  cameraDistance = sp.dist ?? 4.6;
+  syncCameraAndWorldImmediate(true);
   refreshProximityInteract(true);
+  const qWrap = document.getElementById('quick-node-bar');
+  if (qWrap && node.id) {
+    const targetChip = qWrap.querySelector(`.node-chip[data-node-id="${node.id}"]`);
+    if (targetChip && qWrap.scrollWidth > qWrap.clientWidth) {
+      qWrap.scrollLeft = Math.max(
+        0,
+        targetChip.offsetLeft - qWrap.clientWidth / 2 + targetChip.offsetWidth / 2
+      );
+    }
+  }
   if (openModalAfter) {
     openNodeInteraction(node);
   }
@@ -753,9 +800,22 @@ function renderQuickNodeBar() {
     const btn = document.createElement('button');
     const done = isNodeDone(node);
     const locked = isNodeLocked(node);
-    const shortLbl = getShortNodeLabel(node, locked);
+    const baseLbl = getShortNodeLabel(node, false);
     btn.className = `node-chip type-${node.type} ${done ? 'done' : ''} ${locked ? 'locked-node' : ''}`;
-    btn.textContent = `${done && !locked ? '✓ ' : ''}${shortLbl}`;
+    btn.dataset.nodeId = node.id || '';
+
+    const slotSpan = document.createElement('span');
+    slotSpan.className = 'chip-status-slot';
+    slotSpan.setAttribute('aria-hidden', 'true');
+    slotSpan.textContent = locked ? '🔒' : done ? '✓' : '';
+
+    const lblSpan = document.createElement('span');
+    lblSpan.className = 'chip-label-text';
+    lblSpan.textContent = baseLbl;
+
+    btn.appendChild(slotSpan);
+    btn.appendChild(lblSpan);
+
     if (locked) {
       const lockMsg =
         node.type === 'gatehouse_finale'
@@ -770,6 +830,20 @@ function renderQuickNodeBar() {
     });
     wrap.appendChild(btn);
   });
+
+  const scrollCurrentNodeIntoView = () => {
+    const activeNodeId = currentInteractNode?.id;
+    if (!activeNodeId) return;
+    const targetChip = wrap.querySelector(`.node-chip[data-node-id="${activeNodeId}"]`);
+    if (targetChip && wrap.scrollWidth > wrap.clientWidth) {
+      wrap.scrollLeft = Math.max(
+        0,
+        targetChip.offsetLeft - wrap.clientWidth / 2 + targetChip.offsetWidth / 2
+      );
+    }
+  };
+  scrollCurrentNodeIntoView();
+  requestAnimationFrame(scrollCurrentNodeIntoView);
 }
 
 export function openNodeInteraction(node) {
@@ -833,7 +907,7 @@ export function closeAllModals() {
     );
     worldManager.setLabelsHidden(endingCleanupActive);
   }
-  syncCameraAndWorldImmediate();
+  syncCameraAndWorldImmediate(true);
   refreshProximityInteract(false);
   renderStageBar();
   renderQuickNodeBar();
@@ -2166,6 +2240,15 @@ function bindUIButtons() {
     const el = document.getElementById(id);
     if (el) el.addEventListener('click', fn);
   };
+
+  bindClick('btn-mobile-hud-drawer', () => {
+    const topbar = document.getElementById('hud-topbar');
+    const btn = document.getElementById('btn-mobile-hud-drawer');
+    if (!topbar || !btn) return;
+    const isOpen = topbar.classList.toggle('mobile-drawer-open');
+    btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    btn.textContent = isOpen ? '▴ Less' : '▾ More';
+  });
 
   bindClick('btn-nav-zone-start', () => openTitleModal());
   bindClick('btn-ending-return-title', () => openTitleModal());

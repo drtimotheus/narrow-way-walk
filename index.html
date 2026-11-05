@@ -68,7 +68,9 @@
     .hud-pill {
       background: rgba(15, 23, 42, 0.72); border: 1px solid rgba(148, 163, 184, 0.22);
       border-radius: 999px; padding: 2px 7px; font-size: 0.75rem; display: flex; gap: 4px; align-items: center;
+      white-space: nowrap;
     }
+    .hud-pill-icon { font-size: 0.76rem; line-height: 1; opacity: 0.92; }
     .hud-pill.treasure-pill { border-color: rgba(251, 191, 36, 0.65); color: var(--gold); font-weight: 600; }
     .hud-pill-label { color: var(--text-muted); font-size: 0.71rem; }
     .hud-pill-val { font-weight: 700; color: var(--text-main); }
@@ -76,6 +78,22 @@
     .hud-pill-val.spent { color: var(--coral); }
     .hud-pill-val.muted { color: var(--text-muted); }
     .nav-btns { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    #btn-mobile-hud-drawer { display: none; }
+    .chip-status-slot {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.15em;
+      min-width: 1.15em;
+      flex: 0 0 1.15em;
+      margin-right: 3px;
+      text-align: center;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .chip-label-text {
+      white-space: nowrap;
+    }
     button {
       font-family: inherit; font-size: 0.77rem; cursor: pointer;
       background: rgba(23, 35, 54, 0.85); color: var(--text-main);
@@ -205,7 +223,18 @@
     }
     #proximity-prompt-bar {
       background: var(--bg-panel); border: 1px solid var(--gold);
-      border-radius: 999px; padding: 6px 12px; flex-shrink: 0;
+      border-radius: 999px; padding: 5px 8px; flex-shrink: 0;
+      max-width: 100%; box-sizing: border-box;
+    }
+    #btn-proximity-interact {
+      display: block;
+      max-width: min(540px, 88vw);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.35;
+      text-align: center;
+      box-sizing: border-box;
     }
     .hidden { display: none !important; }
 
@@ -499,6 +528,154 @@
       display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
     }
     @media (max-width: 680px) {
+      #ui-layer { padding: 6px 8px; }
+      .top-hud-wrap { gap: 4px; }
+      .hud-topbar {
+        padding: 4px 8px;
+        border-radius: 999px;
+        gap: 4px;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+      }
+      .hud-topbar.mobile-drawer-open {
+        border-radius: 14px;
+        padding: 8px 10px;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .hud-topbar:not(.mobile-drawer-open) .hud-brand-group {
+        display: none;
+      }
+      .hud-topbar:not(.mobile-drawer-open) .hud-pill-secondary {
+        display: none;
+      }
+      .hud-topbar:not(.mobile-drawer-open) .hud-pill-primary .hud-pill-label {
+        display: none;
+      }
+      .hud-topbar:not(.mobile-drawer-open) .stats-strip {
+        flex-wrap: nowrap;
+        gap: 4px;
+      }
+      .hud-topbar:not(.mobile-drawer-open) .hud-pill-primary {
+        padding: 3px 7px;
+        font-size: 0.74rem;
+      }
+      .hud-topbar:not(.mobile-drawer-open) .nav-btns button:not(#btn-mobile-hud-drawer):not(#btn-nav-help) {
+        display: none;
+      }
+      #btn-mobile-hud-drawer {
+        display: inline-flex;
+        min-height: 36px;
+        min-width: 44px;
+        padding: 4px 9px;
+        font-size: 0.72rem;
+        font-weight: 600;
+      }
+      .hud-topbar:not(.mobile-drawer-open) #btn-nav-help {
+        min-height: 36px;
+        min-width: 36px;
+        padding: 4px 8px;
+      }
+      .hud-subbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        padding: 0;
+      }
+      .stage-tabs {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        width: 100%;
+        max-width: 100%;
+        border-radius: 999px;
+        padding: 2px 4px;
+        gap: 4px;
+        box-sizing: border-box;
+      }
+      .stage-tabs::-webkit-scrollbar { display: none; }
+      .stage-tab {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        min-height: 36px;
+        padding: 5px 10px;
+        font-size: 0.72rem;
+      }
+      .controls-hint-card {
+        padding: 2px 6px 2px 10px;
+        font-size: 0.71rem;
+        gap: 6px;
+      }
+      .controls-hint-card #btn-dismiss-hint {
+        min-height: 28px;
+        min-width: 28px;
+        padding: 2px 6px;
+      }
+      .bottom-hud-wrap {
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+      }
+      #joystick-zone {
+        width: 58px;
+        height: 58px;
+        flex: 0 0 58px;
+      }
+      #joystick-knob {
+        width: 24px;
+        height: 24px;
+      }
+      #quick-node-bar {
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: 100%;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 3px 6px;
+        gap: 4px;
+        margin: 0;
+        box-sizing: border-box;
+      }
+      #quick-node-bar::-webkit-scrollbar { display: none; }
+      .node-chip {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        min-height: 38px;
+        padding: 5px 10px;
+        font-size: 0.72rem;
+      }
+      #proximity-prompt-bar {
+        flex: 0 0 100%;
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      #btn-proximity-interact {
+        width: 100%;
+        max-width: 100%;
+        min-height: 44px;
+        padding: 8px 14px;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        background: rgba(2, 132, 199, 0.88);
+        border: 1px solid var(--gold);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+      }
       .guide-grid { grid-template-columns: 1fr; }
       .finale-summary-grid { grid-template-columns: 1fr; }
       .stand-step-grid { grid-template-columns: 1fr; gap: 5px; }
@@ -529,7 +706,7 @@
 
   <div id="ui-layer">
     <div class="top-hud-wrap pointer-auto">
-      <div class="hud-topbar">
+      <div id="hud-topbar" class="hud-topbar">
         <div class="hud-brand-group">
           <span class="brand-title">The Narrow Way Walk · Zone I</span>
           <span id="hud-stage-progress" class="stage-progress-pill">Stage 1 of 6</span>
@@ -537,28 +714,33 @@
           <button id="btn-toggle-story" title="Toggle Stage Story &amp; Scene Art">✦ Stage Story</button>
         </div>
         <div class="stats-strip" aria-label="Fellow-Traveler Stats">
-          <div class="hud-pill" title="Courage: Added to your 2d6 roll in every Stand round">
+          <div class="hud-pill hud-pill-primary" title="Courage: Added to your 2d6 roll in every Stand round">
+            <span class="hud-pill-icon" aria-hidden="true">⚔</span>
             <span class="hud-pill-label">Courage</span>
             <span id="hud-courage" class="hud-pill-val">10</span>
           </div>
-          <div class="hud-pill" title="Strength: Your endurance; if 0, Grace returns you to the Last Well">
+          <div class="hud-pill hud-pill-primary" title="Strength: Your endurance; if 0, Grace returns you to the Last Well">
+            <span class="hud-pill-icon" aria-hidden="true">🛡</span>
             <span class="hud-pill-label">Strength</span>
             <span id="hud-strength" class="hud-pill-val">20/20</span>
           </div>
-          <div class="hud-pill" title="Favor: Roll 2d6 <= Favor to soften a lost Stand round (-1 Strength instead of -2)">
+          <div class="hud-pill hud-pill-primary" title="Favor: Roll 2d6 <= Favor to soften a lost Stand round (-1 Strength instead of -2)">
+            <span class="hud-pill-icon" aria-hidden="true">✦</span>
             <span class="hud-pill-label">Favor</span>
             <span id="hud-favor" class="hud-pill-val">9/9</span>
           </div>
-          <div class="hud-pill treasure-pill" title="Treasure: Rises ONLY when you freely Give (+1) instead of Keep (+0)">
-            <span class="hud-pill-label">★ Treasure</span>
+          <div class="hud-pill hud-pill-primary treasure-pill" title="Treasure: Rises ONLY when you freely Give (+1) instead of Keep (+0)">
+            <span class="hud-pill-icon" aria-hidden="true">★</span>
+            <span class="hud-pill-label">Treasure</span>
             <span id="hud-treasure" class="hud-pill-val">0</span>
           </div>
-          <div class="hud-pill"><span class="hud-pill-label">Oil</span><span id="hud-oil" class="hud-pill-val">1/2</span></div>
-          <div class="hud-pill"><span class="hud-pill-label">Bread</span><span id="hud-bread" class="hud-pill-val">2/3</span></div>
-          <div class="hud-pill"><span class="hud-pill-label">Scrolls</span><span id="hud-scrolls" class="hud-pill-val">0/5</span></div>
-          <div class="hud-pill"><span class="hud-pill-label">Token</span><span id="hud-token" class="hud-pill-val muted">Unfound</span></div>
+          <div class="hud-pill hud-pill-secondary"><span class="hud-pill-label">Oil</span><span id="hud-oil" class="hud-pill-val">1/2</span></div>
+          <div class="hud-pill hud-pill-secondary"><span class="hud-pill-label">Bread</span><span id="hud-bread" class="hud-pill-val">2/3</span></div>
+          <div class="hud-pill hud-pill-secondary"><span class="hud-pill-label">Scrolls</span><span id="hud-scrolls" class="hud-pill-val">0/5</span></div>
+          <div class="hud-pill hud-pill-secondary"><span class="hud-pill-label">Token</span><span id="hud-token" class="hud-pill-val muted">Unfound</span></div>
         </div>
         <div class="nav-btns">
+          <button id="btn-mobile-hud-drawer" type="button" aria-expanded="false" title="Toggle HUD Details &amp; Menu">▾ More</button>
           <button id="btn-nav-zone-start" title="Open Title Screen">↺ Title</button>
           <button id="btn-nav-inventory">Scrolls</button>
           <button id="btn-nav-relics">3D Relics</button>
@@ -576,7 +758,7 @@
         <div id="controls-hint-card" class="controls-hint-card">
           <span class="hint-desktop">WASD / arrows to walk · drag to look · scroll to zoom · E or tap to interact</span>
           <span class="hint-phone">joystick to walk · tap to interact</span>
-          <button id="btn-dismiss-hint" title="Dismiss controls hint">✕</button>
+          <button id="btn-dismiss-hint" title="Dismiss controls hint">×</button>
         </div>
       </div>
 
@@ -593,7 +775,7 @@
             <p id="stage-narration"></p>
             <div id="stage-art-badge" class="hidden"></div>
           </div>
-          <button id="btn-close-story" title="Hide Stage Story">✕</button>
+          <button id="btn-close-story" title="Hide Stage Story">×</button>
         </div>
       </div>
     </div>
@@ -686,7 +868,7 @@
           <h2 class="modal-title">The Narrow Way Walk · Zone I: Elias's Seoul</h2>
           <div class="modal-meta">Book 1: The Unseen Chord (Elias Cho &amp; David the King) · Companion-POV</div>
         </div>
-        <button data-close-modal>✕</button>
+        <button data-close-modal aria-label="Close">×</button>
       </div>
       <div class="modal-art-frame">
         <img id="welcome-art-img" class="modal-art-img" alt="Book 1 Scene Art" />
@@ -730,7 +912,7 @@
           <h2 class="modal-title">How to Play · The Narrow Way Walk</h2>
           <div class="modal-meta">Zone I: Elias Cho &amp; David the King · Companion-POV Guide</div>
         </div>
-        <button data-close-modal>✕</button>
+        <button data-close-modal aria-label="Close">×</button>
       </div>
       <div class="stronghold-def-banner">
         <strong>What is a Stronghold?</strong> A Stronghold is a spiritual lie or habit you stand against with God's Word.
@@ -780,7 +962,7 @@
           <h2 id="stage-complete-title" class="modal-title">Stage Complete</h2>
           <div id="stage-complete-meta" class="modal-meta"></div>
         </div>
-        <button data-close-modal>✕</button>
+        <button data-close-modal aria-label="Close">×</button>
       </div>
       <div class="modal-art-frame">
         <img id="stage-complete-art-img" class="modal-art-img" alt="Stage Transition Art" />
@@ -808,7 +990,7 @@
           <h2 id="wisdom-title" class="modal-title">Wisdom Page</h2>
           <div id="wisdom-meta" class="modal-meta"></div>
         </div>
-        <button data-close-modal>✕</button>
+        <button data-close-modal aria-label="Close">×</button>
       </div>
       <div class="modal-art-frame">
         <img id="wisdom-art-img" class="modal-art-img" alt="Wisdom Scene Panel" />
@@ -837,7 +1019,7 @@
           <h2 id="well-title" class="modal-title">Well of Living Water</h2>
           <div id="well-meta" class="modal-meta"></div>
         </div>
-        <button data-close-modal>✕</button>
+        <button data-close-modal aria-label="Close">×</button>
       </div>
       <div class="modal-art-frame">
         <img id="well-art-img" class="modal-art-img" alt="Well Scene Panel" />
@@ -865,7 +1047,7 @@
           <h2 id="treasure-title" class="modal-title">Treasure Choice</h2>
           <div id="treasure-meta" class="modal-meta"></div>
         </div>
-        <button data-close-modal>✕</button>
+        <button data-close-modal aria-label="Close">×</button>
       </div>
       <div class="modal-art-frame">
         <img id="treasure-art-img" class="modal-art-img" alt="Treasure Scene Panel" />
@@ -905,7 +1087,7 @@
             </div>
             <div id="stand-meta" class="modal-meta"></div>
           </div>
-          <button data-close-modal>✕</button>
+          <button data-close-modal aria-label="Close">×</button>
         </div>
         <div class="modal-art-frame">
           <img id="stand-art-img" class="modal-art-img" alt="Stand Scene Panel" />
@@ -975,7 +1157,7 @@
           <h2 class="modal-title">Pilgrim Record · KJV Scrolls &amp; Unseen Treasure</h2>
           <div class="modal-meta">Book 1: The Unseen Chord · Max 5 Scrolls · 1 Mentor's Token</div>
         </div>
-        <button data-close-modal>✕</button>
+        <button data-close-modal aria-label="Close">×</button>
       </div>
       <div class="choice-card">
         <strong style="color:var(--aqua);">Mentor's Token (David the King — Light Blue / Might)</strong>
@@ -1000,7 +1182,7 @@
           <h2 id="relic-title" class="modal-title">3D Relic Workshop</h2>
           <div id="relic-meta" class="modal-meta"></div>
         </div>
-        <button data-close-modal>✕</button>
+        <button data-close-modal aria-label="Close">×</button>
       </div>
       <div id="relic-tabs" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
       <canvas id="relic-turntable-canvas"></canvas>
@@ -1018,7 +1200,7 @@
           <h2 id="finale-title" class="modal-title">Zone I Complete</h2>
           <div id="finale-subtitle" class="modal-meta"></div>
         </div>
-        <button data-close-modal>✕</button>
+        <button data-close-modal aria-label="Close">×</button>
       </div>
       <div class="modal-art-frame">
         <img id="finale-art-img" class="modal-art-img" alt="Finale Scene Panel" />
@@ -1068,7 +1250,7 @@
           <h2 class="modal-title">The Gatehouse · NW1 Save Code &amp; Book 1 Edition</h2>
           <div class="modal-meta">Free Walk · Zero Accounts · Zero Trackers · Local + NW1 Code Persistence</div>
         </div>
-        <button data-close-modal>✕</button>
+        <button data-close-modal aria-label="Close">×</button>
       </div>
       <div class="modal-art-frame">
         <img id="gatehouse-art-img" class="modal-art-img" src="./assets/art/sea-01-panel-98.png" alt="Four Mentors on the Sea of Glass" />
