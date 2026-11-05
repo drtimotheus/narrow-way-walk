@@ -47,8 +47,8 @@ function createDefaultState() {
     firstSightCompleted: false,
     hintDismissed: false,
     seenStrongholdDef: false,
-    startingStats: { courage: 10, strength: 20, favor: 9 },
-    stats: { courage: 10, strength: 20, favor: 9, treasure: 0 },
+    startingStats: { courage: 9, strength: 20, favor: 9 },
+    stats: { courage: 9, strength: 20, favor: 9, treasure: 0 },
     oil: 1,
     bread: 2,
     scrollsLearned: [],
@@ -219,10 +219,19 @@ function sanitizeProgressGating(targetState) {
   const rawWellStage = Number(targetState.lastWellStageIdx) || 0;
   targetState.lastWellStageIdx = Math.max(0, Math.min(maxUnlocked, rawWellStage));
 
+  if (targetState.startingStats) {
+    const rawStartStr = Number(targetState.startingStats.strength);
+    targetState.startingStats.strength = Math.min(
+      20,
+      Math.max(10, Number.isFinite(rawStartStr) && rawStartStr > 0 ? rawStartStr : 20)
+    );
+  }
   if (targetState.stats && targetState.startingStats) {
-    targetState.stats.strength = Math.min(
-      Number(targetState.startingStats.strength) || 20,
-      Number(targetState.stats.strength) || 20
+    const maxS = Number(targetState.startingStats.strength) || 20;
+    const curS = Number(targetState.stats.strength);
+    targetState.stats.strength = Math.max(
+      0,
+      Math.min(maxS, Number.isFinite(curS) ? curS : maxS)
     );
   }
   if (!areAllRequiredStandsCleared(targetState.standsCleared)) {
@@ -1029,9 +1038,9 @@ export function openWelcomeModal() {
     btnRoll.onclick = () => {
       audio.init();
       audio.playChime('step');
-      const c = rollDie() + 6;
-      const s = rollDie() + rollDie() + 12;
-      const f = rollDie() + 6;
+      const c = 9;
+      const s = 20;
+      const f = 9;
       state.startingStats = { courage: c, strength: s, favor: f };
       state.stats.courage = c;
       state.stats.strength = s;
@@ -1186,14 +1195,15 @@ export function openWellModal(wellId, customBannerMessage = null) {
     state.wellsVisited.push(well.id);
     const prevFavor = state.stats.favor;
     const prevStrength = state.stats.strength;
-    state.stats.favor = state.startingStats.favor;
-    state.stats.strength = Math.min(state.startingStats.strength, state.stats.strength + 4);
+    state.stats.favor = Math.min(state.startingStats.favor, state.stats.favor + 1);
+    state.stats.strength = Math.min(state.startingStats.strength, state.stats.strength + 2);
+    const gainedFavor = state.stats.favor - prevFavor;
     const gainedStr = state.stats.strength - prevStrength;
 
     const favorPart =
-      prevFavor >= state.startingStats.favor
+      gainedFavor <= 0
         ? `Favor already full (${state.stats.favor}/${state.startingStats.favor}).`
-        : `Favor restored to ${state.startingStats.favor}/${state.startingStats.favor}.`;
+        : `Favor +${gainedFavor} (now ${state.stats.favor}/${state.startingStats.favor}).`;
     const strPart =
       gainedStr <= 0
         ? `Strength already full (${state.stats.strength}/${state.startingStats.strength}).`
@@ -1210,14 +1220,14 @@ export function openWellModal(wellId, customBannerMessage = null) {
       rewardNotice += ` Received Mentor's Token: ${MENTOR_TOKEN.name}!`;
     }
   } else {
-    // Reopening an already-visited Well: read-only restoration summary (no second +4 Strength reward)
+    // Reopening an already-visited Well: read-only restoration summary (each Well can be used only once)
     const strStatus =
       state.stats.strength >= state.startingStats.strength
         ? `Strength already full (${state.stats.strength}/${state.startingStats.strength}).`
         : `Strength ${state.stats.strength}/${state.startingStats.strength}.`;
     const sc = well.grantsScroll ? SCROLLS[well.grantsScroll] : null;
     const scrollInfo = sc ? ` Scroll #${sc.num} (${sc.ref}) inscribed.` : '';
-    rewardNotice = `Well Cleared ✓ — Favor ${state.stats.favor}/${state.startingStats.favor}. ${strStatus}${scrollInfo}`;
+    rewardNotice = `Well Cleared ✓ (Used 1/1) — Favor ${state.stats.favor}/${state.startingStats.favor}. ${strStatus}${scrollInfo}`;
   }
 
   audio.playKinnorChord();
@@ -1276,27 +1286,9 @@ export function openWellModal(wellId, customBannerMessage = null) {
 
 export function formatTreasureChoiceStatText(choice, isGive = true) {
   if (!choice) return '';
-  const costs = [];
-  const gains = [];
-  if (choice.breadCost > 0) {
-    costs.push(`${choice.breadCost} Bread`);
-  }
-  if (choice.strengthDelta < 0) {
-    costs.push(`${choice.strengthDelta} Strength`);
-  }
-  if (choice.strengthDelta > 0) {
-    gains.push(`+${choice.strengthDelta} Strength`);
-  }
   if (isGive) {
     const trGain = choice.treasureDelta > 0 ? `+${choice.treasureDelta} Treasure` : '+1 Treasure';
-    gains.push(trGain);
-    if (costs.length > 0 && gains.length > 0) {
-      return `Cost: ${costs.join(', ')} · Gain: ${gains.join(', ')}`;
-    }
-    return `Gain: ${gains.join(', ')}`;
-  }
-  if (costs.length > 0) {
-    return `Cost: ${costs.join(', ')} · +0 Treasure`;
+    return `Cost: 2 Strength or 1 Favor · Gain: ${trGain}`;
   }
   return 'No cost · +0 Treasure';
 }
@@ -1323,7 +1315,8 @@ export function openTreasureModal(treasureId) {
   setText('treasure-keep-cost', formatTreasureChoiceStatText(tr.keepChoice, false));
 
   const outcomeBox = document.getElementById('treasure-outcome-box');
-  const btnGive = document.getElementById('btn-treasure-give');
+  const btnGiveStr = document.getElementById('btn-treasure-give');
+  const btnGiveFavor = document.getElementById('btn-treasure-give-favor');
   const btnKeep = document.getElementById('btn-treasure-keep');
 
   if (prevChoice) {
@@ -1332,10 +1325,15 @@ export function openTreasureModal(treasureId) {
       const chosenObj = prevChoice === 'give' ? tr.giveChoice : tr.keepChoice;
       outcomeBox.textContent = `✓ Choice Recorded (${prevChoice.toUpperCase()}): ${chosenObj.outcomeText}`;
     }
-    if (btnGive) {
-      btnGive.disabled = true;
-      btnGive.classList.toggle('btn-applied', prevChoice === 'give');
-      btnGive.textContent = prevChoice === 'give' ? 'Chosen: Give (+1 Treasure) ✓' : 'Choose to Give (+1 Treasure)';
+    if (btnGiveStr) {
+      btnGiveStr.disabled = true;
+      btnGiveStr.classList.toggle('btn-applied', prevChoice === 'give');
+      btnGiveStr.textContent = prevChoice === 'give' ? 'Chosen: Give (+1 Treasure) ✓' : 'Give (Cost: 2 Strength · Gain: +1 Treasure)';
+    }
+    if (btnGiveFavor) {
+      btnGiveFavor.disabled = true;
+      btnGiveFavor.classList.toggle('btn-applied', prevChoice === 'give');
+      btnGiveFavor.textContent = prevChoice === 'give' ? 'Give Sacrifice Recorded ✓' : 'Give (Cost: 1 Favor · Gain: +1 Treasure)';
     }
     if (btnKeep) {
       btnKeep.disabled = true;
@@ -1344,41 +1342,51 @@ export function openTreasureModal(treasureId) {
     }
   } else {
     if (outcomeBox) outcomeBox.classList.add('hidden');
-    if (btnGive) {
-      btnGive.disabled = false;
-      btnGive.classList.remove('btn-applied');
-      btnGive.textContent = 'Choose to Give (+1 Treasure)';
-      btnGive.onclick = () => {
-        if (state.treasuresChosen[tr.id]) return;
-        if (tr.giveChoice.breadCost) {
-          state.bread = Math.max(0, state.bread - tr.giveChoice.breadCost);
-        }
-        if (tr.giveChoice.strengthDelta) {
-          state.stats.strength = Math.min(
-            state.startingStats.strength,
-            Math.max(2, state.stats.strength + tr.giveChoice.strengthDelta)
-          );
-        }
-        state.stats.treasure += tr.giveChoice.treasureDelta;
+    const canSpendStr = state.stats.strength > 2;
+    const canSpendFavor = state.stats.favor >= 1;
+
+    if (btnGiveStr) {
+      btnGiveStr.disabled = !canSpendStr;
+      btnGiveStr.classList.remove('btn-applied');
+      btnGiveStr.textContent = canSpendStr
+        ? `Give (Cost: 2 Strength · Gain: +1 Treasure)`
+        : `Give (Need >2 Strength · Cur: ${state.stats.strength})`;
+      btnGiveStr.onclick = () => {
+        if (state.treasuresChosen[tr.id] || state.stats.strength <= 2) return;
+        state.stats.strength = Math.max(1, state.stats.strength - 2);
+        state.stats.treasure += tr.giveChoice.treasureDelta || 1;
         state.treasuresChosen[tr.id] = 'give';
-        state.treasureLog.push(tr.giveChoice.deedRecord);
+        state.treasureLog.push(`${tr.giveChoice.deedRecord} (Sacrificed 2 Strength)`);
         audio.playChime('treasure');
         saveState();
         openTreasureModal(tr.id);
       };
     }
+
+    if (btnGiveFavor) {
+      btnGiveFavor.disabled = !canSpendFavor;
+      btnGiveFavor.classList.remove('btn-applied');
+      btnGiveFavor.textContent = canSpendFavor
+        ? `Give (Cost: 1 Favor · Gain: +1 Treasure)`
+        : `Give (Need 1 Favor · Cur: 0)`;
+      btnGiveFavor.onclick = () => {
+        if (state.treasuresChosen[tr.id] || state.stats.favor < 1) return;
+        state.stats.favor = Math.max(0, state.stats.favor - 1);
+        state.stats.treasure += tr.giveChoice.treasureDelta || 1;
+        state.treasuresChosen[tr.id] = 'give';
+        state.treasureLog.push(`${tr.giveChoice.deedRecord} (Sacrificed 1 Favor)`);
+        audio.playChime('treasure');
+        saveState();
+        openTreasureModal(tr.id);
+      };
+    }
+
     if (btnKeep) {
       btnKeep.disabled = false;
       btnKeep.classList.remove('btn-applied');
       btnKeep.textContent = 'Keep / Pass By (+0 Treasure)';
       btnKeep.onclick = () => {
         if (state.treasuresChosen[tr.id]) return;
-        if (tr.keepChoice.strengthDelta) {
-          state.stats.strength = Math.min(
-            state.startingStats.strength,
-            Math.max(2, state.stats.strength + tr.keepChoice.strengthDelta)
-          );
-        }
         state.treasuresChosen[tr.id] = 'keep';
         audio.playChime('step');
         saveState();
@@ -1392,7 +1400,7 @@ export function openTreasureModal(treasureId) {
 function getStandStep1Subline(st) {
   if (!st) return '';
   if (st.isRiggedBait) {
-    return 'Walk away in wisdom (Gain: +1 Courage, +1 Strength, Scroll 5)';
+    return 'Walk away in wisdom (Cost: 1 Favor · Learn Scroll 5)';
   }
   const cDelta = st.victoryLawEffect?.courageDelta || 0;
   const sDelta = st.victoryLawEffect?.strengthDelta || 0;
@@ -1423,6 +1431,7 @@ export function openStandModal(standId) {
     saveState();
   }
   state.tokenSpentInCurrentStand = false;
+  const startRollBonus = st.baseCourage + (st.rollBonus ?? 1);
 
   if (alreadyCleared) {
     // Reopening a cleared Stand opens read-only with the "Cleared ✓" badge, victory text, and Close button
@@ -1460,7 +1469,7 @@ export function openStandModal(standId) {
       isAlreadyCleared: false,
       showStrongholdDef: isFirstStronghold || st.id === 'stand_1',
       log: [
-        `Stand entered: ${st.title} (${st.strongholdName} · Courage ${st.baseCourage}, Strength ${st.baseStrength}).`,
+        `Stand entered: ${st.title} (${st.strongholdName} · Courage ${st.baseCourage}, Strength ${st.baseStrength} · Stronghold rolls 2d6+${startRollBonus}).`,
         `Scripture Root: ${st.scriptureRoot}`,
         `Step 1 Prompt: ${st.victoryLawPrompt}`
       ]
@@ -1471,10 +1480,57 @@ export function openStandModal(standId) {
   showModal('stand-modal');
 }
 
+function executeRiggedBaitWalkOut(costType = 'auto') {
+  if (!activeStandSession) return;
+  const s = activeStandSession;
+  const st = s.stand;
+  if (!st.isRiggedBait || s.isWon || s.isAlreadyCleared) return;
+
+  let chosenCost = costType;
+  if (chosenCost === 'auto') {
+    chosenCost = state.stats.favor >= 1 ? 'favor' : 'strength';
+  }
+
+  let costDesc = '';
+  if (chosenCost === 'favor' && state.stats.favor >= 1) {
+    state.stats.favor = Math.max(0, state.stats.favor - 1);
+    costDesc = 'Cost: 1 Favor';
+  } else {
+    state.stats.strength = Math.max(0, state.stats.strength - 1);
+    costDesc = 'Cost: 1 Strength';
+    if (state.stats.strength <= 0) {
+      saveState();
+      triggerGraceFall(st);
+      return;
+    }
+  }
+
+  const firstClear = !state.standsCleared.includes(st.id);
+  s.isWon = true;
+  s.victoryLawApplied = true;
+  s.enemyStrength = 0;
+  if (firstClear) {
+    state.standsCleared.push(st.id);
+    if (!state.scrollsLearned.includes('scroll_5')) state.scrollsLearned.push('scroll_5');
+  }
+  s.log.push(
+    `Victory Law Walk-Out Applied ✓ (${costDesc}): Walked away from ${st.title} in wisdom and inscribed Scroll #5 (1 Corinthians 6:12 KJV)!`
+  );
+  audio.playChime('stand_win');
+  saveState();
+  renderStageBar();
+  renderQuickNodeBar();
+  renderStandSession();
+  bindStandAuxButtons();
+}
+
 function renderStandSession() {
   if (!activeStandSession) return;
   const s = activeStandSession;
   const st = s.stand;
+  const rollBonus = st.rollBonus ?? 1;
+  const effectiveEnemyRollMod = s.enemyCourage + rollBonus;
+  const baseEnemyRollMod = s.baseEnemyCourage + rollBonus;
 
   setText('stand-title', st.title);
   setText('stand-meta', `Section ${st.sectionNum} · ${st.strongholdName} · ${st.scriptureRoot}`);
@@ -1509,6 +1565,14 @@ function renderStandSession() {
     } else {
       eStrengthEl.textContent = `${s.enemyStrength}/${s.maxEnemyStrength}`;
       eStrengthEl.className = '';
+    }
+  }
+  const eRollEl = document.getElementById('stand-enemy-roll');
+  if (eRollEl) {
+    if (effectiveEnemyRollMod < baseEnemyRollMod) {
+      eRollEl.textContent = `Stronghold rolls 2d6+${effectiveEnemyRollMod} (was 2d6+${baseEnemyRollMod})`;
+    } else {
+      eRollEl.textContent = `Stronghold rolls 2d6+${effectiveEnemyRollMod}`;
     }
   }
 
@@ -1563,64 +1627,86 @@ function renderStandSession() {
 
   const btnLaw = document.getElementById('btn-stand-victory-law');
   if (btnLaw) {
-    btnLaw.disabled = s.victoryLawApplied || s.round > 0 || st.isRiggedBait || s.isWon;
-    btnLaw.classList.toggle('btn-applied', Boolean(s.victoryLawApplied));
-    const step1Title = s.victoryLawApplied
-      ? 'Step 1: Victory Law — Applied ✓'
-      : 'Step 1: Apply Victory Law';
-    const step1Sub = getStandStep1Subline(st);
-    btnLaw.innerHTML = `<span class="step-btn-title">${step1Title}</span><span class="step-btn-sub">${step1Sub}</span>`;
-    btnLaw.onclick = () => {
-      if (s.victoryLawApplied || s.round > 0 || st.isRiggedBait || s.isWon) return;
-      const prevC = s.enemyCourage;
-      const prevS = s.enemyStrength;
-      s.victoryLawApplied = true;
-      s.enemyCourage = Math.max(4, s.enemyCourage + (st.victoryLawEffect?.courageDelta || 0));
-      s.enemyStrength = Math.max(1, s.enemyStrength + (st.victoryLawEffect?.strengthDelta || 0));
-      s.log.push(
-        `Step 1 (Victory Law) Applied ✓: ${st.victoryLawEffect?.note || ''} [Stronghold Courage ${prevC}→${s.enemyCourage}, Strength ${prevS}→${s.enemyStrength}]`
-      );
-      audio.playChime('stand_win');
-      renderStandSession();
-    };
+    if (st.isRiggedBait) {
+      btnLaw.disabled = s.isWon || state.stats.favor < 1;
+      btnLaw.classList.toggle('btn-applied', Boolean(s.isWon));
+      const t = s.isWon
+        ? 'Walk-Out Victory Law — Applied ✓'
+        : 'Step 1: Walk Out in Wisdom (Cost: 1 Favor)';
+      const sub = state.stats.favor >= 1
+        ? 'Spend 1 Favor · Refuse rigged fight & learn Scroll 5'
+        : 'Need 1 Favor (use Strength option instead)';
+      btnLaw.innerHTML = `<span class="step-btn-title">${t}</span><span class="step-btn-sub">${sub}</span>`;
+      btnLaw.onclick = () => executeRiggedBaitWalkOut('favor');
+    } else {
+      btnLaw.disabled = s.victoryLawApplied || s.round > 0 || s.isWon;
+      btnLaw.classList.toggle('btn-applied', Boolean(s.victoryLawApplied));
+      const step1Title = s.victoryLawApplied
+        ? 'Step 1: Victory Law — Applied ✓'
+        : 'Step 1: Apply Victory Law';
+      const step1Sub = getStandStep1Subline(st);
+      btnLaw.innerHTML = `<span class="step-btn-title">${step1Title}</span><span class="step-btn-sub">${step1Sub}</span>`;
+      btnLaw.onclick = () => {
+        if (s.victoryLawApplied || s.round > 0 || s.isWon) return;
+        const prevC = s.enemyCourage;
+        const prevS = s.enemyStrength;
+        s.victoryLawApplied = true;
+        s.enemyCourage = Math.max(4, s.enemyCourage + (st.victoryLawEffect?.courageDelta || 0));
+        s.enemyStrength = Math.max(1, s.enemyStrength + (st.victoryLawEffect?.strengthDelta || 0));
+        const nextRollMod = s.enemyCourage + (st.rollBonus ?? 1);
+        s.log.push(
+          `Step 1 (Victory Law) Applied ✓: ${st.victoryLawEffect?.note || ''} [Stronghold Courage ${prevC}→${s.enemyCourage} (rolls 2d6+${nextRollMod}), Strength ${prevS}→${s.enemyStrength}]`
+        );
+        audio.playChime('stand_win');
+        renderStandSession();
+      };
+    }
   }
 
   const btnScroll = document.getElementById('btn-stand-scroll');
   if (btnScroll) {
-    const resIds = st.resonantScrolls || [];
-    const primaryId = resIds[0];
-    const primaryScroll = primaryId ? SCROLLS[primaryId] : null;
-    const learnedMatchId = resIds.find((id) => state.scrollsLearned.includes(id));
-    const canSpeakScroll = Boolean(learnedMatchId || st.id === 'stand_3');
-    btnScroll.disabled = !canSpeakScroll || s.scrollApplied || s.round > 0 || st.isRiggedBait || s.isWon;
-    btnScroll.classList.toggle('btn-applied', Boolean(s.scrollApplied));
-    const scrollRefText = primaryScroll ? primaryScroll.ref : 'KJV Scroll';
-    btnScroll.textContent = s.scrollApplied
-      ? `Speak ${scrollRefText} — Applied ✓`
-      : `Speak ${scrollRefText}`;
-    btnScroll.onclick = () => {
-      if (!canSpeakScroll || s.scrollApplied || s.round > 0 || st.isRiggedBait || s.isWon) return;
-      const scObj = primaryScroll || (learnedMatchId ? SCROLLS[learnedMatchId] : null);
-      if (!scObj) return;
-      s.scrollApplied = true;
-      const alreadyReducedByStep1 =
-        s.victoryLawApplied &&
-        (st.id === 'stand_2' || st.id === 'stand_3' || st.id === 'stand_5' || st.id === 'stand_6');
-      if (!alreadyReducedByStep1) {
-        const prevC = s.enemyCourage;
-        const prevS = s.enemyStrength;
-        s.enemyCourage = Math.max(4, s.enemyCourage + (st.scrollLawEffect?.courageDelta || 0));
-        s.enemyStrength = Math.max(1, s.enemyStrength + (st.scrollLawEffect?.strengthDelta || 0));
-        s.log.push(
-          `Spoke ${scObj.ref} verbatim: "${scObj.text}" -> ${st.scrollLawEffect?.note || ''} [Courage ${prevC}→${s.enemyCourage}, Strength ${prevS}→${s.enemyStrength}]`
-        );
-      } else {
-        s.log.push(`Spoke ${scObj.ref} verbatim: "${scObj.text}" — Standing firm on God's Word!`);
-      }
-      speakKjvScroll(scObj.text, scObj.ref);
-      audio.playKinnorChord();
-      renderStandSession();
-    };
+    if (st.isRiggedBait) {
+      btnScroll.disabled = s.isWon;
+      btnScroll.classList.toggle('btn-applied', Boolean(s.isWon));
+      btnScroll.innerHTML = `<span class="step-btn-title">${s.isWon ? 'Walk-Out Recorded ✓' : 'Walk Out in Wisdom (Cost: 1 Strength)'}</span><span class="step-btn-sub">Spend 1 Strength · Refuse rigged fight & learn Scroll 5</span>`;
+      btnScroll.onclick = () => executeRiggedBaitWalkOut('strength');
+    } else {
+      const resIds = st.resonantScrolls || [];
+      const primaryId = resIds[0];
+      const primaryScroll = primaryId ? SCROLLS[primaryId] : null;
+      const learnedMatchId = resIds.find((id) => state.scrollsLearned.includes(id));
+      const canSpeakScroll = Boolean(learnedMatchId || st.id === 'stand_3');
+      btnScroll.disabled = !canSpeakScroll || s.scrollApplied || s.round > 0 || s.isWon;
+      btnScroll.classList.toggle('btn-applied', Boolean(s.scrollApplied));
+      const scrollRefText = primaryScroll ? primaryScroll.ref : 'KJV Scroll';
+      btnScroll.textContent = s.scrollApplied
+        ? `Speak ${scrollRefText} — Applied ✓`
+        : `Speak ${scrollRefText}`;
+      btnScroll.onclick = () => {
+        if (!canSpeakScroll || s.scrollApplied || s.round > 0 || s.isWon) return;
+        const scObj = primaryScroll || (learnedMatchId ? SCROLLS[learnedMatchId] : null);
+        if (!scObj) return;
+        s.scrollApplied = true;
+        const alreadyReducedByStep1 =
+          s.victoryLawApplied &&
+          (st.id === 'stand_2' || st.id === 'stand_3' || st.id === 'stand_5' || st.id === 'stand_6' || st.id === 'stand_8');
+        if (!alreadyReducedByStep1) {
+          const prevC = s.enemyCourage;
+          const prevS = s.enemyStrength;
+          s.enemyCourage = Math.max(4, s.enemyCourage + (st.scrollLawEffect?.courageDelta || 0));
+          s.enemyStrength = Math.max(1, s.enemyStrength + (st.scrollLawEffect?.strengthDelta || 0));
+          const nextRollMod = s.enemyCourage + (st.rollBonus ?? 1);
+          s.log.push(
+            `Spoke ${scObj.ref} verbatim: "${scObj.text}" -> ${st.scrollLawEffect?.note || ''} [Courage ${prevC}→${s.enemyCourage} (rolls 2d6+${nextRollMod}), Strength ${prevS}→${s.enemyStrength}]`
+          );
+        } else {
+          s.log.push(`Spoke ${scObj.ref} verbatim: "${scObj.text}" — Standing firm on God's Word!`);
+        }
+        speakKjvScroll(scObj.text, scObj.ref);
+        audio.playKinnorChord();
+        renderStandSession();
+      };
+    }
   }
 
   const btnRoll = document.getElementById('btn-stand-roll');
@@ -1631,11 +1717,12 @@ function renderStandSession() {
     } else if (s.isWon) {
       btnRoll.textContent = 'Claim Victory ✓';
     } else if (st.isRiggedBait) {
-      btnRoll.textContent = 'Walk Out of the Trap in Wisdom (Sec. 145 -> Sec. 158 · Learn Scroll 5)';
+      const autoCostLabel = state.stats.favor >= 1 ? 'Cost: 1 Favor' : 'Cost: 1 Strength';
+      btnRoll.textContent = `Walk Out in Wisdom (${autoCostLabel} · Sec. 145 -> 158 · Learn Scroll 5)`;
     } else {
       btnRoll.textContent = s.tokenAuto10Next
-        ? `Roll Round ${s.round + 1} (Aquamarine Stone Auto-10 + Courage ${state.stats.courage})`
-        : `Roll Round ${s.round + 1}: 2d6 + Courage (${state.stats.courage}) vs 2d6 + ${s.enemyCourage}`;
+        ? `Roll Round ${s.round + 1} (Aquamarine Auto-10 + ${state.stats.courage} vs 2d6+${effectiveEnemyRollMod})`
+        : `Roll Round ${s.round + 1}: 2d6+${state.stats.courage} vs Stronghold 2d6+${effectiveEnemyRollMod}`;
     }
     btnRoll.onclick = () => handleStandRollRound();
   }
@@ -1652,23 +1739,9 @@ function handleStandRollRound() {
     return;
   }
 
-  // Stand 4 (Rigged Bait at Hannam-dong): walking away in wisdom achieves victory and shows the victory text + Claim Victory button first
+  // Stand 4 (Rigged Bait at Hannam-dong): walking away in wisdom costs 1 Favor or 1 Strength
   if (st.isRiggedBait) {
-    const firstClear = !state.standsCleared.includes(st.id);
-    s.isWon = true;
-    s.enemyStrength = 0;
-    if (firstClear) {
-      state.standsCleared.push(st.id);
-      if (!state.scrollsLearned.includes('scroll_5')) state.scrollsLearned.push('scroll_5');
-      state.stats.courage += 1;
-      state.stats.strength = Math.min(state.startingStats.strength, state.stats.strength + 1);
-    }
-    audio.playChime('stand_win');
-    saveState();
-    renderStageBar();
-    renderQuickNodeBar();
-    renderStandSession();
-    bindStandAuxButtons();
+    executeRiggedBaitWalkOut('auto');
     return;
   }
 
@@ -1681,13 +1754,14 @@ function handleStandRollRound() {
 
   const eD1 = rollDie();
   const eD2 = rollDie();
+  const enemyRollMod = s.enemyCourage + (st.rollBonus ?? 1);
   const pTotal = pD1 + pD2 + state.stats.courage;
-  const eTotal = eD1 + eD2 + s.enemyCourage;
+  const eTotal = eD1 + eD2 + enemyRollMod;
 
   if (pTotal > eTotal) {
     s.enemyStrength = Math.max(0, s.enemyStrength - 2);
     s.log.push(
-      `Round ${s.round}: You rolled [${pD1}+${pD2}${usedAuto10 ? ' Token=10' : ''}] + ${state.stats.courage} = ${pTotal} vs Stronghold [${eD1}+${eD2}] + ${s.enemyCourage} = ${eTotal} -> WIN! Stronghold -2 Strength (${s.enemyStrength} left).`
+      `Round ${s.round}: You rolled [${pD1}+${pD2}${usedAuto10 ? ' Token=10' : ''}] + ${state.stats.courage} = ${pTotal} vs Stronghold [${eD1}+${eD2}] + ${enemyRollMod} = ${eTotal} -> WIN! Stronghold -2 Strength (${s.enemyStrength} left).`
     );
     audio.playChime('stand_win');
     if (s.enemyStrength <= 0) {
@@ -1707,7 +1781,7 @@ function handleStandRollRound() {
     state.stats.strength = Math.max(0, state.stats.strength - 2);
     s.lastRoundLost = true;
     s.log.push(
-      `Round ${s.round}: You rolled [${pD1}+${pD2}] + ${state.stats.courage} = ${pTotal} vs Stronghold [${eD1}+${eD2}] + ${s.enemyCourage} = ${eTotal} -> HIT (Cost: -2 Strength, now ${state.stats.strength}). You may Test Favor to halve loss!`
+      `Round ${s.round}: You rolled [${pD1}+${pD2}] + ${state.stats.courage} = ${pTotal} vs Stronghold [${eD1}+${eD2}] + ${enemyRollMod} = ${eTotal} -> HIT (Cost: -2 Strength, now ${state.stats.strength}). You may Test Favor to halve loss!`
     );
     audio.playChime('grace');
     saveState();
@@ -1716,9 +1790,17 @@ function handleStandRollRound() {
       return;
     }
   } else {
+    // Watchman Tie Rule: player loses 1 Strength on a tie
+    state.stats.strength = Math.max(0, state.stats.strength - 1);
     s.log.push(
-      `Round ${s.round}: Tie (${pTotal} vs ${eTotal}) — the chord holds steady in the rain. Neither side loses Strength.`
+      `Round ${s.round}: Tie (${pTotal} vs ${eTotal}) — Watchman clash! Cost: -1 Strength (now ${state.stats.strength}/${state.startingStats.strength}).`
     );
+    audio.playChime('grace');
+    saveState();
+    if (state.stats.strength <= 0) {
+      triggerGraceFall(st);
+      return;
+    }
   }
   renderStandSession();
   bindStandAuxButtons();
@@ -1735,7 +1817,7 @@ function bindStandAuxButtons() {
     btnFavor.classList.toggle('hidden', hideAux);
     btnFavor.disabled = !s.lastRoundLost || state.stats.favor <= 0 || s.isWon;
     btnFavor.textContent = s.lastRoundLost
-      ? `Test Favor (2d6 <= ${state.stats.favor})`
+      ? `Test Favor (<=${state.stats.favor})`
       : 'Test Favor';
     btnFavor.onclick = () => {
       if (!s.lastRoundLost || state.stats.favor <= 0 || s.isWon) return;
@@ -1766,8 +1848,8 @@ function bindStandAuxButtons() {
     btnOil.disabled = state.oil <= 0 || strRoom <= 0 || s.isWon;
     btnOil.textContent =
       strRoom <= 0
-        ? `Use Oil (Full · ${state.oil})`
-        : `Use Oil (+${actualOilGain} Str · ${state.oil})`;
+        ? `Oil (Full · ${state.oil})`
+        : `Oil (+${actualOilGain} Str · ${state.oil})`;
     btnOil.onclick = () => {
       if (state.oil <= 0 || state.stats.strength >= state.startingStats.strength || s.isWon) return;
       const prevStr = state.stats.strength;
@@ -1775,6 +1857,30 @@ function bindStandAuxButtons() {
       state.stats.strength = Math.min(state.startingStats.strength, state.stats.strength + 4);
       const gained = state.stats.strength - prevStr;
       s.log.push(`Anointed with Oil: Gain: +${gained} Strength (now ${state.stats.strength}/${state.startingStats.strength}).`);
+      audio.playKinnorChord();
+      saveState();
+      renderStandSession();
+      bindStandAuxButtons();
+    };
+  }
+
+  const btnBread = document.getElementById('btn-stand-bread');
+  if (btnBread) {
+    btnBread.classList.toggle('hidden', hideAux);
+    const strRoom = Math.max(0, state.startingStats.strength - state.stats.strength);
+    const actualBreadGain = Math.min(2, strRoom);
+    btnBread.disabled = state.bread <= 0 || strRoom <= 0 || s.isWon;
+    btnBread.textContent =
+      strRoom <= 0
+        ? `Bread (Full · ${state.bread})`
+        : `Bread (+${actualBreadGain} Str · ${state.bread})`;
+    btnBread.onclick = () => {
+      if (state.bread <= 0 || state.stats.strength >= state.startingStats.strength || s.isWon) return;
+      const prevStr = state.stats.strength;
+      state.bread -= 1;
+      state.stats.strength = Math.min(state.startingStats.strength, state.stats.strength + 2);
+      const gained = state.stats.strength - prevStr;
+      s.log.push(`Ate 1 Loaf of Bread: Gain: +${gained} Strength (now ${state.stats.strength}/${state.startingStats.strength}).`);
       audio.playKinnorChord();
       saveState();
       renderStandSession();
@@ -1822,48 +1928,60 @@ function bindStandAuxButtons() {
   }
 }
 
-export function triggerGraceFall() {
-  // Grace Rule (Book 1 How-To-Play §3): No dead ends. Keep all Scrolls & Treasure.
+export function triggerGraceFall(failedStand = null) {
+  // Watchman Cost of Failure: "Fallen, but not forsaken" (Micah 7:8 KJV)
+  // Restore Strength to 50%, lose 1 Treasure if you have any, and return to start of current stage with Stand un-cleared.
   if (state.tokenSpentInCurrentStand) {
     state.tokenUsed = false;
     state.tokenSpentInCurrentStand = false;
   }
-  const well = WELLS[state.lastWellId] || WELLS.well_1;
-  const gp = well.gracePassage || WELLS.well_1.gracePassage;
+  const st = failedStand || activeStandSession?.stand || null;
+  if (st && st.id) {
+    state.standsCleared = state.standsCleared.filter((id) => id !== st.id);
+  }
 
-  setText('grace-title', `Grace Restoration · ${gp.sectionRef}`);
-  setText('grace-kjv', gp.exposed);
-  setText('grace-narrative', gp.text);
+  const restoredStr = Math.max(1, Math.round((Number(state.startingStats.strength) || 20) * 0.5));
+  const hadTreasure = state.stats.treasure > 0;
+  if (hadTreasure) {
+    state.stats.treasure = Math.max(0, state.stats.treasure - 1);
+  }
+  state.stats.strength = restoredStr;
+  saveState();
+
+  const curStageIdx = state.currentStageIdx || 0;
+  const curStage = STAGES[curStageIdx] || STAGES[0];
+  // Immediately reposition player at the start of the current stage
+  loadStage(curStageIdx);
+
+  const kjvVerse =
+    '"Rejoice not against me, O mine enemy: when I fall, I shall arise; when I sit in darkness, the LORD shall be a light unto me." — Micah 7:8 (KJV)';
+  setText('grace-title', 'Fallen, but not forsaken');
+  setText('grace-kjv', kjvVerse);
+  const trLossNote = hadTreasure
+    ? `Lost 1 Treasure (now ${state.stats.treasure}).`
+    : `Treasure remains at 0.`;
+  const standLabel = st ? st.title : 'this Stand';
+  setText(
+    'grace-narrative',
+    `Your Strength reached 0 against ${standLabel}. Strength is restored to 50% (${restoredStr}/${state.startingStats.strength}). ${trLossNote} You have been returned to the start of ${curStage.title} with ${standLabel} un-cleared.`
+  );
+  speakKjvScroll(
+    'Rejoice not against me, O mine enemy: when I fall, I shall arise; when I sit in darkness, the LORD shall be a light unto me.',
+    'Micah 7:8 (KJV)'
+  );
 
   const btnRestore = document.getElementById('btn-grace-restore-str');
   if (btnRestore) {
-    const newStr = Math.max(10, state.startingStats.strength - 2);
-    btnRestore.textContent = `Return to ${well.title} (Restore Strength to ${newStr}, Keep All Scrolls & Treasure)`;
+    btnRestore.textContent = `Rise at Start of ${curStage.title} (Strength ${restoredStr}/${state.startingStats.strength}) →`;
     btnRestore.onclick = () => {
-      state.stats.strength = newStr;
-      state.stats.favor = state.startingStats.favor;
-      saveState();
-      loadStage(state.lastWellStageIdx || 0);
+      loadStage(curStageIdx);
       closeAllModals();
     };
   }
 
   const btnSupply = document.getElementById('btn-grace-restore-supply');
   if (btnSupply) {
-    const hasSupply = state.bread > 0 || state.oil > 0;
-    btnSupply.disabled = !hasSupply;
-    btnSupply.textContent = hasSupply
-      ? `Spend 1 Bread/Oil -> Return at Full Starting Strength (${state.startingStats.strength})`
-      : 'Spend 1 Bread/Oil (None Remaining)';
-    btnSupply.onclick = () => {
-      if (state.bread > 0) state.bread -= 1;
-      else if (state.oil > 0) state.oil -= 1;
-      state.stats.strength = state.startingStats.strength;
-      state.stats.favor = state.startingStats.favor;
-      saveState();
-      loadStage(state.lastWellStageIdx || 0);
-      closeAllModals();
-    };
+    btnSupply.classList.add('hidden');
   }
 
   audio.playKinnorChord();

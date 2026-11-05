@@ -360,7 +360,7 @@
     }
     .stand-bottom-actions {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 6px;
       padding-top: 6px; border-top: 1px solid rgba(148, 163, 184, 0.18); flex-shrink: 0;
     }
@@ -717,19 +717,19 @@
           <div class="hud-pill hud-pill-primary" title="Courage: Added to your 2d6 roll in every Stand round">
             <span class="hud-pill-icon" aria-hidden="true">⚔</span>
             <span class="hud-pill-label">Courage</span>
-            <span id="hud-courage" class="hud-pill-val">10</span>
+            <span id="hud-courage" class="hud-pill-val">9</span>
           </div>
-          <div class="hud-pill hud-pill-primary" title="Strength: Your endurance; if 0, Grace returns you to the Last Well">
+          <div class="hud-pill hud-pill-primary" title="Strength (20 max): Your endurance; if 0, Fallen but not forsaken restores 50% Strength at stage start">
             <span class="hud-pill-icon" aria-hidden="true">🛡</span>
             <span class="hud-pill-label">Strength</span>
             <span id="hud-strength" class="hud-pill-val">20/20</span>
           </div>
-          <div class="hud-pill hud-pill-primary" title="Favor: Roll 2d6 <= Favor to soften a lost Stand round (-1 Strength instead of -2)">
+          <div class="hud-pill hud-pill-primary" title="Favor: Roll 2d6 <= Favor to soften a lost Stand round, or spend 1 Favor to Give at a Treasure">
             <span class="hud-pill-icon" aria-hidden="true">✦</span>
             <span class="hud-pill-label">Favor</span>
             <span id="hud-favor" class="hud-pill-val">9/9</span>
           </div>
-          <div class="hud-pill hud-pill-primary treasure-pill" title="Treasure: Rises ONLY when you freely Give (+1) instead of Keep (+0)">
+          <div class="hud-pill hud-pill-primary treasure-pill" title="Treasure: Each Give costs 2 Strength or 1 Favor for +1 Treasure (4+ reaches Section 300 True Ending)">
             <span class="hud-pill-icon" aria-hidden="true">★</span>
             <span class="hud-pill-label">Treasure</span>
             <span id="hud-treasure" class="hud-pill-val">0</span>
@@ -835,6 +835,10 @@
         Walk beside 24-year-old session guitarist Elias Cho from the rain-slicked neon alleys of Seoul onto the crystalline Sea of Glass. Stand against Strongholds with KJV Scripture, rest at the Wells of Living Water, and discover the Unseen Treasure that grows only when you give.
       </p>
 
+      <div id="title-watchman-line" style="font-size:0.84rem; font-weight:700; color:var(--gold); letter-spacing:0.04em;">
+        Watchman difficulty — stand firm.
+      </div>
+
       <div id="title-save-summary" class="hidden" style="font-size:0.8rem; color:#fde68a; background:rgba(180,83,9,0.22); border:1px solid rgba(251,191,36,0.5); padding:5px 14px; border-radius:999px;"></div>
 
       <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center; width:100%;">
@@ -882,18 +886,18 @@
       </p>
       <div class="choice-grid">
         <div class="choice-card">
-          <strong>Courage &amp; Strength</strong>
-          <p class="narrative-p" style="font-size:0.82rem;"><strong>Courage (1d6+6):</strong> Added to your transparent <code>2d6</code> roll in every Stand round.<br/><strong>Strength (2d6+12):</strong> Your endurance. If it reaches 0, you never die—Grace returns you to the Last Well keeping every Scroll and Treasure.</p>
+          <strong>Courage &amp; Strength (Watchman Balance)</strong>
+          <p class="narrative-p" style="font-size:0.82rem;"><strong>Courage (9):</strong> Added to your transparent <code>2d6</code> roll in every Stand round against Strongholds (<code>2d6 + Roll Bonus</code>).<br/><strong>Strength (20 max):</strong> Your endurance (ties cost 1 Strength; lost rounds cost 2). If Strength reaches 0, <em>"Fallen, but not forsaken"</em> (Micah 7:8 KJV) restores Strength to 50% (10/20), deducts 1 Treasure if you have any, and sends you to the start of the current stage.</p>
         </div>
         <div class="choice-card">
-          <strong>Favor &amp; Treasure</strong>
-          <p class="narrative-p" style="font-size:0.82rem;"><strong>Favor (1d6+6):</strong> Test Favor (<code>2d6 &lt;= Favor</code>) when you lose a Stand round to halve your Strength loss.<br/><strong>★ Treasure (Starts at 0):</strong> Rises <strong>ONLY</strong> when you choose to <strong>Give (+1)</strong> at personal cost instead of <strong>Keep (+0)</strong>.</p>
+          <strong>Favor, Wells &amp; Sacrificial Treasure</strong>
+          <p class="narrative-p" style="font-size:0.82rem;"><strong>Favor (9 max) &amp; Wells:</strong> Test Favor (<code>2d6 &lt;= Favor</code>, costs 1 Favor) to halve a lost round, or use <strong>Oil (+4)</strong> &amp; <strong>Bread (+2)</strong> mid-fight. Each Well heals <strong>+2 Strength</strong> &amp; <strong>+1 Favor</strong> once.<br/><strong>★ Treasure (Starts at 0):</strong> Each <strong>Give (+1 Treasure)</strong> costs <strong>2 Strength OR 1 Favor</strong> (4+ Treasure reaches the Section 300 True Ending).</p>
         </div>
       </div>
       <div id="welcome-roll-preview" style="font-weight:700; color:var(--aqua); font-size:0.86rem;"></div>
       <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:space-between; align-items:center;">
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button id="btn-roll-stats">Roll Starting Stats (1d6+6 / 2d6+12)</button>
+          <button id="btn-roll-stats">Set Watchman Stats (Courage 9 · Strength 20 · Favor 9)</button>
           <button id="btn-open-guide-from-welcome">? How to Play</button>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -910,12 +914,12 @@
       <div class="modal-head">
         <div>
           <h2 class="modal-title">How to Play · The Narrow Way Walk</h2>
-          <div class="modal-meta">Zone I: Elias Cho &amp; David the King · Companion-POV Guide</div>
+          <div class="modal-meta">Zone I: Elias Cho &amp; David the King · Watchman Balance Guide</div>
         </div>
         <button data-close-modal aria-label="Close">×</button>
       </div>
       <div class="stronghold-def-banner">
-        <strong>What is a Stronghold?</strong> A Stronghold is a spiritual lie or habit you stand against with God's Word.
+        <strong>Watchman Difficulty — Stand Firm:</strong> A Stronghold is a spiritual lie or habit you stand against with God's Word.
       </div>
       <div class="guide-grid">
         <div class="choice-card">
@@ -926,24 +930,22 @@
           </p>
         </div>
         <div class="choice-card">
-          <strong style="color:var(--coral);">2. Stands, Dice &amp; Victory Law</strong>
+          <strong style="color:var(--coral);">2. Stands, Ties &amp; Victory Law</strong>
           <p class="narrative-p" style="font-size:0.8rem;">
-            Before Round 1, apply <strong>Step 1: The Victory Law</strong> (humility/confession) and speak a resonant <strong>KJV Scroll</strong> to lower the Stronghold's Courage &amp; Strength. Each round rolls transparent <code>2d6 + Courage</code> vs the Stronghold's <code>2d6 + Courage</code>. Higher total reduces the other side's Strength by 2. Clear every Stand in a stage to unlock the next stage.
+            Before Round 1, apply <strong>Step 1: The Victory Law</strong> and speak a resonant <strong>KJV Scroll</strong> to lower the Stronghold's roll bonus &amp; Strength. Each round rolls <code>2d6 + Courage</code> vs the Stronghold's <code>2d6 + Roll Bonus</code> (e.g. <code>2d6+9</code>). Wins deal 2 damage to the Stronghold; losses cost 2 Strength; <strong>ties cost 1 Strength</strong>. Walking away on a Victory Law walk-out path costs <strong>1 Favor or 1 Strength</strong>.
           </p>
         </div>
         <div class="choice-card">
-          <strong style="color:var(--emerald);">3. Courage, Strength, Favor &amp; Wells</strong>
+          <strong style="color:var(--emerald);">3. Wells &amp; Cost of Failure</strong>
           <p class="narrative-p" style="font-size:0.8rem;">
-            <strong>Courage</strong> adds to every Stand roll. <strong>Strength</strong> is endurance. When you lose a round, you may <strong>Test Favor</strong> (<code>2d6 &lt;= Favor</code>, costs 1 Favor) to halve the loss from -2 to -1. <strong>Wells of Living Water</strong> restore Favor to full, heal +4 Strength, and teach KJV Scrolls. If Strength hits 0, Grace returns you to the Last Well keeping all Scrolls &amp; Treasure.
+            Each <strong>Well of Living Water</strong> can be used <strong>once</strong>, restoring <strong>+2 Strength</strong> and <strong>+1 Favor</strong> and teaching a KJV Scroll. When you lose a round, you may <strong>Test Favor</strong> (<code>2d6 &lt;= Favor</code>, costs 1 Favor) to halve the loss. If Strength reaches 0, <strong>"Fallen, but not forsaken" (Micah 7:8 KJV)</strong> restores Strength to <strong>50% (10/20)</strong>, loses <strong>1 Treasure</strong> (if any), and sends you to the start of the current stage with that Stand un-cleared.
           </p>
         </div>
         <div class="choice-card">
-          <strong style="color:var(--gold);">4. Oil, Bread, Scrolls &amp; Treasure</strong>
+          <strong style="color:var(--gold);">4. Oil, Bread &amp; Sacrificial Treasure</strong>
           <p class="narrative-p" style="font-size:0.8rem;">
-            <strong>Oil:</strong> Restores +4 Strength during a Stand.<br/>
-            <strong>Bread:</strong> Restores +2 Strength at a Well or can be shared with neighbors in need.<br/>
-            <strong>Scrolls:</strong> Verbatim KJV Scriptures learned at Wells.<br/>
-            <strong>★ Treasure:</strong> Rises <strong>ONLY</strong> when you freely choose to <strong>Give (+1)</strong> rather than <strong>Keep (+0)</strong>.
+            <strong>Oil (+4 Strength)</strong> and <strong>Bread (+2 Strength)</strong> are your main ways to recover mid-fight inside a Stand (Bread can also be eaten at a Well).<br/>
+            <strong>★ Treasure:</strong> Each <strong>Give</strong> costs a real sacrifice—<strong>2 Strength OR 1 Favor</strong> (your choice)—for <strong>+1 Treasure</strong>. Reach <strong>4+ Treasure</strong> with all Stands cleared for Section 300 (True Ending).
           </p>
         </div>
       </div>
@@ -1058,13 +1060,16 @@
         <div class="choice-card" style="border-color:var(--gold);">
           <strong style="color:var(--gold);">★ Give Choice (Raises Treasure +1)</strong>
           <p id="treasure-give-label" class="narrative-p" style="font-size:0.82rem;"></p>
-          <div id="treasure-give-cost" style="font-size:0.79rem; color:#fde68a;"></div>
-          <button id="btn-treasure-give" class="btn-gold">Choose to Give (+1 Treasure)</button>
+          <div id="treasure-give-cost" style="font-size:0.79rem; color:#fde68a; font-weight:600;">Cost: 2 Strength or 1 Favor · Gain: +1 Treasure</div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <button id="btn-treasure-give" class="btn-gold">Give (Cost: 2 Strength · Gain: +1 Treasure)</button>
+            <button id="btn-treasure-give-favor" class="btn-gold">Give (Cost: 1 Favor · Gain: +1 Treasure)</button>
+          </div>
         </div>
         <div class="choice-card">
           <strong style="color:var(--text-muted);">Keep / Pass By (+0 Treasure)</strong>
           <p id="treasure-keep-label" class="narrative-p" style="font-size:0.82rem;"></p>
-          <div id="treasure-keep-cost" style="font-size:0.79rem; color:var(--text-muted);"></div>
+          <div id="treasure-keep-cost" style="font-size:0.79rem; color:var(--text-muted);">No cost · +0 Treasure</div>
           <button id="btn-treasure-keep">Keep / Pass By (+0 Treasure)</button>
         </div>
       </div>
@@ -1097,7 +1102,7 @@
           <strong>Stronghold:</strong> A Stronghold is a spiritual lie or habit you stand against with God's Word.
         </div>
         <div id="stand-coach-tip" class="coach-tip-banner hidden">
-          <strong>3-Step Stand Coach Tip:</strong> <strong>1.</strong> Click <em>Step 1: Apply Victory Law</em> (humility before Round 1). <strong>2.</strong> Speak a <em>Resonant KJV Scroll</em> if learned. <strong>3.</strong> Click <em>Roll Round</em> to roll <code>2d6 + Courage</code>!
+          <strong>Watchman Stand Coach Tip:</strong> <strong>1.</strong> Click <em>Step 1: Apply Victory Law</em> before Round 1. <strong>2.</strong> Speak a <em>Resonant KJV Scroll</em> if learned. <strong>3.</strong> Click <em>Roll Round</em> (ties cost 1 Strength; use <em>Oil</em> or <em>Bread</em> mid-fight to recover)!
         </div>
       </div>
 
@@ -1106,11 +1111,11 @@
         <div class="choice-grid" style="gap:7px; flex-shrink:0;">
           <div class="choice-card" style="padding:6px 10px;">
             <strong style="color:var(--aqua); font-size:0.80rem;">Fellow-Traveler (You)</strong>
-            <div style="font-size:0.79rem;">Courage: <strong id="stand-player-courage">10</strong> | Strength: <strong id="stand-player-strength">20/20</strong> | Favor: <strong id="stand-player-favor">9/9</strong></div>
+            <div style="font-size:0.79rem;">Courage: <strong id="stand-player-courage">9</strong> | Strength: <strong id="stand-player-strength">20/20</strong> | Favor: <strong id="stand-player-favor">9/9</strong></div>
           </div>
           <div class="choice-card" style="border-color:var(--coral); padding:6px 10px;">
             <strong id="stand-enemy-name" style="color:var(--coral); font-size:0.80rem;">Stronghold</strong>
-            <div style="font-size:0.79rem;">Courage: <strong id="stand-enemy-courage">8</strong> | Strength: <strong id="stand-enemy-strength">10/10</strong></div>
+            <div style="font-size:0.79rem;">Courage: <strong id="stand-enemy-courage">8</strong> | Strength: <strong id="stand-enemy-strength">10/10</strong> · <strong id="stand-enemy-roll" style="color:#fde68a;">Stronghold rolls 2d6+9</strong></div>
           </div>
         </div>
         <div id="stand-step-actions" class="stand-step-grid">
@@ -1124,8 +1129,9 @@
       <div class="stand-bottom-actions">
         <button id="btn-stand-roll" class="btn-primary" style="flex:1 1 230px;">Roll Round (2d6 + Courage)</button>
         <button id="btn-stand-favor">Test Favor</button>
-        <button id="btn-stand-oil">Use Oil (+4 Str)</button>
-        <button id="btn-stand-token">Aquamarine Stone</button>
+        <button id="btn-stand-oil">Oil (+4 Str)</button>
+        <button id="btn-stand-bread">Bread (+2 Str)</button>
+        <button id="btn-stand-token">Token (Auto-10)</button>
         <button id="btn-stand-withdraw">Withdraw (-2 Str)</button>
       </div>
     </div>
@@ -1136,15 +1142,16 @@
     <div class="modal-card">
       <div class="modal-head">
         <div>
-          <h2 id="grace-title" class="modal-title">The Well of Grace Restoration</h2>
-          <div class="modal-meta">Grace Rule · Zero Dead Ends · All Scrolls &amp; Treasure Kept</div>
+          <h2 id="grace-title" class="modal-title">Fallen, but not forsaken</h2>
+          <div class="modal-meta">Watchman Grace Rule · 50% Strength Restored · Return to Current Stage Start</div>
         </div>
+        <button data-close-modal aria-label="Close">×</button>
       </div>
       <div id="grace-kjv" class="kjv-box"></div>
       <p id="grace-narrative" class="narrative-p"></p>
       <div style="display:flex; flex-direction:column; gap:8px;">
-        <button id="btn-grace-restore-str" class="btn-primary">Return to Last Well</button>
-        <button id="btn-grace-restore-supply" class="btn-gold">Spend 1 Bread/Oil -> Return at Full Starting Strength</button>
+        <button id="btn-grace-restore-str" class="btn-primary">Rise at Start of Current Stage</button>
+        <button id="btn-grace-restore-supply" class="btn-gold hidden">Spend 1 Bread/Oil -> Return at Full Starting Strength</button>
       </div>
     </div>
   </div>

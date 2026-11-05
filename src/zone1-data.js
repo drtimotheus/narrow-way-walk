@@ -355,7 +355,8 @@ export const STANDS = {
     strongholdName: 'Pride (#15)',
     scriptureRoot: 'Ezekiel 28:17; Isaiah 14:13–14; Proverbs 16:18 (KJV)',
     baseCourage: 7,
-    baseStrength: 6,
+    rollBonus: 1,
+    baseStrength: 8,
     crackTarget: 3, // Crack at <= 3, Demolish at 0
     isRiggedBait: false,
     resonantScrolls: ['scroll_1'],
@@ -363,7 +364,7 @@ export const STANDS = {
       '“Look at these executives waiting to put your brother on every screen in the country. Don’t mention how tired he is. Smile, take the credit, and tell them how effortlessly he carries the anointing.”',
     victoryLawPrompt:
       'Step 1 (The Victory Law): Refuse the flattery and give the glory to God alone before Round 1.',
-    victoryLawEffect: { courageDelta: -1, strengthDelta: 0, note: 'Humility lowers The Applause Echo’s COURAGE from 7 to 6!' },
+    victoryLawEffect: { courageDelta: -1, strengthDelta: 0, note: 'Humility lowers The Applause Echo’s COURAGE from 7 to 6 (rolls 2d6+7)!' },
     scrollLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Speaking Proverbs 16:18 cracks the gilded mirror (-1 Courage, -2 Strength)!' },
     victoryText:
       'Elias sets down the porcelain espresso cup and looks the producer in the eye: “The song isn’t a brand, sir. Anything good in that room tonight belonged to the Lord, and I need some air.” The gilded reflection in the lounge mirror fractures and fades.',
@@ -379,7 +380,8 @@ export const STANDS = {
     strongholdName: 'Addictions (#23)',
     scriptureRoot: 'Proverbs 23:29–35; 1 Corinthians 6:12 (KJV)',
     baseCourage: 7,
-    baseStrength: 6,
+    rollBonus: 1,
+    baseStrength: 8,
     crackTarget: 3,
     isRiggedBait: false,
     resonantScrolls: ['scroll_5', 'scroll_1'],
@@ -387,8 +389,8 @@ export const STANDS = {
       '“You gave two thousand people everything you had tonight, Elias. Nobody at church knows how loud the hospital machines still sound in your head. You don’t have to quit forever—just get through tonight. Usual spot, twenty minutes.”',
     victoryLawPrompt:
       'Step 1 (The Victory Law): Step beside Elias by the dumpsters and ask him to read the dealer’s text message out loud into the light instead of hiding it.',
-    victoryLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Bringing the secret into the light lowers Addictions’ COURAGE to 6 and STRENGTH from 6 to 4!' },
-    scrollLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Speaking KJV Scripture aloud with honest confession lowers COURAGE to 6 and STRENGTH to 4!' },
+    victoryLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Bringing the secret into the light lowers Addictions’ COURAGE to 6 (rolls 2d6+7) and STRENGTH from 8 to 6!' },
+    scrollLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Speaking KJV Scripture aloud with honest confession lowers COURAGE to 6 and STRENGTH to 6!' },
     victoryText:
       'As you stand shoulder-to-shoulder with Elias in the neon drizzle and refuse to let the secret stay in the dark, the low, humming coil above the dumpsters cracks and recoils—and beneath your sneakers, the wet asphalt warms into translucent crystal.',
     withdrawText:
@@ -403,7 +405,8 @@ export const STANDS = {
     strongholdName: 'Jealousy (#27)',
     scriptureRoot: 'Numbers 5:14; 1 Samuel 18:6–10; Proverbs 27:2 (KJV)',
     baseCourage: 8,
-    baseStrength: 8,
+    rollBonus: 1,
+    baseStrength: 10,
     crackTarget: 4,
     isRiggedBait: false,
     resonantScrolls: ['scroll_3', 'scroll_1'],
@@ -411,7 +414,7 @@ export const STANDS = {
       '“Look how easily the doors open for that younger singer in Busan while you bleed for every note. If you let your streaming numbers slip this month, everyone will forget your name. Watch them. Measure yourself against them.”',
     victoryLawPrompt:
       'Step 1 (The Victory Law): Pray aloud with Elias for the younger worship leader in Busan to be blessed, or speak Proverbs 27:2 (KJV).',
-    victoryLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Jealousy cannot breathe where another’s good is celebrated! Courage drops from 8 to 7, Strength from 8 to 6.' },
+    victoryLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Jealousy cannot breathe where another’s good is celebrated! Courage drops from 8 to 7 (rolls 2d6+8), Strength from 10 to 8.' },
     scrollLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Speaking Proverbs 27:2 (KJV) cracks the jaundiced lens (-1 Courage, -2 Strength)!' },
     victoryText:
       '“Lord, bless that brother’s songs in Busan,” Elias says out loud, his voice rough at first and then genuinely warm. “If kids are meeting You there, what does it matter whose name is on the poster?” The jaundiced green-gold lens cracks across the middle and dissolves like smoke in sunlight.',
@@ -427,18 +430,19 @@ export const STANDS = {
     strongholdName: 'Pride (#15) + Addictions (#23)',
     scriptureRoot: '1 Corinthians 6:12; Proverbs 16:18 (KJV)',
     baseCourage: 11,
-    baseStrength: 12,
+    rollBonus: 1,
+    baseStrength: 14,
     crackTarget: 0,
     isRiggedBait: true, // Walking away is the canonical Victory!
     resonantScrolls: ['scroll_5', 'scroll_1'],
     whisper:
       '“What’s the matter? Are you two afraid of a room? Step inside Tae-yang’s green room for ten minutes and prove how strong your recovery is. If you walk away now, everyone at the party will say you’re still weak.”',
     victoryLawPrompt:
-      'Step 1 (The Victory Law — Section 145): Some battles are snares of ego that are won only by refusing them! Choose to walk out into the night with Elias right now (Section 158) instead of fighting a rigged Courage 11 snare in the doorway.',
-    victoryLawEffect: { courageDelta: 0, strengthDelta: 0, note: 'Refusing the rigged fight costs 0 Strength, restores +1 Courage & +1 Strength, and teaches Scroll 5!' },
+      'Step 1 (The Victory Law — Section 145): Some battles are snares of ego that are won only by refusing them! Choose to walk out into the night with Elias right now (Section 158) instead of fighting a rigged snare in the doorway (Cost: 1 Favor or 1 Strength).',
+    victoryLawEffect: { courageDelta: 0, strengthDelta: 0, note: 'Refusing the rigged fight in wisdom costs 1 Favor or 1 Strength and teaches Scroll 5!' },
     scrollLawEffect: { courageDelta: 0, strengthDelta: 0, note: 'Refusing the rigged fight in wisdom is the true victory!' },
     victoryText:
-      '“No, Tae-yang,” Elias says in the hallway—neither loud nor defensive. “I’m not coming in. And it isn’t you I don’t trust.” You and Elias turn around together and walk out into the clean midnight air of Hannam-dong. Behind the velvet rope, the rigged snare shatters silently into nothing because nobody stayed to feed it! (+1 Courage, +1 Strength, and learned Scroll 5: 1 Corinthians 6:12 KJV).',
+      '“No, Tae-yang,” Elias says in the hallway—neither loud nor defensive. “I’m not coming in. And it isn’t you I don’t trust.” You and Elias turn around together and walk out into the clean midnight air of Hannam-dong. Behind the velvet rope, the rigged snare shatters silently into nothing because nobody stayed to feed it! (Cost: 1 Favor or 1 Strength · Learned Scroll 5: 1 Corinthians 6:12 KJV).',
     withdrawText:
       'Waking up to the trap in the smoke-filled doorway, you and Elias turn your backs on Tae-yang’s party and step out into the clean Hannam-dong night.'
   },
@@ -452,7 +456,8 @@ export const STANDS = {
     strongholdName: 'Grief (#28 — Loss + Refused Comfort)',
     scriptureRoot: 'Genesis 37:34–35; Isaiah 53:4; 2 Samuel 18:33 (KJV)',
     baseCourage: 8,
-    baseStrength: 8,
+    rollBonus: 1,
+    baseStrength: 10,
     crackTarget: 0, // Demolish target 0
     isRiggedBait: false,
     resonantScrolls: ['scroll_4', 'scroll_2'],
@@ -460,7 +465,7 @@ export const STANDS = {
       '“Keep your chin up before the brass plate. Bow for ten seconds, say something spiritual, and walk out to the car before your sister Yuna sees you cry. If you let the dam break, you will never stop.”',
     victoryLawPrompt:
       'Step 1 (The Victory Law): Speak Psalm 51:17 or Isaiah 53:4 aloud, or tell Elias gently, “You don’t have to hold it together here, brother; Yuna and I are right beside you.”',
-    victoryLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Honest lament lowers The Curated Sorrow’s COURAGE from 8 to 7 and STRENGTH from 8 to 6!' },
+    victoryLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Honest lament lowers The Curated Sorrow’s COURAGE from 8 to 7 (rolls 2d6+8) and STRENGTH from 10 to 8!' },
     scrollLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Speaking Isaiah 53:4 / Psalm 51:17 shatters the shell of refused comfort (-1 Courage, -2 Strength)!' },
     victoryText:
       'The cold stone shell of refused comfort shatters into nothing. Standing before the small brass plate of Grace Mi-ran Cho, with Yuna’s hand on his left arm and you standing on his right, Elias weeps for his mother in the daylight—and after ten unhurried minutes, wipes his eyes and stands back up without pretending he didn’t cry.',
@@ -476,7 +481,8 @@ export const STANDS = {
     strongholdName: 'Infirmity (#19)',
     scriptureRoot: 'Luke 13:11–16; 2 Corinthians 12:9 (KJV)',
     baseCourage: 8,
-    baseStrength: 8,
+    rollBonus: 1,
+    baseStrength: 10,
     crackTarget: 4,
     isRiggedBait: false,
     resonantScrolls: ['scroll_2', 'scroll_1', 'scroll_4', 'scroll_5'],
@@ -484,7 +490,7 @@ export const STANDS = {
       '“Your body is spent and your nerves are frayed. Stay in the windowless rehearsal booth. Cancel on Yuna. Tell her you have vocal fatigue. Bind yourself where nobody can ask anything of you.”',
     victoryLawPrompt:
       'Step 1 (The Victory Law): Refuse the isolation, lift Elias’s heavy guitar case onto your own shoulder, and pray for the Lord to loose the exhaustion (Luke 13:12 KJV).',
-    victoryLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Bearing your brother’s burden lowers The Iron Collar’s COURAGE to 7 and STRENGTH from 8 to 6!' },
+    victoryLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Bearing your brother’s burden lowers The Iron Collar’s COURAGE to 7 (rolls 2d6+8) and STRENGTH from 10 to 8!' },
     scrollLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Speaking KJV Scripture aloud looses the iron yoke (-1 Courage, -2 Strength)!' },
     victoryText:
       'As you lift the guitar case off Elias’s bent shoulder and pray aloud in the booth, the unseen iron yoke cracks with the sound of snapping rust. Elias straightens his spine, inhaling a full lungful of air, and you find Auntie Park’s clay vial of olive oil (+1 Flask of Oil)!',
@@ -500,7 +506,8 @@ export const STANDS = {
     strongholdName: 'Pride (#15)',
     scriptureRoot: 'Proverbs 16:18; Psalm 51:17; 2 Corinthians 12:9 (KJV)',
     baseCourage: 9,
-    baseStrength: 8,
+    rollBonus: 1,
+    baseStrength: 10,
     crackTarget: 0, // Demolish at 0
     isRiggedBait: false,
     resonantScrolls: ['scroll_1', 'scroll_2', 'scroll_3'],
@@ -508,8 +515,8 @@ export const STANDS = {
       '“Why tell those forty nineteen-year-olds in the basement that you have been drowning since your mother died? Give them the polished version. Protect the ministry. Protect your name. If they see you weak, they will stop listening.”',
     victoryLawPrompt:
       'Step 1 (The Victory Law): Speak Scroll 1 (Proverbs 16:18) or Scroll 2 (Psalm 51:17) aloud while refusing to give the youth group a fake testimony.',
-    victoryLawEffect: { courageDelta: -1, strengthDelta: 0, note: 'Costly honesty (“We aren’t going in there to look strong”) lowers COURAGE from 9 to 8!' },
-    scrollLawEffect: { courageDelta: -2, strengthDelta: -2, note: 'Speaking Proverbs 16:18 / Psalm 51:17 splits the obsidian mirror (-2 Courage to 7, -2 Strength to 6)!' },
+    victoryLawEffect: { courageDelta: -1, strengthDelta: 0, note: 'Costly honesty (“We aren’t going in there to look strong”) lowers COURAGE from 9 to 8 (rolls 2d6+9)!' },
+    scrollLawEffect: { courageDelta: -1, strengthDelta: -2, note: 'Speaking Proverbs 16:18 / Psalm 51:17 splits the obsidian mirror (-1 Courage to 7, -2 Strength to 8)!' },
     victoryText:
       'The obsidian glass shatters into harmless gray dust on the linoleum floor, leaving only an ordinary hallway mirror and a quiet door. Inside the basement, when 19-year-old Soo-jin asks for the real answer, Elias lowers the microphone to his knee and tells the unvarnished truth.',
     withdrawText:
@@ -524,7 +531,8 @@ export const STANDS = {
     strongholdName: 'Pride (#15) + Shame (#17) [with Jealousy #27, Abandonment #21, Occult #29]',
     scriptureRoot: 'Proverbs 16:18; Psalm 51:17; Genesis 3:7; Revelation 15:2 (KJV)',
     baseCourage: 10,
-    baseStrength: 12,
+    rollBonus: 1,
+    baseStrength: 15,
     crackTarget: 0, // Demolish at 0
     isRiggedBait: false,
     isClimax: true,
@@ -533,8 +541,8 @@ export const STANDS = {
       'Shame opens a false doorway to a dim hallway and whispers: “Look at these strangers counting on you, Elias. Are you really going to stand here—or are you only going to fail them, the way you failed your mother?” While Pride whispers to you: “Let him go. Why go down with a man who almost relapsed?”',
     victoryLawPrompt:
       'Step 1 (The Victory Law + Fellowship Synergy, Sec. 260–263): Refuse to abandon Elias, speak Proverbs 16:18 & Psalm 51:17 as Elias cries out “I’m not okay. And I’m still here,” and lock hands in an unbroken circle with Adaeze, Brother Matthias, and Talia!',
-    victoryLawEffect: { courageDelta: -2, strengthDelta: -4, note: 'Confession + Locking Four Hands across the Sea of Glass drops COURAGE from 10 to 8 and STRENGTH from 12 to 8!' },
-    scrollLawEffect: { courageDelta: -2, strengthDelta: -4, note: 'Spoken KJV Scrolls + Unbroken Fellowship Circle drops COURAGE to 8 and STRENGTH to 8!' },
+    victoryLawEffect: { courageDelta: -2, strengthDelta: -4, note: 'Confession + Locking Four Hands across the Sea of Glass drops COURAGE from 10 to 8 (rolls 2d6+9) and STRENGTH from 15 to 11!' },
+    scrollLawEffect: { courageDelta: -2, strengthDelta: -4, note: 'Spoken KJV Scrolls + Unbroken Fellowship Circle drops COURAGE to 8 and STRENGTH to 11!' },
     victoryText:
       'As the final shard of Pride’s obsidian mirror and Shame’s fig-leaf door cracks to 0, the bruise-colored sky above the Sea of Glass tears open like dawn! Because you, Elias, Adaeze, Matthias, and Talia confessed and joined hands first, four biblical Mentors drop through the sky onto the crystal floor behind you: King David (Light Blue • Aquamarine), Daniel (Green • Emerald), Paul (Dark Blue • Sapphire), and Queen Esther (Red • Ruby)! Then, when Heaviness (#20) rises like wet ash at the threshold, all five of you sit down on the warm glass floor and hum the four unpolished notes from the broken cassette-player night—dissolving the ash into sunrise.',
     withdrawText:
@@ -543,7 +551,7 @@ export const STANDS = {
 };
 
 // All 8 Canonical Treasure Opportunities in Book 1 (draft.md Sections 14, 56, 88/90, 131, 189, 218, 252, 288)
-// HARD RULE (§3): Giving raises Treasure (+1). Keeping/taking/passing by NEVER raises Treasure (+0).
+// HARD RULE (§3): Giving raises Treasure (+1) and costs 2 Strength OR 1 Favor. Keeping/taking/passing by NEVER raises Treasure (+0).
 export const TREASURES = {
   treasure_1: {
     id: 'treasure_1',
@@ -556,7 +564,7 @@ export const TREASURES = {
       'At the backstage corridor junction (Section 14), two doors stand open. To the LEFT, out in the cold loading-bay rain, 68-year-old janitor Mr. Park has dropped a heavy oak crate of wet XLR sound cables across his broom; his bad knee is locked in its brace and no one from the stage crew has stopped. To the RIGHT, through warm glass doors, manager Daniel waves you and Elias toward the VIP Sponsor Lounge where television producers and espresso cups are waiting.',
     giveChoice: {
       label: '✦ GIVE (Section 73): Turn away from the VIP lounge, kneel in the loading-bay rain with Elias to lift Mr. Park’s cable crate, and share 1 Loaf of Bread',
-      breadCost: 1,
+      breadCost: 0,
       strengthDelta: 0,
       treasureDelta: 1,
       deedRecord: 'Section 14/73 — Helped Mr. Park coil the wet cables in the loading-bay rain & shared bread instead of entering the VIP lounge.',
@@ -585,11 +593,11 @@ export const TREASURES = {
     giveChoice: {
       label: '✦ GIVE (Section 82): Set down your coats with Elias, brew hot barley tea, and spend an unhurried hour walking Min-jun through the bridge—taking zero credit',
       breadCost: 0,
-      strengthDelta: 2,
+      strengthDelta: 0,
       treasureDelta: 1,
       deedRecord: 'Section 56/82 — Stayed past midnight in secret to encourage and tutor 17-year-old bassist Min-jun.',
       outcomeText:
-        'Elias shows Min-jun how his own thumb used to cramp on the F-sharp minor transition at sixteen, and you brew three paper cups of hot barley tea. By the third run-through, Min-jun nails the bridge cleanly. Serving a younger brother in secret leaves your spirit lighter (+1 TREASURE, +2 Strength)!'
+        'Elias shows Min-jun how his own thumb used to cramp on the F-sharp minor transition at sixteen, and you brew three paper cups of hot barley tea. By the third run-through, Min-jun nails the bridge cleanly. Serving a younger brother in secret leaves your spirit lighter (+1 TREASURE)!'
     },
     keepChoice: {
       label: 'Keep Your Rest (Section 58): Pat Min-jun on the shoulder with a quick “practice it before Tuesday” and head straight home',
@@ -611,12 +619,12 @@ export const TREASURES = {
       'After Elias confesses the truth about his drinking and grief to his sister Yuna over coffee by the apartment window (Section 89), you walk her down to the avenue in the cold drizzle. Under the concrete ribs of the Mapo-gu overpass, a 19-year-old delivery rider crouches soaked and shivering beside a stalled motor-scooter, trying to keep someone else’s food box dry.',
     giveChoice: {
       label: '✦ GIVE (Section 104): Drape your dry coat over the shivering rider, press 1 Loaf of Bread (or 1 Strength) into his hands, and push his scooter to shelter',
-      breadCost: 1,
-      strengthDelta: 1,
+      breadCost: 0,
+      strengthDelta: 0,
       treasureDelta: 1,
       deedRecord: 'Section 88/104 — Gave dry coat and Bread to the stranded teenaged delivery rider under the Mapo-gu overpass.',
       outcomeText:
-        '“Nobody even looks at us when the bike dies in the rain,” the boy says, blinking rain from his eyelashes. Shivering in your shirt-sleeves, you and Elias climb the apartment stairs with a quiet joy no spotlight ever gave (+1 TREASURE, +1 Strength)!'
+        '“Nobody even looks at us when the bike dies in the rain,” the boy says, blinking rain from his eyelashes. Shivering in your shirt-sleeves, you and Elias climb the apartment stairs with a quiet joy no spotlight ever gave (+1 TREASURE)!'
     },
     keepChoice: {
       label: 'Keep Your Dry Coat & Bread (Section 91): Wave Yuna onto her bus and hurry straight back up to the warm apartment',
@@ -639,11 +647,11 @@ export const TREASURES = {
     giveChoice: {
       label: '✦ GIVE (Section 150): Take both heavy flowerpots from Mrs. Kang and walk slowly at her pace up all three flights of stairs without mentioning your hurry',
       breadCost: 0,
-      strengthDelta: 2,
+      strengthDelta: 0,
       treasureDelta: 1,
       deedRecord: 'Section 131/150 — Carried 80-year-old widow Mrs. Kang’s heavy chrysanthemum pots up the columbarium stairs at her pace.',
       outcomeText:
-        'Step by slow step, you listen as Mrs. Kang tells you about her late carpenter husband. At her husband’s niche in Hall C, she presses two warm honey-rice cakes into your hands: “You were not in too much of a hurry for an old woman.” Across the aisle, Yuna watches with shining eyes (+1 TREASURE, +2 Strength)!'
+        'Step by slow step, you listen as Mrs. Kang tells you about her late carpenter husband. At her husband’s niche in Hall C, she presses two warm honey-rice cakes into your hands: “You were not in too much of a hurry for an old woman.” Across the aisle, Yuna watches with shining eyes (+1 TREASURE)!'
     },
     keepChoice: {
       label: 'Keep Your Schedule (Section 132): Offer Mrs. Kang a polite nod and sprint up the steps two at a time so you aren’t late',
@@ -667,11 +675,11 @@ export const TREASURES = {
     giveChoice: {
       label: '✦ GIVE (Section 196): Let Daniel’s van wait and stay on the concrete steps with Elias for 20 unhurried minutes to listen to Soo-jin and connect her with a church counselor',
       breadCost: 0,
-      strengthDelta: 1,
+      strengthDelta: 0,
       treasureDelta: 1,
       deedRecord: 'Section 189/196 — Let the manager’s van wait to sit on the basement steps with 19-year-old Soo-jin and connect her with Pastor Ji’s care.',
       outcomeText:
-        'Soo-jin tells you her younger brother has been in the hospital since August and she felt like a fraud leading worship. Elias writes Pastor Ji’s chaplaincy number on her chord chart and you introduce her to the women’s ministry counselor. “Thank you for not rushing to the van,” she whispers (+1 TREASURE, +1 Strength)!'
+        'Soo-jin tells you her younger brother has been in the hospital since August and she felt like a fraud leading worship. Elias writes Pastor Ji’s chaplaincy number on her chord chart and you introduce her to the women’s ministry counselor. “Thank you for not rushing to the van,” she whispers (+1 TREASURE)!'
     },
     keepChoice: {
       label: 'Keep the Tour Schedule (Section 198): Hurry straight out to Manager Daniel’s van to deal with the sponsor fallout',
@@ -694,19 +702,19 @@ export const TREASURES = {
     giveChoice: {
       label: '✦ GIVE (Section 226): Step forward with Elias immediately, take responsibility for clearing the orchestral track on your own voucher, and spare Hoon’s job and name',
       breadCost: 0,
-      strengthDelta: 1,
+      strengthDelta: 0,
       treasureDelta: 1,
       deedRecord: 'Section 218/226 — Stepped forward with Elias to take the blame and studio charge so 20-year-old intern Hoon kept his job.',
       outcomeText:
-        '“Don’t fire him,” Elias tells the promoter evenly while you stand at his shoulder. “We told Hoon we didn’t want the canned orchestral swell anymore. Put the charge on our sheet.” Hoon bows ninety degrees in gratitude, and Elias plays the bridge bare—just wood, wire, and an honest voice (+1 TREASURE, +1 Strength)!'
+        '“Don’t fire him,” Elias tells the promoter evenly while you stand at his shoulder. “We told Hoon we didn’t want the canned orchestral swell anymore. Put the charge on our sheet.” Hoon bows ninety degrees in gratitude, and Elias plays the bridge bare—just wood, wire, and an honest voice (+1 TREASURE)!'
     },
     keepChoice: {
       label: 'Keep Your Budget Clean (Section 219): Stay silent in the corner and let Hoon take the blame for his own mistake',
       breadCost: 0,
-      strengthDelta: -1,
+      strengthDelta: 0,
       treasureDelta: 0,
       outcomeText:
-        'You say nothing. Hoon packs his notebook in shame and walks out without a job. The silence in the booth feels cold and heavy (-1 Strength, +0 Treasure).'
+        'You say nothing. Hoon packs his notebook in shame and walks out without a job. The silence in the booth feels cold and heavy (+0 Treasure).'
     }
   },
   treasure_7: {
@@ -719,21 +727,21 @@ export const TREASURES = {
     prompt:
       'On the Sea of Glass before the Climax Stand, Stronghold Abandonment (#21) opens a freezing desert mirage behind Talia Reyes (“Leave before they leave you”). Adaeze lunges toward her, but a jagged blast of freezing sand sweeps between them.',
     giveChoice: {
-      label: '✦ GIVE (Section 268): Throw yourself into the freezing gale (-1 Strength) to shield Adaeze and clasp Talia’s icy hand so she is not left behind',
+      label: '✦ GIVE (Section 268): Throw yourself into the freezing gale to shield Adaeze and clasp Talia’s icy hand so she is not left behind',
       breadCost: 0,
-      strengthDelta: -1,
+      strengthDelta: 0,
       treasureDelta: 1,
-      deedRecord: 'Section 252/268 — Took the freezing gale (-1 Strength) beside Adaeze to clasp Talia Reyes’s hand and break Abandonment’s lie.',
+      deedRecord: 'Section 252/268 — Braved the freezing gale beside Adaeze to clasp Talia Reyes’s hand and break Abandonment’s lie.',
       outcomeText:
         '“Look at us, Talia!” Adaeze cries out as your hands lock around Talia’s wrist. “We are the ones who stayed!” The desert watchtower of Abandonment shudders as its lie is broken by living proof (+1 TREASURE)!'
     },
     keepChoice: {
       label: 'Keep Your Guard Up (Section 253): Stay back at Elias’s side and shout encouragement across the wind while Adaeze reaches alone',
       breadCost: 0,
-      strengthDelta: -1,
+      strengthDelta: 0,
       treasureDelta: 0,
       outcomeText:
-        'Adaeze catches Talia’s wrist by the fingertips while the wind’s backlash buffets your position (-1 Strength, +0 Treasure).'
+        'Adaeze catches Talia’s wrist by the fingertips while the wind’s backlash buffets your position (+0 Treasure).'
     }
   },
   treasure_8: {
@@ -748,7 +756,7 @@ export const TREASURES = {
     giveChoice: {
       label: '✦ GIVE (Section 294): Give up the arena payday and spotlight for the honest recovery line, small unrecorded rooms, and Chair #7 in Pastor Ji’s Thursday basement circle',
       breadCost: 0,
-      strengthDelta: 2,
+      strengthDelta: 0,
       treasureDelta: 1,
       deedRecord: 'Section 288/294 — Traded the lucrative arena dates and spotlight for Chair #7 in Pastor Ji’s Thursday night church-basement recovery circle.',
       outcomeText:
