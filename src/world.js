@@ -332,8 +332,10 @@ function populateStageScenery(stageId, envGroup, ecoMode = false) {
     for (let i = -3; i <= 3; i++) {
       const bL = new THREE.Mesh(new THREE.BoxGeometry(4.5, 9 + Math.abs(i) * 1.5, 4.5), wallMat);
       bL.position.set(-8.8, 4.5, i * 6.2);
+      bL.userData.isSolidObstacle = true;
       const bR = new THREE.Mesh(new THREE.BoxGeometry(4.5, 8.5 + (i % 2) * 2, 4.5), wallMat);
       bR.position.set(8.8, 4.2, i * 6.2);
+      bR.userData.isSolidObstacle = true;
       const signMat = i % 3 === 0 ? neonCoralMat : i % 2 === 0 ? neonBlueMat : warmMat;
       const sign = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.5, 2.3), signMat);
       sign.position.set(i % 2 === 0 ? -6.4 : 6.4, 3.8, i * 6.2);
@@ -354,15 +356,21 @@ function populateStageScenery(stageId, envGroup, ecoMode = false) {
       envGroup.add(david);
     }
   } else if (stageId === 'mapo_hannam') {
-    for (let i = -2; i <= 2; i++) {
-      const tower = new THREE.Mesh(new THREE.BoxGeometry(5.2, 12, 4.8), wallMat);
-      tower.position.set(i * 6.5, 6, -15.5);
-      const glassWindow = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 8.5), i % 2 === 0 ? neonBlueMat : warmMat);
-      glassWindow.position.set(i * 6.5, 6, -13.05);
+    const sideTowerOffsets = [-13.5, -8.2, 8.2, 13.5];
+    sideTowerOffsets.forEach((tx, idx) => {
+      const tower = new THREE.Mesh(new THREE.BoxGeometry(4.8, 12, 4.8), wallMat);
+      tower.position.set(tx, 6, -15.5);
+      tower.userData.isSolidObstacle = true;
+      const glassWindow = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.4, 8.5),
+        idx % 2 === 0 ? neonBlueMat : warmMat
+      );
+      glassWindow.position.set(tx, 6, -13.05);
       envGroup.add(tower, glassWindow);
-    }
+    });
   } else if (stageId === 'columbarium_autumn') {
     // Stage IV: Chuseok Morning at the Seoul Memorial Columbarium (Hall C) & Autumn Maple Steps
+    // Flanking memorial wings + Hall C sanctuary backdrop keep the central walkway (x in [-5.8, +5.8]) 100% clear for Well 3 & all nodes
     const marbleWallMat = new THREE.MeshStandardMaterial({
       map: createPainterlyTexture('#2e3846', '#5a4638'),
       roughness: 0.55,
@@ -373,13 +381,6 @@ function populateStageScenery(stageId, envGroup, ecoMode = false) {
       roughness: 0.42,
       metalness: 0.25
     });
-    const stoneWall = new THREE.Mesh(new THREE.BoxGeometry(19.2, 6.2, 1.15), marbleWallMat);
-    stoneWall.position.set(0, 3.1, -14.6);
-    const topCornice = new THREE.Mesh(new THREE.BoxGeometry(19.8, 0.36, 1.45), rosewoodBeamMat);
-    topCornice.position.set(0, 6.28, -14.55);
-    const basePlinth = new THREE.Mesh(new THREE.BoxGeometry(19.6, 0.48, 1.55), rosewoodBeamMat);
-    basePlinth.position.set(0, 0.24, -14.45);
-    envGroup.add(stoneWall, topCornice, basePlinth);
 
     // Existing painted panels from Book 1 assets mounted inside the memorial niches
     const nichePanelUrls = [
@@ -435,37 +436,59 @@ function populateStageScenery(stageId, envGroup, ecoMode = false) {
     const ledgeGeo = new THREE.BoxGeometry(1.86, 0.08, 0.28);
     const flowerGeo = new THREE.SphereGeometry(0.11, 7, 6);
 
-    for (let r = 0; r < 3; r++) {
-      for (let c = -3; c <= 3; c++) {
-        const idx = (r * 7 + (c + 3));
-        const isMotherCenter = r === 1 && c === 0;
-        const fMat = isMotherCenter
-          ? frameMaterials[0]
-          : frameMaterials[(idx + r) % frameMaterials.length];
-        const pMat = isMotherCenter
-          ? panelMaterials[0]
-          : panelMaterials[idx % panelMaterials.length];
+    const buildColumbariumWing = (wingX, wingZ, rotY, colsCount, wingOffsetIdx) => {
+      const wingGroup = new THREE.Group();
+      wingGroup.position.set(wingX, 0, wingZ);
+      wingGroup.rotation.y = rotY;
+      const wallW = colsCount * 2.35 + 1.4;
+      const stoneWall = new THREE.Mesh(new THREE.BoxGeometry(wallW, 5.8, 1.05), marbleWallMat);
+      stoneWall.position.set(0, 2.9, -0.6);
+      stoneWall.userData.isSolidObstacle = true;
+      const topCornice = new THREE.Mesh(new THREE.BoxGeometry(wallW + 0.5, 0.34, 1.35), rosewoodBeamMat);
+      topCornice.position.set(0, 5.9, -0.55);
+      const basePlinth = new THREE.Mesh(new THREE.BoxGeometry(wallW + 0.4, 0.44, 1.45), rosewoodBeamMat);
+      basePlinth.position.set(0, 0.22, -0.45);
+      wingGroup.add(stoneWall, topCornice, basePlinth);
 
-        const x = c * 2.35;
-        const y = 1.48 + r * 1.56;
-        const frame = new THREE.Mesh(frameGeo, fMat);
-        frame.position.set(x, y, -13.96);
-        const artPlane = new THREE.Mesh(artGeo, pMat);
-        artPlane.position.set(x, y, -13.87);
-        const ledge = new THREE.Mesh(ledgeGeo, rosewoodBeamMat);
-        ledge.position.set(x, y - 0.58, -13.88);
-        envGroup.add(frame, artPlane, ledge);
+      const halfC = (colsCount - 1) / 2;
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < colsCount; c++) {
+          const idx = wingOffsetIdx + r * colsCount + c;
+          const isCenterHighlight = r === 1 && Math.abs(c - halfC) < 0.6;
+          const fMat = isCenterHighlight
+            ? frameMaterials[0]
+            : frameMaterials[(idx + r) % frameMaterials.length];
+          const pMat = isCenterHighlight
+            ? panelMaterials[0]
+            : panelMaterials[idx % panelMaterials.length];
+          const nx = (c - halfC) * 2.28;
+          const ny = 1.42 + r * 1.48;
+          const frame = new THREE.Mesh(frameGeo, fMat);
+          frame.position.set(nx, ny, -0.02);
+          const artPlane = new THREE.Mesh(artGeo, pMat);
+          artPlane.position.set(nx, ny, 0.07);
+          const ledge = new THREE.Mesh(ledgeGeo, rosewoodBeamMat);
+          ledge.position.set(nx, ny - 0.56, 0.06);
+          wingGroup.add(frame, artPlane, ledge);
 
-        if ((c + r) % 2 === 0 || isMotherCenter) {
-          const fl = new THREE.Mesh(
-            flowerGeo,
-            isMotherCenter || c % 2 === 0 ? blossomMatWhite : blossomMatRose
-          );
-          fl.position.set(x - 0.58, y - 0.46, -13.82);
-          envGroup.add(fl);
+          if ((c + r) % 2 === 0 || isCenterHighlight) {
+            const fl = new THREE.Mesh(
+              flowerGeo,
+              isCenterHighlight || c % 2 === 0 ? blossomMatWhite : blossomMatRose
+            );
+            fl.position.set(nx - 0.56, ny - 0.44, 0.12);
+            wingGroup.add(fl);
+          }
         }
       }
-    }
+      envGroup.add(wingGroup);
+    };
+
+    // Left & right angled columbarium wings + central Hall C backdrop wall (keeps x in [-5.8, +5.8] unobstructed)
+    buildColumbariumWing(-8.2, -13.5, 0.42, 3, 0);
+    buildColumbariumWing(8.2, -13.5, -0.42, 3, 2);
+    buildColumbariumWing(-8.2, -22.2, 0.38, 3, 4);
+    buildColumbariumWing(8.2, -22.2, -0.38, 3, 1);
 
     // Autumn crimson & gold maple trees flanking the columbarium courtyard
     const trunkGeo = new THREE.CylinderGeometry(0.16, 0.24, 2.6, 7);
@@ -485,10 +508,10 @@ function populateStageScenery(stageId, envGroup, ecoMode = false) {
     const treePositions = [
       [-6.8, -5.5, crimsonMapleMat],
       [6.8, -5.5, goldGinkgoMat],
-      [-7.2, -12.0, goldGinkgoMat],
-      [7.2, -12.0, crimsonMapleMat],
-      [-6.6, -20.5, crimsonMapleMat],
-      [6.6, -20.5, goldGinkgoMat]
+      [-7.2, -18.0, goldGinkgoMat],
+      [7.2, -18.0, crimsonMapleMat],
+      [-6.6, -26.2, crimsonMapleMat],
+      [6.6, -26.2, goldGinkgoMat]
     ];
     for (const [tx, tz, leafMat] of treePositions) {
       const trunk = new THREE.Mesh(trunkGeo, rosewoodBeamMat);
@@ -501,17 +524,18 @@ function populateStageScenery(stageId, envGroup, ecoMode = false) {
     for (let i = 0; i < 12; i++) {
       const angle = (i / 12) * Math.PI * 2;
       const chair = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.75, 0.55), wallMat);
-      chair.position.set(-4.5 + Math.cos(angle) * 2.4, 0.38, 1.5 + Math.sin(angle) * 2.4);
-      chair.lookAt(-4.5, 0.38, 1.5);
+      chair.position.set(-6.8 + Math.cos(angle) * 2.1, 0.38, -4.0 + Math.sin(angle) * 2.1);
+      chair.lookAt(-6.8, 0.38, -4.0);
       envGroup.add(chair);
     }
     const counter = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.05, 1.1), wallMat);
-    counter.position.set(4.5, 0.52, -3.5);
+    counter.position.set(6.8, 0.52, -14.0);
+    counter.userData.isSolidObstacle = true;
     const bottle = new THREE.Mesh(
       new THREE.CylinderGeometry(0.08, 0.11, 0.42, 10),
       new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.2, transparent: true, opacity: 0.88 })
     );
-    bottle.position.set(4.5, 1.26, -3.5);
+    bottle.position.set(6.8, 1.26, -14.0);
     envGroup.add(counter, bottle);
   } else if (stageId === 'sea_of_glass_climax') {
     const witnesses = [
@@ -544,6 +568,8 @@ export class WorldStageManager {
     this.stageGroup = new THREE.Group();
     this.scene.add(this.stageGroup);
     this.nodeGroups = [];
+    this.sceneryObstacleBoxes = [];
+    this.labelsHidden = false;
     this.seaMaterial = null;
     this.particles = null;
     this.skyDome = null;
@@ -563,11 +589,31 @@ export class WorldStageManager {
     this.scene.add(this.eliasCompanion);
   }
 
+  setLabelsHidden(hidden) {
+    this.labelsHidden = Boolean(hidden);
+    if (this.eliasCompanion && this.eliasCompanion.userData.nameTag) {
+      this.eliasCompanion.userData.nameTag.visible = !this.labelsHidden;
+    }
+    for (const mon of this.nodeGroups) {
+      if (mon.userData.labelSprite) {
+        if (this.labelsHidden) {
+          mon.userData.labelSprite.visible = false;
+        }
+      }
+    }
+    this.stageGroup.traverse((obj) => {
+      if (obj.userData && obj.userData.nameTag && this.labelsHidden) {
+        obj.userData.nameTag.visible = false;
+      }
+    });
+  }
+
   buildStage(stage, isNodeDoneFn, ecoMode = false, isNodeLockedFn = null) {
     while (this.stageGroup.children.length > 0) {
       this.stageGroup.remove(this.stageGroup.children[0]);
     }
     this.nodeGroups = [];
+    this.sceneryObstacleBoxes = [];
     const pal = stage.palette || {};
     this.scene.fog = new THREE.FogExp2(pal.fog || '#162238', 0.0115);
 
@@ -640,6 +686,7 @@ export class WorldStageManager {
       new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.68 })
     );
     frameMesh.position.set(0, 4.4, -29.2);
+    frameMesh.userData.isSolidObstacle = true;
     const canvasPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(7.9, 4.75),
       new THREE.MeshBasicMaterial({ map: artTex })
@@ -673,6 +720,62 @@ export class WorldStageManager {
       this.stageGroup.add(mon);
       this.nodeGroups.push(mon);
     }
+
+    // Collect world-space bounding boxes of solid scenery obstacles for camera collision pushback
+    this.stageGroup.updateMatrixWorld(true);
+    this.stageGroup.traverse((obj) => {
+      if (obj.isMesh && obj.userData && obj.userData.isSolidObstacle) {
+        const box = new THREE.Box3().setFromObject(obj);
+        this.sceneryObstacleBoxes.push(box);
+      }
+    });
+  }
+
+  // Ensures the camera never sits inside geometry or behind a solid wall
+  resolveCameraPosition(playerPos, desiredCamPos, padding = 0.68) {
+    const out = desiredCamPos.clone();
+    // Clamp camera to the safe corridor bounds first
+    out.x = Math.max(-5.5, Math.min(5.5, out.x));
+    out.y = Math.max(1.65, Math.min(9.5, out.y));
+    out.z = Math.max(-27.8, Math.min(14.5, out.z));
+
+    const origin = new THREE.Vector3(playerPos.x, 1.4, playerPos.z);
+    const segDir = out.clone().sub(origin);
+    const segLen = segDir.length();
+    if (segLen > 0.001) {
+      const ray = new THREE.Ray(origin, segDir.clone().normalize());
+      const hitPoint = new THREE.Vector3();
+      let closestT = segLen;
+      for (const rawBox of this.sceneryObstacleBoxes) {
+        const expanded = rawBox.clone().expandByScalar(padding);
+        if (expanded.containsPoint(out)) {
+          // Push out toward the central walkway (x = 0) and forward toward player
+          out.x *= 0.55;
+        }
+        const hit = ray.intersectBox(expanded, hitPoint);
+        if (hit) {
+          const dist = origin.distanceTo(hitPoint);
+          if (dist < closestT) {
+            closestT = Math.max(2.6, dist - 0.25);
+          }
+        }
+      }
+      if (closestT < segLen) {
+        out.copy(origin).addScaledVector(segDir.normalize(), closestT);
+      }
+    }
+    return out;
+  }
+
+  isCameraColliding(camPos, clearance = 0.25) {
+    if (!camPos) return false;
+    for (const rawBox of this.sceneryObstacleBoxes) {
+      const expanded = rawBox.clone().expandByScalar(clearance);
+      if (expanded.containsPoint(camPos)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // Updates the Sea of Glass ending moment (0 <= progress <= 1)
@@ -804,7 +907,7 @@ export class WorldStageManager {
           (mon.position.y || 0) + 2.35,
           mon.position.z,
           camera,
-          mon === nearestMon
+          !this.labelsHidden && mon === nearestMon
         );
       }
     }
@@ -823,7 +926,7 @@ export class WorldStageManager {
         this.eliasCompanion.position.y + 2.22,
         this.eliasCompanion.position.z,
         camera,
-        true
+        !this.labelsHidden
       );
     }
   }

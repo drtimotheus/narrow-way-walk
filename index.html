@@ -337,14 +337,103 @@
     }
     .stand-bottom-actions #btn-stand-roll {
       grid-column: 1 / -1;
-      min-height: 40px;
-      height: 40px;
+      min-height: 44px;
+      height: 44px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .stand-bottom-actions button:not(#btn-stand-roll) {
-      min-height: 36px;
-      height: 36px; font-size: 0.72rem; padding: 2px 6px;
+      min-height: 44px;
+      height: 44px; font-size: 0.72rem; padding: 4px 6px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .modal-card button {
+      min-height: 44px;
+      min-width: 44px;
+      max-width: 100%;
+    }
+    /* Ending Screen Cleanup: hide regular HUD and show only Return to Title + NW1 Code */
+    body.ending-cleanup-active .top-hud-wrap,
+    body.ending-cleanup-active .bottom-hud-wrap,
+    body.ending-cleanup-active #hud-stage-progress,
+    body.ending-cleanup-active #proximity-prompt-bar {
+      display: none !important;
+    }
+    #ending-sea-hud {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      z-index: 35;
+      width: min(640px, 94vw);
+      background: rgba(8, 14, 26, 0.88);
+      border: 1px solid rgba(251, 191, 36, 0.65);
+      border-radius: 14px;
+      padding: 8px 12px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      pointer-events: auto;
+    }
+    .ending-nw1-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1 1 240px;
+      min-width: 0;
+    }
+    .ending-nw1-label {
+      color: var(--gold);
+      font-size: 0.75rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .ending-nw1-input {
+      flex: 1 1 auto;
+      min-width: 0;
+      background: #050811;
+      color: var(--aqua);
+      border: 1px solid var(--border-aqua);
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-family: monospace;
+      font-size: 0.75rem;
+      height: 36px;
+    }
+    .finale-summary-card {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(92, 200, 255, 0.4);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .finale-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px 12px;
+      font-size: 0.81rem;
+    }
+    .finale-summary-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      background: rgba(8, 14, 26, 0.72);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 7px;
+      padding: 5px 9px;
+    }
+    .finale-ending-hint {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--gold);
+      padding-top: 4px;
+      border-top: 1px solid rgba(251, 191, 36, 0.25);
     }
     .stat-reduced { color: var(--emerald); font-weight: 700; }
     .stronghold-def-banner {
@@ -411,10 +500,27 @@
     }
     @media (max-width: 680px) {
       .guide-grid { grid-template-columns: 1fr; }
+      .finale-summary-grid { grid-template-columns: 1fr; }
       .stand-step-grid { grid-template-columns: 1fr; gap: 5px; }
-      .stand-card-fixed { height: 95vh; max-height: 95vh; padding: 12px 14px; gap: 5px; }
-      .modal-art-frame { height: 84px; }
-      .title-cover-showcase { height: 190px; }
+      .stand-card-fixed { height: 95vh; max-height: 95vh; padding: 10px 12px; gap: 5px; }
+      .modal-card { padding: 14px 14px; }
+      .modal-art-frame { height: 76px; }
+      .title-cover-showcase { height: 180px; }
+      .stand-bottom-actions #btn-stand-roll {
+        white-space: normal;
+        line-height: 1.15;
+        font-size: 0.77rem;
+        text-align: center;
+        padding: 4px 8px;
+        height: auto;
+      }
+      .stand-bottom-actions button:not(#btn-stand-roll) {
+        white-space: normal;
+        line-height: 1.12;
+        font-size: 0.68rem;
+        text-align: center;
+        padding: 2px 4px;
+      }
     }
   </style>
 </head>
@@ -460,6 +566,7 @@
           <button id="btn-eco-toggle">Eco: OFF</button>
           <button id="btn-text-toggle" title="Toggle Large Text">Aa</button>
           <button id="btn-audio-toggle">Audio: On</button>
+          <button id="btn-tts-toggle" title="Optional Read-Aloud for KJV Scrolls">Read-Aloud: OFF</button>
           <button id="btn-nav-help" title="How to Play Guide">?</button>
         </div>
       </div>
@@ -499,6 +606,15 @@
       <div id="proximity-prompt-bar" class="pointer-auto hidden">
         <button id="btn-proximity-interact" class="btn-primary">Interact [E]</button>
       </div>
+    </div>
+  </div>
+
+  <!-- MINIMAL SEA OF GLASS ENDING BAR (RETURN TO TITLE + NW1 CODE ONLY) -->
+  <div id="ending-sea-hud" class="hidden">
+    <button id="btn-ending-return-title" class="btn-gold">↺ Return to Title</button>
+    <div class="ending-nw1-wrap">
+      <span class="ending-nw1-label">NW1 Code:</span>
+      <input id="ending-sea-nw1-code" class="ending-nw1-input" type="text" readonly aria-label="NW1 Progress Code" />
     </div>
   </div>
 
@@ -911,12 +1027,34 @@
       <p id="finale-narrative" class="narrative-p"></p>
       <div id="finale-kjv" class="kjv-box"></div>
       <p id="finale-Benediction" class="narrative-p" style="font-weight:600; color:var(--aqua);"></p>
+      <div id="finale-stat-summary" class="finale-summary-card">
+        <strong style="color:var(--aqua); font-size:0.84rem;">Pilgrim Walk Summary</strong>
+        <div class="finale-summary-grid">
+          <div class="finale-summary-item">
+            <span style="color:var(--text-muted);">Stands Cleared</span>
+            <strong id="finale-stat-stands" style="color:var(--emerald);">8 / 8</strong>
+          </div>
+          <div class="finale-summary-item">
+            <span style="color:var(--text-muted);">Treasure (Give vs Keep)</span>
+            <strong id="finale-stat-treasure" style="color:var(--gold);">0 Given · 0 Kept</strong>
+          </div>
+          <div class="finale-summary-item">
+            <span style="color:var(--text-muted);">Scrolls Learned</span>
+            <strong id="finale-stat-scrolls" style="color:var(--aqua);">0 / 5</strong>
+          </div>
+          <div class="finale-summary-item">
+            <span style="color:var(--text-muted);">Wells Used</span>
+            <strong id="finale-stat-wells" style="color:var(--aqua);">0 / 5</strong>
+          </div>
+        </div>
+        <div id="finale-ending-hint" class="finale-ending-hint"></div>
+      </div>
       <div>
         <label for="finale-nw1-code" style="color:var(--gold); font-size:0.84rem; font-weight:700;">Your NW1 Progress Code (Save / Export to Another Browser):</label>
         <textarea id="finale-nw1-code" class="code-textarea" readonly></textarea>
       </div>
       <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-        <button id="btn-finale-open-gatehouse" class="btn-gold">Book 1: The Unseen Chord · Gatehouse Edition</button>
+        <button id="btn-finale-return-title" class="btn-gold">↺ Return to Title</button>
         <button data-close-modal class="btn-primary">Return to the Sea of Glass</button>
       </div>
     </div>

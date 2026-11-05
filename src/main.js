@@ -70,7 +70,8 @@ function createDefaultState() {
     settings: {
       ecoMode: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || ''),
       largeText: false,
-      reducedMotion: false
+      reducedMotion: false,
+      readAloudScroll: false
     }
   };
 }
@@ -80,6 +81,42 @@ let activeStandSession = null;
 let turntable = null;
 let needsOneWorldRender = true;
 let gatingToastTimer = null;
+let endingCleanupActive = false;
+let currentInteractNode = null;
+let interactCooldownUntil = 0;
+let interactConfirmTimer = null;
+
+export function stopKjvSpeech() {
+  try {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  } catch {
+    // Ignore speechSynthesis errors on unsupported browsers
+  }
+}
+
+export function speakKjvScroll(text, ref = '') {
+  if (!state.settings.readAloudScroll || !text) return false;
+  try {
+    if (
+      typeof window !== 'undefined' &&
+      'speechSynthesis' in window &&
+      typeof window.SpeechSynthesisUtterance !== 'undefined'
+    ) {
+      window.speechSynthesis.cancel();
+      const spoken = ref ? `${text} — ${ref}` : String(text);
+      const utter = new window.SpeechSynthesisUtterance(spoken);
+      utter.rate = 0.95;
+      utter.pitch = 1.0;
+      window.speechSynthesis.speak(utter);
+      return true;
+    }
+  } catch {
+    // Ignore speechSynthesis errors
+  }
+  return false;
+}
 
 // Finale Sea of Glass Payoff state
 let finalePayoffState = {
@@ -391,21 +428,197 @@ function isNodeLocked(node) {
   return false;
 }
 
-export function loadStage(idx, customZ = 12) {
+export function getDetailedInteractLabel(node, isLocked = false) {
+  if (!node) return 'Interact';
+  if (node.type === 'stand') {
+    const st = STANDS[node.standId];
+    return `Interact: ${st ? st.title : getShortNodeLabel(node, isLocked)}`;
+  }
+  if (node.type === 'well') {
+    const w = WELLS[node.wellId];
+    return `Interact: ${w ? w.title : getShortNodeLabel(node, isLocked)}`;
+  }
+  if (node.type === 'treasure') {
+    const tr = TREASURES[node.treasureId];
+    return `Interact: ${tr ? tr.title : getShortNodeLabel(node, isLocked)}`;
+  }
+  if (node.type === 'wisdom') {
+    const wp = WISDOM_PAGES[node.wisdomId];
+    return `Interact: ${wp ? wp.title : getShortNodeLabel(node, isLocked)}`;
+  }
+  if (node.type === 'relic') {
+    if (node.relicId === 'aquamarine-tuning-stone') {
+      return "Interact: Token · David's Aquamarine Tuning-Stone";
+    }
+    return "Interact: Relic 2 · David's Crownless Cypress Kinnor";
+  }
+  if (node.type === 'portal') {
+    const next = (node.targetStageIdx ?? 1) + 1;
+    return isLocked ? `Interact: 🔒 Stage ${next} (Locked)` : `Interact: Stage ${next} →`;
+  }
+  if (node.type === 'gatehouse_finale') {
+    return isLocked ? 'Interact: 🔒 Treasure Gate (Locked)' : 'Interact: Treasure Gate · Finale';
+  }
+  return `Interact: ${getShortNodeLabel(node, isLocked)}`;
+}
+
+// Returns a deterministic safe spawn position in the clear central corridor in front of a node
+export function getSafeNodeSpawn(node) {
+  if (!node || !Array.isArray(node.pos)) {
+    return { x: 0, y: 0, z: -5.5 };
+  }
+  const nx = Number(node.pos[0]) || 0;
+  const nz = Number(node.pos[2]) || -7.5;
+  const safeX = Math.abs(nx) > 1.0 ? Number((nx * 0.68).toFixed(2)) : 0;
+  const safeZ = Number((nz + 1.85).toFixed(2));
+  return { x: safeX, y: 0, z: safeZ };
+}
+
+// Returns the default safe spawn point for a stage (in front of the first uncleared Stand or primary node)
+export function getDefinedStageSpawn(stageIdx) {
+  const stage = STAGES[stageIdx] || STAGES[0];
+  const nodes = stage.nodes || [];
+  const firstUnclearedStand = nodes.find(
+    (n) => n.type === 'stand' && n.standId && !state.standsCleared.includes(n.standId)
+  );
+  const targetNode = firstUnclearedStand || nodes[0];
+  return getSafeNodeSpawn(targetNode);
+}
+
+export function syncCameraAndWorldImmediate() {
+  cameraYaw = 0;
+  cameraDistance = Math.max(3.0, Math.min(9.0, cameraDistance || 4.6));
+  if (worldManager && worldManager.eliasCompanion) {
+    worldManager.eliasCompanion.position.set(playerPos.x - 1.75, 0, playerPos.z - 1.15);
+  }
+  if (camera) {
+    const clampedDist = Math.max(3.0, Math.min(9.0, cameraDistance));
+    const desiredCamPos = new THREE.Vector3(
+      playerPos.x + Math.sin(cameraYaw) * clampedDist,
+      2.2 + (clampedDist - 3.0) * 0.16,
+      playerPos.z + Math.cos(cameraYaw) * clampedDist
+    );
+    const safeCamPos = worldManager
+      ? worldManager.resolveCameraPosition(playerPos, desiredCamPos)
+      : desiredCamPos;
+    camera.position.copy(safeCamPos);
+    camera.lookAt(
+      playerPos.x - Math.sin(cameraYaw) * 4,
+      1.35,
+      playerPos.z - Math.cos(cameraYaw) * 4
+    );
+  }
+  if (worldManager) {
+    worldManager.update(0.016, performance.now() / 1000, playerPos, camera);
+  }
+  needsOneWorldRender = true;
+}
+
+export function refreshProximityInteract(isTeleport = false) {
+  const promptBar = document.getElementById('proximity-prompt-bar');
+  const promptBtn = document.getElementById('btn-proximity-interact');
+  if (!promptBar || !promptBtn) return null;
+
+  if (endingCleanupActive || finalePayoffState.active) {
+    currentInteractNode = null;
+    promptBar.classList.add('hidden');
+    return null;
+  }
+
+  const near = worldManager ? worldManager.getNearestNode(playerPos, 4.2) : null;
+  currentInteractNode = near;
+
+  if (isTeleport) {
+    interactCooldownUntil = performance.now() + 260;
+    if (interactConfirmTimer) clearTimeout(interactConfirmTimer);
+    promptBtn.disabled = true;
+    interactConfirmTimer = setTimeout(() => {
+      const confirmed = worldManager ? worldManager.getNearestNode(playerPos, 4.2) : null;
+      currentInteractNode = confirmed;
+      if (!endingCleanupActive && !finalePayoffState.active && confirmed) {
+        const locked = isNodeLocked(confirmed);
+        promptBar.classList.remove('hidden');
+        promptBtn.textContent = getDetailedInteractLabel(confirmed, locked);
+        promptBtn.dataset.targetNodeId = confirmed.id || '';
+        promptBtn.disabled = false;
+      } else {
+        promptBar.classList.add('hidden');
+        promptBtn.disabled = false;
+      }
+    }, 260);
+  }
+
+  if (near) {
+    const locked = isNodeLocked(near);
+    promptBar.classList.remove('hidden');
+    promptBtn.textContent = getDetailedInteractLabel(near, locked);
+    promptBtn.dataset.targetNodeId = near.id || '';
+    promptBtn.disabled = performance.now() < interactCooldownUntil;
+    promptBtn.onclick = () => {
+      if (performance.now() < interactCooldownUntil) return;
+      const liveNear = worldManager ? worldManager.getNearestNode(playerPos, 4.2) : null;
+      if (liveNear) {
+        currentInteractNode = liveNear;
+        openNodeInteraction(liveNear);
+      }
+    };
+  } else {
+    promptBar.classList.add('hidden');
+    promptBtn.dataset.targetNodeId = '';
+  }
+  return near;
+}
+
+export function setEndingCleanupMode(active) {
+  endingCleanupActive = Boolean(active);
+  document.body.classList.toggle('ending-cleanup-active', endingCleanupActive);
+  if (worldManager) {
+    worldManager.setLabelsHidden(endingCleanupActive);
+  }
+  const seaHud = document.getElementById('ending-sea-hud');
+  if (seaHud) {
+    seaHud.classList.toggle('hidden', !endingCleanupActive);
+  }
+  const codeInput = document.getElementById('ending-sea-nw1-code');
+  if (codeInput && endingCleanupActive) {
+    codeInput.value = generateNW1Code();
+  }
+  const promptBar = document.getElementById('proximity-prompt-bar');
+  if (promptBar && endingCleanupActive) {
+    promptBar.classList.add('hidden');
+  }
+  const stageProg = document.getElementById('hud-stage-progress');
+  if (stageProg) {
+    stageProg.classList.toggle('hidden', endingCleanupActive);
+  }
+  needsOneWorldRender = true;
+}
+
+export function loadStage(idx, customZ = null) {
   const requestedIdx = Math.max(0, Math.min(STAGES.length - 1, idx));
   if (!isStageUnlocked(requestedIdx)) {
     const reason = getStageLockReason(requestedIdx);
     showGatingToast(reason);
     return false;
   }
+  if (endingCleanupActive) {
+    setEndingCleanupMode(false);
+  }
   state.currentStageIdx = requestedIdx;
   const stage = STAGES[requestedIdx];
-  playerPos.set(0, 0, customZ);
+  if (customZ !== null && customZ !== undefined) {
+    playerPos.set(0, 0, Number(customZ));
+  } else {
+    const sp = getDefinedStageSpawn(requestedIdx);
+    playerPos.set(sp.x, sp.y, sp.z);
+  }
   cameraYaw = 0;
+  cameraDistance = 4.6;
   if (worldManager) {
     worldManager.buildStage(stage, isNodeDone, state.settings.ecoMode, isNodeLocked);
   }
-  needsOneWorldRender = true;
+  syncCameraAndWorldImmediate();
+  refreshProximityInteract(true);
   saveState();
   renderStageBar();
   renderQuickNodeBar();
@@ -426,6 +639,10 @@ export function updateHUD() {
   setText('hud-bread', `${state.bread}/3`);
   setText('hud-scrolls', `${state.scrollsLearned.length}/5`);
   setText('hud-stage-progress', `Stage ${state.currentStageIdx + 1} of ${STAGES.length}`);
+  const stageProg = document.getElementById('hud-stage-progress');
+  if (stageProg) {
+    stageProg.classList.toggle('hidden', endingCleanupActive);
+  }
 
   const tokenEl = document.getElementById('hud-token');
   if (tokenEl) {
@@ -466,6 +683,11 @@ export function updateHUD() {
   const ecoBtn = document.getElementById('btn-eco-toggle');
   if (ecoBtn) {
     ecoBtn.textContent = state.settings.ecoMode ? 'Eco: ON' : 'Eco: OFF';
+  }
+  const ttsBtn = document.getElementById('btn-tts-toggle');
+  if (ttsBtn) {
+    ttsBtn.textContent = state.settings.readAloudScroll ? 'Read-Aloud: ON' : 'Read-Aloud: OFF';
+    ttsBtn.classList.toggle('btn-gold', Boolean(state.settings.readAloudScroll));
   }
 }
 
@@ -510,6 +732,18 @@ function renderStageBar() {
   });
 }
 
+export function teleportToNode(node, openModalAfter = true) {
+  if (!node) return;
+  const sp = getSafeNodeSpawn(node);
+  playerPos.set(sp.x, sp.y, sp.z);
+  cameraDistance = 4.6;
+  syncCameraAndWorldImmediate();
+  refreshProximityInteract(true);
+  if (openModalAfter) {
+    openNodeInteraction(node);
+  }
+}
+
 function renderQuickNodeBar() {
   const wrap = document.getElementById('quick-node-bar');
   if (!wrap) return;
@@ -532,9 +766,7 @@ function renderQuickNodeBar() {
       btn.title = node.label;
     }
     btn.addEventListener('click', () => {
-      playerPos.set(node.pos[0], 0, node.pos[2] + 1.8);
-      needsOneWorldRender = true;
-      openNodeInteraction(node);
+      teleportToNode(node, true);
     });
     wrap.appendChild(btn);
   });
@@ -589,6 +821,7 @@ function showModal(id) {
 }
 
 export function closeAllModals() {
+  stopKjvSpeech();
   document.querySelectorAll('.modal-backdrop').forEach((m) => m.classList.add('hidden'));
   if (turntable) turntable.stop();
   if (worldManager) {
@@ -598,8 +831,10 @@ export function closeAllModals() {
       state.settings.ecoMode,
       isNodeLocked
     );
+    worldManager.setLabelsHidden(endingCleanupActive);
   }
-  needsOneWorldRender = true;
+  syncCameraAndWorldImmediate();
+  refreshProximityInteract(false);
   renderStageBar();
   renderQuickNodeBar();
   updateHUD();
@@ -663,6 +898,7 @@ export function openTitleModal() {
       } catch {
         // Ignore
       }
+      setEndingCleanupMode(false);
       state = createDefaultState();
       saveState();
       loadStage(0);
@@ -744,9 +980,12 @@ export function openWelcomeModal() {
     btnBegin.onclick = () => {
       audio.init();
       audio.playKinnorChord();
+      setEndingCleanupMode(false);
       if (savedExists) {
         const startStats = { ...state.startingStats };
+        const prevSettings = { ...state.settings };
         state = createDefaultState();
+        state.settings = prevSettings;
         state.startingStats = startStats;
         state.stats = { ...startStats, treasure: 0 };
         state.firstSightCompleted = true;
@@ -755,6 +994,7 @@ export function openWelcomeModal() {
       } else {
         state.firstSightCompleted = true;
         saveState();
+        loadStage(0);
       }
       closeAllModals();
     };
@@ -839,6 +1079,12 @@ export function openWisdomModal(wisdomId) {
   setText('wisdom-kjv-ref', (page.verses || []).map((v) => v.ref).join(' · '));
   setText('wisdom-context', page.counselText);
   setText('wisdom-question', (page.questions || []).join('  |  '));
+  if (page.verses && page.verses.length > 0) {
+    speakKjvScroll(
+      page.verses.map((v) => v.text).join(' '),
+      page.verses.map((v) => v.ref).join(' and ')
+    );
+  }
   loadArtIntoImage(
     document.getElementById('wisdom-art-img'),
     document.getElementById('wisdom-art-badge'),
@@ -911,6 +1157,9 @@ export function openWellModal(wellId, customBannerMessage = null) {
   setText('well-kjv-text', firstVerse ? `"${firstVerse.text}" — ${firstVerse.ref}` : '');
   setText('well-reward-banner', rewardNotice);
   setText('well-question', linkedWisdom?.questions?.[0] || 'Where has Pride asked you to wear a mask instead of resting in grace?');
+  if (firstVerse && !customBannerMessage) {
+    speakKjvScroll(firstVerse.text, firstVerse.ref);
+  }
 
   const artCfg = WELL_ART_MAP[well.id] || { url: STAGE_ART_MAP[well.stageIdx ?? state.currentStageIdx], motif: 'sea_of_glass', stageIdx: well.stageIdx ?? 0 };
   loadArtIntoImage(
@@ -1294,6 +1543,7 @@ function renderStandSession() {
       } else {
         s.log.push(`Spoke ${scObj.ref} verbatim: "${scObj.text}" — Standing firm on God's Word!`);
       }
+      speakKjvScroll(scObj.text, scObj.ref);
       audio.playKinnorChord();
       renderStandSession();
     };
@@ -1640,6 +1890,7 @@ export function triggerEndingSequence() {
   if (state.currentStageIdx !== 5) {
     loadStage(5, -22);
   }
+  setEndingCleanupMode(true);
   playerPos.set(0.85, 0, -23.5);
   finalePayoffState.active = true;
   finalePayoffState.startTime = performance.now();
@@ -1684,6 +1935,7 @@ export function openFinaleModal() {
   state.zone1Completed = true;
   state.endingReached = ending.id;
   saveState();
+  setEndingCleanupMode(true);
 
   setText('finale-title', ending.title);
   setText(
@@ -1693,6 +1945,25 @@ export function openFinaleModal() {
   setText('finale-narrative', (ending.body || []).join('\n\n'));
   setText('finale-kjv', `"${ending.epigraphText}" — ${ending.epigraphRef}`);
   setText('finale-Benediction', 'The love of God and the love of people is the treasure of life—found not by taking, but by giving.');
+
+  // End-screen stat summary: Stands cleared, Treasure given vs kept, Scrolls learned, Wells used + ending hint
+  const choices = Object.values(state.treasuresChosen || {});
+  const givenCount = Math.max(
+    state.stats.treasure,
+    choices.filter((v) => v === 'give').length
+  );
+  const keptCount = choices.filter((v) => v === 'keep').length;
+  setText('finale-stat-stands', `${state.standsCleared.length} / 8`);
+  setText('finale-stat-treasure', `${givenCount} Given · ${keptCount} Kept`);
+  setText('finale-stat-scrolls', `${state.scrollsLearned.length} / 5`);
+  setText('finale-stat-wells', `${state.wellsVisited.length} / 5`);
+  setText(
+    'finale-ending-hint',
+    isTrue
+      ? 'You found the True Ending (Section 300: The Unseen Chord · 4+ Treasure given).'
+      : 'Give more Treasure to find the True Ending (4+ Treasure unlocks Section 300: The Unseen Chord).'
+  );
+
   loadArtIntoImage(
     document.getElementById('finale-art-img'),
     document.getElementById('finale-art-badge'),
@@ -1703,12 +1974,15 @@ export function openFinaleModal() {
       subtitle: `Section ${ending.sectionNum} · ${ending.epigraphRef}`
     }
   );
+  const nw1Code = generateNW1Code();
   const codeBox = document.getElementById('finale-nw1-code');
-  if (codeBox) codeBox.value = generateNW1Code();
+  if (codeBox) codeBox.value = nw1Code;
+  const seaCodeBox = document.getElementById('ending-sea-nw1-code');
+  if (seaCodeBox) seaCodeBox.value = nw1Code;
 
-  const btnGate = document.getElementById('btn-finale-open-gatehouse');
-  if (btnGate) {
-    btnGate.onclick = () => openGatehouseModal();
+  const btnReturnTitle = document.getElementById('btn-finale-return-title');
+  if (btnReturnTitle) {
+    btnReturnTitle.onclick = () => openTitleModal();
   }
 
   audio.playKinnorChord();
@@ -1777,7 +2051,13 @@ function initThreeWorld() {
 
   window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
-    if ((e.code === 'KeyE' || e.code === 'Enter') && !isAnyModalOpen() && !finalePayoffState.active) {
+    if (
+      (e.code === 'KeyE' || e.code === 'Enter') &&
+      !isAnyModalOpen() &&
+      !finalePayoffState.active &&
+      !endingCleanupActive &&
+      performance.now() >= interactCooldownUntil
+    ) {
       const near = worldManager.getNearestNode(playerPos, 4.2);
       if (near) openNodeInteraction(near);
     }
@@ -1822,7 +2102,14 @@ function initThreeWorld() {
     dragging = false;
     // Tap / Click picking on pointerup only (zero per-frame ReadPixels / zero GPU stall)
     const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
-    if (moved < 6 && e.target === renderer.domElement && worldManager && camera && !isAnyModalOpen()) {
+    if (
+      moved < 6 &&
+      e.target === renderer.domElement &&
+      worldManager &&
+      camera &&
+      !isAnyModalOpen() &&
+      !endingCleanupActive
+    ) {
       const rect = renderer.domElement.getBoundingClientRect();
       pointerNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       pointerNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -1834,9 +2121,7 @@ function initThreeWorld() {
           obj = obj.parent;
         }
         if (obj && obj.userData?.node) {
-          const n = obj.userData.node;
-          playerPos.set(n.pos[0], 0, n.pos[2] + 1.8);
-          openNodeInteraction(n);
+          teleportToNode(obj.userData.node, true);
         }
       }
     }
@@ -1883,6 +2168,7 @@ function bindUIButtons() {
   };
 
   bindClick('btn-nav-zone-start', () => openTitleModal());
+  bindClick('btn-ending-return-title', () => openTitleModal());
   bindClick('btn-nav-inventory', () => openInventoryModal());
   bindClick('btn-nav-relics', () => openRelicModal('aquamarine-tuning-stone'));
   bindClick('btn-nav-gatehouse', () => openGatehouseModal());
@@ -1920,6 +2206,14 @@ function bindUIButtons() {
     setText('btn-audio-toggle', muted ? 'Audio: Muted' : 'Audio: On');
   });
 
+  bindClick('btn-tts-toggle', () => {
+    state.settings.readAloudScroll = !state.settings.readAloudScroll;
+    if (!state.settings.readAloudScroll) {
+      stopKjvSpeech();
+    }
+    saveState();
+  });
+
   bindClick('btn-copy-nw1', () => {
     const code = generateNW1Code();
     navigator.clipboard?.writeText(code);
@@ -1946,6 +2240,7 @@ function bindUIButtons() {
     } catch {
       // Ignore
     }
+    setEndingCleanupMode(false);
     state = createDefaultState();
     saveState();
     loadStage(0);
@@ -2019,17 +2314,21 @@ function animate(now) {
     const cos = Math.cos(cameraYaw);
     playerPos.x += (moveRight * cos - moveForward * sin) * speed;
     playerPos.z += (-moveForward * cos - moveRight * sin) * speed;
-    playerPos.x = Math.max(-6.5, Math.min(6.5, playerPos.x));
+    playerPos.x = Math.max(-5.2, Math.min(5.2, playerPos.x));
     playerPos.z = Math.max(-27.5, Math.min(14.5, playerPos.z));
   }
 
   if (camera) {
     const clampedDist = Math.max(3.0, Math.min(9.0, cameraDistance));
-    camera.position.set(
+    const desiredCamPos = new THREE.Vector3(
       playerPos.x + Math.sin(cameraYaw) * clampedDist,
       2.2 + (clampedDist - 3.0) * 0.16,
       playerPos.z + Math.cos(cameraYaw) * clampedDist
     );
+    const safeCamPos = worldManager
+      ? worldManager.resolveCameraPosition(playerPos, desiredCamPos)
+      : desiredCamPos;
+    camera.position.copy(safeCamPos);
     camera.lookAt(
       playerPos.x - Math.sin(cameraYaw) * 4,
       1.35,
@@ -2039,19 +2338,7 @@ function animate(now) {
 
   if (worldManager) {
     worldManager.update(dt, elapsed, playerPos, camera);
-    const near = worldManager.getNearestNode(playerPos, 4.2);
-    const promptBar = document.getElementById('proximity-prompt-bar');
-    const promptBtn = document.getElementById('btn-proximity-interact');
-    if (promptBar && promptBtn) {
-      if (near) {
-        const locked = isNodeLocked(near);
-        promptBar.classList.remove('hidden');
-        promptBtn.textContent = `Interact [E / Tap]: ${getShortNodeLabel(near, locked)}`;
-        promptBtn.onclick = () => openNodeInteraction(near);
-      } else {
-        promptBar.classList.add('hidden');
-      }
-    }
+    refreshProximityInteract(false);
   }
 
   if (renderer && scene && camera) {
@@ -2075,6 +2362,9 @@ window.narrowWayApp = {
   getPlayerPos: () => playerPos,
   getCamera: () => camera,
   getRenderer: () => renderer,
+  isEndingCleanupActive: () => endingCleanupActive,
+  getInteractCooldownRemainingMs: () => Math.max(0, Math.round(interactCooldownUntil - performance.now())),
+  getCurrentInteractNode: () => currentInteractNode,
   getPerformanceMetrics: () => ({
     fps: currentFps,
     pixelRatio: renderer ? renderer.getPixelRatio() : 1,
@@ -2106,6 +2396,14 @@ window.narrowWayApp = {
   isStageArtPreloaded,
   preloadStageArt,
   formatTreasureChoiceStatText,
+  getDetailedInteractLabel,
+  getSafeNodeSpawn,
+  getDefinedStageSpawn,
+  teleportToNode,
+  refreshProximityInteract,
+  setEndingCleanupMode,
+  speakKjvScroll,
+  stopKjvSpeech,
   STAGE_ART_MAP,
   PORTRAIT_ART_MAP,
   STAND_ART_MAP,
