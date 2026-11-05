@@ -764,6 +764,11 @@
 
       <div id="gating-toast" class="gating-toast hidden" role="status" aria-live="polite"></div>
 
+      <div id="multitab-sync-banner" class="gating-toast hidden" role="alert" style="background:rgba(120, 53, 15, 0.96); border-color:var(--gold); color:#fef3c7; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; white-space:normal;">
+        <span>⚠ Game open in another tab — reload to sync</span>
+        <button id="btn-multitab-reload" type="button" class="btn-gold" style="min-height:32px; padding:3px 10px; font-size:0.76rem;">Reload to Sync</button>
+      </div>
+
       <div id="stage-drawer" class="stage-drawer hidden">
         <div class="stage-banner-row">
           <img id="stage-art-thumb" alt="Stage Scene Panel" />
@@ -1259,7 +1264,7 @@
           </div>
           <div class="finale-summary-item">
             <span style="color:var(--text-muted);">Wells Used</span>
-            <strong id="finale-stat-wells" style="color:var(--aqua);">0 / 5</strong>
+            <strong id="finale-stat-wells" style="color:var(--aqua);">0 / 6</strong>
           </div>
         </div>
         <div id="finale-ending-hint" class="finale-ending-hint"></div>

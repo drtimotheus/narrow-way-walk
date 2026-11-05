@@ -52,6 +52,7 @@ function createDefaultState() {
     oil: 1,
     bread: 2,
     breadPickupClaimed: false,
+    stage6BreadClaimed: false,
     scrollsLearned: [],
     tokenEarned: false,
     tokenUsed: false,
@@ -86,6 +87,9 @@ let endingCleanupActive = false;
 let currentInteractNode = null;
 let interactCooldownUntil = 0;
 let interactConfirmTimer = null;
+let lastModalClosedAt = 0;
+let treasureChoiceInFlight = false;
+let multiTabConflictDetected = false;
 
 export function stopKjvSpeech() {
   try {
@@ -284,6 +288,11 @@ function loadState() {
 state = loadState();
 
 function saveState() {
+  if (multiTabConflictDetected) {
+    // Do not overwrite another tab's newer save until the user reloads or syncs
+    updateHUD();
+    return;
+  }
   sanitizeProgressGating(state);
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -291,6 +300,26 @@ function saveState() {
     // Ignore storage quota errors in private browsing
   }
   checkAndPreloadNextStage();
+  updateHUD();
+}
+
+export function showMultiTabSyncBanner() {
+  multiTabConflictDetected = true;
+  const banner = document.getElementById('multitab-sync-banner');
+  if (banner) {
+    banner.classList.remove('hidden');
+  }
+}
+
+export function syncFromOtherTab() {
+  multiTabConflictDetected = false;
+  state = loadState();
+  const banner = document.getElementById('multitab-sync-banner');
+  if (banner) {
+    banner.classList.add('hidden');
+  }
+  closeAllModals();
+  loadStage(state.currentStageIdx);
   updateHUD();
 }
 
@@ -421,7 +450,11 @@ function isNodeDone(node) {
   if (node.type === 'treasure') return Boolean(state.treasuresChosen[node.treasureId]);
   if (node.type === 'wisdom') return state.wisdomRead.includes(node.wisdomId);
   if (node.type === 'relic') return state.relicsInspected.includes(node.relicId);
-  if (node.type === 'bread') return Boolean(state.breadPickupClaimed);
+  if (node.type === 'bread') {
+    return node.breadId === 'bread_stage6'
+      ? Boolean(state.stage6BreadClaimed)
+      : Boolean(state.breadPickupClaimed);
+  }
   if (node.type === 'portal') return isStageCleared(state.currentStageIdx);
   if (node.type === 'gatehouse_finale') return state.zone1Completed;
   return false;
@@ -471,7 +504,11 @@ export function getDetailedInteractLabel(node, isLocked = false) {
     return isLocked ? 'Interact: 🔒 Treasure Gate (Locked)' : 'Interact: Treasure Gate · Finale';
   }
   if (node.type === 'bread') {
-    return state.breadPickupClaimed
+    const claimed =
+      node.breadId === 'bread_stage6'
+        ? Boolean(state.stage6BreadClaimed)
+        : Boolean(state.breadPickupClaimed);
+    return claimed
       ? 'Interact: Bread Pickup · Claimed ✓'
       : 'Interact: Bread Pickup · +1 Loaf of Bread';
   }
@@ -877,7 +914,7 @@ export function openNodeInteraction(node) {
   } else if (node.type === 'relic') {
     openRelicModal(node.relicId);
   } else if (node.type === 'bread') {
-    openBreadPickupModal();
+    openBreadPickupModal(node.breadId || 'bread_stage4');
   } else if (node.type === 'portal') {
     const nextIdx = node.targetStageIdx ?? state.currentStageIdx + 1;
     if (!isStageCleared(state.currentStageIdx) || !isStageUnlocked(nextIdx)) {
@@ -914,7 +951,12 @@ function showModal(id) {
 
 export function closeAllModals() {
   stopKjvSpeech();
+  const wasOpen = isAnyModalOpen();
   document.querySelectorAll('.modal-backdrop').forEach((m) => m.classList.add('hidden'));
+  if (wasOpen) {
+    lastModalClosedAt = performance.now();
+  }
+  treasureChoiceInFlight = false;
   if (turntable) turntable.stop();
   if (worldManager) {
     worldManager.buildStage(
@@ -1190,10 +1232,15 @@ export function openWisdomModal(wisdomId) {
   showModal('wisdom-modal');
 }
 
-export function openBreadPickupModal() {
-  const alreadyClaimed = Boolean(state.breadPickupClaimed);
+export function openBreadPickupModal(breadId = 'bread_stage4') {
+  const isStage6 = breadId === 'bread_stage6';
+  const alreadyClaimed = isStage6 ? Boolean(state.stage6BreadClaimed) : Boolean(state.breadPickupClaimed);
   if (!alreadyClaimed) {
-    state.breadPickupClaimed = true;
+    if (isStage6) {
+      state.stage6BreadClaimed = true;
+    } else {
+      state.breadPickupClaimed = true;
+    }
     state.bread = Math.min(4, (Number(state.bread) || 0) + 1);
     audio.playKinnorChord();
     saveState();
@@ -1201,11 +1248,23 @@ export function openBreadPickupModal() {
   const msg = alreadyClaimed
     ? `Bread Pickup Claimed ✓ — You have already gathered this Loaf of Bread (Current Bread: ${state.bread}).`
     : `Gain: +1 Loaf of Bread (now ${state.bread} Bread)! Use Bread mid-fight or at a Well to restore +2 Strength.`;
-  setText('well-title', 'Bread of the Juniper Tree · Stage IV Pickup');
-  setText('well-meta', 'Section 175 · Placed Beside Well 3 on the Columbarium Bench · 1 Kings 19:6 (KJV)');
+  setText(
+    'well-title',
+    isStage6
+      ? 'Bread of the Fellowship Circle · Stage VI Pickup'
+      : 'Bread of the Juniper Tree · Stage IV Pickup'
+  );
+  setText(
+    'well-meta',
+    isStage6
+      ? 'Section 256 · Shared Before Stand 8 on the Sea of Glass · 1 Kings 19:6 (KJV)'
+      : 'Section 175 · Placed Beside Well 3 on the Columbarium Bench · 1 Kings 19:6 (KJV)'
+  );
   setText(
     'well-narrative',
-    'Beside the sun-warmed wooden bench at Well 3 rests a warm barley loaf wrapped in linen—a provision for the climb ahead before the Youth Q&A and the Sea of Glass.'
+    isStage6
+      ? 'Before the final Stand on the fire-veined crystal of the Sea of Glass, Adaeze and Brother Matthias share a warm barley loaf wrapped in linen so you do not enter the circle empty.'
+      : 'Beside the sun-warmed wooden bench at Well 3 rests a warm barley loaf wrapped in linen—a provision for the climb ahead before the Youth Q&A and the Sea of Glass.'
   );
   setText(
     'well-kjv-text',
@@ -1213,14 +1272,16 @@ export function openBreadPickupModal() {
   );
   setText('well-reward-banner', msg);
   setText('well-question', 'Where has the Lord provided quiet strength for the next step of your walk today?');
-  const artCfg = WELL_ART_MAP.well_3 || { url: STAGE_ART_MAP[3], motif: 'sea_of_glass', stageIdx: 3 };
+  const artCfg = isStage6
+    ? WELL_ART_MAP.well_6 || { url: STAGE_ART_MAP[5], motif: 'sea_of_glass', stageIdx: 5 }
+    : WELL_ART_MAP.well_3 || { url: STAGE_ART_MAP[3], motif: 'sea_of_glass', stageIdx: 3 };
   loadArtIntoImage(
     document.getElementById('well-art-img'),
     document.getElementById('well-art-badge'),
     {
-      stageIdx: 3,
+      stageIdx: isStage6 ? 5 : 3,
       pngUrl: artCfg.url,
-      title: 'Bread of the Juniper Tree',
+      title: isStage6 ? 'Bread of the Fellowship Circle' : 'Bread of the Juniper Tree',
       subtitle: '+1 Loaf of Bread · 1 Kings 19:6 (KJV)',
       motif: artCfg.motif
     }
@@ -1243,7 +1304,7 @@ export function openBreadPickupModal() {
         state.stats.strength = Math.min(state.startingStats.strength, state.stats.strength + 2);
         const gainedNow = state.stats.strength - prevS;
         saveState();
-        openBreadPickupModal();
+        openBreadPickupModal(breadId);
         setText(
           'well-reward-banner',
           `Used Bread: Gain: +${gainedNow} Strength (now ${state.stats.strength}/${state.startingStats.strength} · ${state.bread} Bread left).`
@@ -1432,13 +1493,18 @@ export function openTreasureModal(treasureId) {
         ? `Give (Cost: 2 Strength · Gain: +1 Treasure)`
         : `Give (Need >2 Strength · Cur: ${state.stats.strength})`;
       btnGiveStr.onclick = () => {
-        if (state.treasuresChosen[tr.id] || state.stats.strength <= 2) return;
+        if (treasureChoiceInFlight || state.treasuresChosen[tr.id] || state.stats.strength <= 2) return;
+        treasureChoiceInFlight = true;
+        btnGiveStr.disabled = true;
+        if (btnGiveFavor) btnGiveFavor.disabled = true;
+        if (btnKeep) btnKeep.disabled = true;
         state.stats.strength = Math.max(1, state.stats.strength - 2);
         state.stats.treasure += tr.giveChoice.treasureDelta || 1;
         state.treasuresChosen[tr.id] = 'give';
         state.treasureLog.push(`${tr.giveChoice.deedRecord} (Sacrificed 2 Strength)`);
         audio.playChime('treasure');
         saveState();
+        treasureChoiceInFlight = false;
         openTreasureModal(tr.id);
       };
     }
@@ -1450,13 +1516,18 @@ export function openTreasureModal(treasureId) {
         ? `Give (Cost: 1 Favor · Gain: +1 Treasure)`
         : `Give (Need 1 Favor · Cur: 0)`;
       btnGiveFavor.onclick = () => {
-        if (state.treasuresChosen[tr.id] || state.stats.favor < 1) return;
+        if (treasureChoiceInFlight || state.treasuresChosen[tr.id] || state.stats.favor < 1) return;
+        treasureChoiceInFlight = true;
+        btnGiveFavor.disabled = true;
+        if (btnGiveStr) btnGiveStr.disabled = true;
+        if (btnKeep) btnKeep.disabled = true;
         state.stats.favor = Math.max(0, state.stats.favor - 1);
         state.stats.treasure += tr.giveChoice.treasureDelta || 1;
         state.treasuresChosen[tr.id] = 'give';
         state.treasureLog.push(`${tr.giveChoice.deedRecord} (Sacrificed 1 Favor)`);
         audio.playChime('treasure');
         saveState();
+        treasureChoiceInFlight = false;
         openTreasureModal(tr.id);
       };
     }
@@ -1466,10 +1537,15 @@ export function openTreasureModal(treasureId) {
       btnKeep.classList.remove('btn-applied');
       btnKeep.textContent = 'Keep / Pass By (+0 Treasure)';
       btnKeep.onclick = () => {
-        if (state.treasuresChosen[tr.id]) return;
+        if (treasureChoiceInFlight || state.treasuresChosen[tr.id]) return;
+        treasureChoiceInFlight = true;
+        btnKeep.disabled = true;
+        if (btnGiveStr) btnGiveStr.disabled = true;
+        if (btnGiveFavor) btnGiveFavor.disabled = true;
         state.treasuresChosen[tr.id] = 'keep';
         audio.playChime('step');
         saveState();
+        treasureChoiceInFlight = false;
         openTreasureModal(tr.id);
       };
     }
@@ -1519,11 +1595,13 @@ export function openStandModal(standId) {
       stand: st,
       enemyStrength: 0,
       maxEnemyStrength: st.baseStrength,
+      baseMaxEnemyStrength: st.baseStrength,
       enemyCourage: st.baseCourage,
       baseEnemyCourage: st.baseCourage,
       round: 0,
       victoryLawApplied: true,
       scrollApplied: true,
+      wisdomApplied: false,
       tokenAuto10Next: false,
       lastRoundLost: false,
       isWon: true,
@@ -1546,11 +1624,13 @@ export function openStandModal(standId) {
       stand: st,
       enemyStrength: st.baseStrength,
       maxEnemyStrength: st.baseStrength,
+      baseMaxEnemyStrength: st.baseStrength,
       enemyCourage: st.baseCourage,
       baseEnemyCourage: st.baseCourage,
       round: 0,
       victoryLawApplied: false,
       scrollApplied: false,
+      wisdomApplied: false,
       tokenAuto10Next: false,
       lastRoundLost: false,
       isWon: false,
@@ -1640,11 +1720,12 @@ function renderStandSession() {
   }
   const eStrengthEl = document.getElementById('stand-enemy-strength');
   if (eStrengthEl) {
+    const baseMaxS = s.baseMaxEnemyStrength || st.baseStrength;
     if (s.isAlreadyCleared || s.isWon) {
       eStrengthEl.textContent = `0/${s.maxEnemyStrength} (Cleared ✓)`;
       eStrengthEl.className = 'stat-reduced';
-    } else if (s.enemyStrength < s.maxEnemyStrength) {
-      eStrengthEl.textContent = `${s.enemyStrength}/${s.maxEnemyStrength} (${s.maxEnemyStrength}→${s.enemyStrength})`;
+    } else if (s.maxEnemyStrength < baseMaxS) {
+      eStrengthEl.textContent = `${s.enemyStrength}/${s.maxEnemyStrength} (was ${baseMaxS}→${s.maxEnemyStrength})`;
       eStrengthEl.className = 'stat-reduced';
     } else {
       eStrengthEl.textContent = `${s.enemyStrength}/${s.maxEnemyStrength}`;
@@ -1676,7 +1757,34 @@ function renderStandSession() {
   if (wisdomBannerEl) {
     if (st.wisdomLine) {
       wisdomBannerEl.classList.remove('hidden');
-      wisdomBannerEl.innerHTML = `<strong style="color:var(--gold);">${st.wisdomLine}</strong>${st.wisdomKjvText ? ` <span style="font-style:italic; color:#fef3c7;">${st.wisdomKjvText}</span>` : ''}`;
+      const canApplyWisdom = Boolean(st.wisdomBenefitEffect && !s.wisdomApplied && s.round === 0 && !s.isWon && !s.isAlreadyCleared);
+      const wisdomActionHtml = st.wisdomBenefitEffect
+        ? s.wisdomApplied
+          ? ` <span style="display:inline-block; margin-left:6px; font-weight:700; color:var(--emerald);">· Proverbs 22:3 Wisdom Applied ✓ (-1 Roll, -2 Strength)</span>`
+          : canApplyWisdom
+            ? ` <button id="btn-stand-apply-wisdom" type="button" class="btn-gold" style="display:inline-flex; align-items:center; min-height:30px; padding:2px 9px; margin-left:6px; font-size:0.72rem;">Heed Proverbs 22:3 (-1 Roll, -2 Str)</button>`
+            : ''
+        : '';
+      wisdomBannerEl.innerHTML = `<strong style="color:var(--gold);">${st.wisdomLine}</strong>${st.wisdomKjvText ? ` <span style="font-style:italic; color:#fef3c7;">${st.wisdomKjvText}</span>` : ''}${wisdomActionHtml}`;
+      const btnWisdom = document.getElementById('btn-stand-apply-wisdom');
+      if (btnWisdom) {
+        btnWisdom.onclick = () => {
+          if (s.wisdomApplied || s.round > 0 || s.isWon) return;
+          const prevC = s.enemyCourage;
+          const prevS = s.enemyStrength;
+          s.wisdomApplied = true;
+          s.enemyCourage = Math.max(4, s.enemyCourage + (st.wisdomBenefitEffect.courageDelta || 0));
+          s.enemyStrength = Math.max(1, s.enemyStrength + (st.wisdomBenefitEffect.strengthDelta || 0));
+          s.maxEnemyStrength = s.enemyStrength;
+          const nextRollMod = s.enemyCourage + (st.rollBonus ?? 1);
+          s.log.push(
+            `Proverbs 22:3 Wisdom Applied ✓: ${st.wisdomBenefitEffect.note || ''} [Stronghold Courage ${prevC}→${s.enemyCourage} (rolls 2d6+${nextRollMod}), Strength ${prevS}→${s.enemyStrength}]`
+          );
+          audio.playChime('stand_win');
+          renderStandSession();
+          bindStandAuxButtons();
+        };
+      }
     } else {
       wisdomBannerEl.classList.add('hidden');
       wisdomBannerEl.textContent = '';
@@ -1747,6 +1855,7 @@ function renderStandSession() {
         s.victoryLawApplied = true;
         s.enemyCourage = Math.max(4, s.enemyCourage + (st.victoryLawEffect?.courageDelta || 0));
         s.enemyStrength = Math.max(1, s.enemyStrength + (st.victoryLawEffect?.strengthDelta || 0));
+        s.maxEnemyStrength = s.enemyStrength;
         const nextRollMod = s.enemyCourage + (st.rollBonus ?? 1);
         s.log.push(
           `Step 1 (Victory Law) Applied ✓: ${st.victoryLawEffect?.note || ''} [Stronghold Courage ${prevC}→${s.enemyCourage} (rolls 2d6+${nextRollMod}), Strength ${prevS}→${s.enemyStrength}]`
@@ -1775,7 +1884,7 @@ function renderStandSession() {
       btnScroll.classList.toggle('btn-applied', Boolean(s.scrollApplied));
       const scrollRefText = primaryScroll ? primaryScroll.ref : 'KJV Scroll';
       btnScroll.textContent = s.scrollApplied
-        ? `Speak ${scrollRefText} — Applied ✓`
+        ? `Speak ${scrollRefText} — Used this fight ✓`
         : `Speak ${scrollRefText}`;
       btnScroll.onclick = () => {
         if (!canSpeakScroll || s.scrollApplied || s.round > 0 || s.isWon) return;
@@ -1795,6 +1904,7 @@ function renderStandSession() {
               : st.scrollLawEffect?.strengthDelta || 0;
           s.enemyCourage = Math.max(4, s.enemyCourage + cDelta);
           s.enemyStrength = Math.max(1, s.enemyStrength + sDelta);
+          s.maxEnemyStrength = s.enemyStrength;
           const nextRollMod = s.enemyCourage + (st.rollBonus ?? 1);
           s.log.push(
             `Spoke ${scObj.ref} verbatim: "${scObj.text}" -> ${st.scrollLawEffect?.note || ''} [Courage ${prevC}→${s.enemyCourage} (rolls 2d6+${nextRollMod}), Strength ${prevS}→${s.enemyStrength}]`
@@ -2252,7 +2362,7 @@ export function openFinaleModal() {
   setText('finale-stat-stands', `${state.standsCleared.length} / 8`);
   setText('finale-stat-treasure', `${givenCount} Given · ${keptCount} Kept`);
   setText('finale-stat-scrolls', `${state.scrollsLearned.length} / 5`);
-  setText('finale-stat-wells', `${state.wellsVisited.length} / 5`);
+  setText('finale-stat-wells', `${state.wellsVisited.length} / ${Object.keys(WELLS).length}`);
   setText(
     'finale-ending-hint',
     isTrue
@@ -2411,7 +2521,8 @@ function initThreeWorld() {
       worldManager &&
       camera &&
       !isAnyModalOpen() &&
-      !endingCleanupActive
+      !endingCleanupActive &&
+      performance.now() - lastModalClosedAt >= 180
     ) {
       const rect = renderer.domElement.getBoundingClientRect();
       pointerNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -2562,6 +2673,16 @@ function bindUIButtons() {
   bindClick('btn-gatehouse-reset-no', () => {
     const confirmBox = document.getElementById('gatehouse-reset-confirm');
     if (confirmBox) confirmBox.classList.add('hidden');
+  });
+
+  bindClick('btn-multitab-reload', () => {
+    window.location.reload();
+  });
+
+  window.addEventListener('storage', (e) => {
+    if (e && e.key === STORAGE_KEY) {
+      showMultiTabSyncBanner();
+    }
   });
 }
 
@@ -2743,5 +2864,8 @@ window.narrowWayApp = {
   openGatehouseModal,
   generateNW1Code,
   restoreFromNW1Code,
+  showMultiTabSyncBanner,
+  syncFromOtherTab,
+  isMultiTabConflictDetected: () => multiTabConflictDetected,
   closeAllModals
 };

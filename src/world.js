@@ -900,10 +900,14 @@ export class WorldStageManager {
     const ndc = worldVec.clone().project(camera);
     if (ndc.z >= -1 && ndc.z <= 1) {
       const safeMarginPx = 12;
+      const isNarrowViewport = vw <= 680;
+      const topSafePx = isNarrowViewport ? 148 : 88;
+      const bottomSafePx = isNarrowViewport ? 148 : 88;
       const halfNdcW = Math.min(0.85, (clampedPxW + safeMarginPx * 2) / vw);
-      const halfNdcH = Math.min(0.85, (clampedPxH + safeMarginPx * 2) / vh);
+      const minNdcY = -1 + Math.min(0.85, (clampedPxH + bottomSafePx * 2) / vh);
+      const maxNdcY = 1 - Math.min(0.85, (clampedPxH + topSafePx * 2) / vh);
       const clampedNdcX = Math.max(-1 + halfNdcW, Math.min(1 - halfNdcW, ndc.x));
-      const clampedNdcY = Math.max(-1 + halfNdcH, Math.min(1 - halfNdcH, ndc.y));
+      const clampedNdcY = Math.max(minNdcY, Math.min(maxNdcY, ndc.y));
       if (clampedNdcX !== ndc.x || clampedNdcY !== ndc.y) {
         const unproj = new THREE.Vector3(clampedNdcX, clampedNdcY, ndc.z).unproject(camera);
         sprite.position.set(

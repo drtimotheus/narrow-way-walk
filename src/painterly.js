@@ -237,7 +237,8 @@ export const WELL_ART_MAP = {
   well_2: { url: './assets/art/sea-01-panel-39.png', motif: 'dawn_window', stageIdx: 2 },       // Well 2: Clean Night Air & Dawn Window
   well_3: { url: './assets/art/sea-01-panel-49.png', motif: 'columbarium_bench', stageIdx: 3 }, // Well 3: Columbarium Bench with David
   well_4: { url: './assets/art/sea-01-panel-62.png', motif: 'pastor_office', stageIdx: 3 },     // Well 4: Pastor Ji's Basement Office
-  well_5: { url: './assets/art/sea-01-panel-74.png', motif: 'sea_of_glass', stageIdx: 4 }       // Well 5: Kitchen Floor Tilting into the Sea of Glass
+  well_5: { url: './assets/art/sea-01-panel-74.png', motif: 'sea_of_glass', stageIdx: 4 },      // Well 5: Kitchen Floor Tilting into the Sea of Glass
+  well_6: { url: './assets/art/sea-01-panel-85.png', motif: 'sea_of_glass', stageIdx: 5 }       // Well 6: Fellowship Basin on the Sea of Glass
 };
 
 // Dedicated painted panel for each of the 8 Treasures (zero overlap within any stage)

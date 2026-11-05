@@ -340,6 +340,24 @@ export const WELLS = {
       exposed: 'Even in the final storm, no believer stands alone; calling on the fellowship and spending the scrolls of truth is the path through.',
       text: 'Even here at the height of the siege, the outcome of the war is never in doubt. Across the warm crystal of the Sea of Glass (Revelation 15:2 KJV), all five towering Strongholds tremble and shrink back (“the devils also believe, and tremble,” James 2:19 KJV). David the King steps to your side, his hand warm on your shoulder: “The battle belongs to the Lord, Fellow-Traveler. Catch your breath at the threshold, and step back into the circle.”'
     }
+  },
+  well_6: {
+    id: 'well_6',
+    num: 6,
+    sectionNum: 256,
+    stageIdx: 5,
+    title: 'Well 6 · The Fellowship Basin on the Sea of Glass (Section 256)',
+    subtitle: 'Living Water & Manna Before the Final Stand on the Crystal Shore',
+    body:
+      'Before the obsidian crown of Pride (#15) and the fig-leaf door of Shame (#17), a warm fountain of living water rises through the fire-veined crystal of the Sea of Glass (Revelation 15:2 KJV). Adaeze Okonkwo, Brother Matthias, and Talia Reyes kneel with you and Elias to drink and share a warm loaf of bread before locking hands in the circle.',
+    grantsScroll: null,
+    grantsToken: false,
+    wisdomId: 'wisdom_7',
+    gracePassage: {
+      sectionRef: 'Section 275 (Act V Climax Grace Restoration)',
+      exposed: 'Even in the final storm, no believer stands alone; calling on the fellowship and spending the scrolls of truth is the path through.',
+      text: 'Even here at the height of the siege, the outcome of the war is never in doubt. Across the warm crystal of the Sea of Glass (Revelation 15:2 KJV), all five towering Strongholds tremble and shrink back (“the devils also believe, and tremble,” James 2:19 KJV). David the King steps to your side, his hand warm on your shoulder: “The battle belongs to the Lord, Fellow-Traveler. Catch your breath at the threshold, and step back into the circle.”'
+    }
   }
 };
 
@@ -431,11 +449,12 @@ export const STANDS = {
     scriptureRoot: '1 Corinthians 6:12; Proverbs 16:18; Proverbs 22:3 (KJV)',
     baseCourage: 9,
     rollBonus: 1,
-    baseStrength: 12,
+    baseStrength: 10,
     crackTarget: 0,
-    isRiggedBait: true, // Walking away is the canonical Victory, or fighting at 2d6+10 is possible but risky!
+    isRiggedBait: true, // Walking away is the canonical Victory, or fighting at 2d6+10 (Str 10, or 2d6+9 / Str 8 with Proverbs 22:3 Wisdom)
     wisdomLine: 'Wisdom: Sometimes the bravest stand is walking away (Proverbs 22:3).',
     wisdomKjvText: '“A prudent man foreseeth the evil, and hideth himself: but the simple pass on, and are punished.” — Proverbs 22:3 (KJV)',
+    wisdomBenefitEffect: { courageDelta: -1, strengthDelta: -2, note: 'Heeding Proverbs 22:3 (KJV) exposes the trap (-1 Courage to 2d6+9, -2 Strength to 8)!' },
     resonantScrolls: ['scroll_5', 'scroll_1'],
     whisper:
       '“What’s the matter? Are you two afraid of a room? Step inside Tae-yang’s green room for ten minutes and prove how strong your recovery is. If you walk away now, everyone at the party will say you’re still weak.”',
@@ -1193,6 +1212,14 @@ export const STAGES = [
         pos: [-3.6, 0, -7.5],
         label: '✦ Treasure Choice #7: Shield Adaeze & Clasp Talia Reyes’s Hand (Sec. 252)',
         color: '#ffd166'
+      },
+      {
+        id: 'node_well6_climax',
+        type: 'well',
+        wellId: 'well_6',
+        pos: [3.2, 0, -9.8],
+        label: '💧 Well 6: Fellowship Basin on the Sea of Glass (+3 Strength · +1 Favor before Stand 8)',
+        color: '#48cae4'
       },
       {
         id: 'node_stand8_climax',
