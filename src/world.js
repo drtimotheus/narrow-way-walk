@@ -80,6 +80,9 @@ export function getShortNodeLabel(node, isLocked = false) {
   if (node.type === 'gatehouse_finale') {
     return isLocked ? '🔒 Treasure Gate' : 'Treasure Gate';
   }
+  if (node.type === 'bread') {
+    return 'Bread +1';
+  }
   return 'Inspect';
 }
 
@@ -170,7 +173,8 @@ const NODE_STYLES = {
   wisdom: { color: 0xa7f3d0, hex: '#6ee7b7' },
   relic: { color: 0x60a5fa, hex: '#93c5fd' },
   portal: { color: 0xc084fc, hex: '#d8b4fe' },
-  gatehouse_finale: { color: 0xfbbf24, hex: '#fde047' }
+  gatehouse_finale: { color: 0xfbbf24, hex: '#fde047' },
+  bread: { color: 0xfbbf24, hex: '#fbbf24' }
 };
 
 export function createNodeMonument(node, isCompleted = false, isLocked = false) {
@@ -241,6 +245,21 @@ export function createNodeMonument(node, isCompleted = false, isLocked = false) 
     crown.position.y = 1.42;
     group.add(ped, crown);
     group.userData.floatingMesh = crown;
+  } else if (node.type === 'bread') {
+    const stoneMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.5 });
+    const breadMat = new THREE.MeshStandardMaterial({
+      color: isCompleted ? 0x34d399 : 0xf59e0b,
+      emissive: isCompleted ? 0x059669 : 0xd97706,
+      emissiveIntensity: 0.72,
+      roughness: 0.35
+    });
+    const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.52, 0.78, 12), stoneMat);
+    ped.position.y = 0.39;
+    const loaf = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 12), breadMat);
+    loaf.scale.set(1.25, 0.72, 0.92);
+    loaf.position.y = 1.42;
+    group.add(ped, loaf);
+    group.userData.floatingMesh = loaf;
   } else {
     const standMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.45 });
     const scrollMat = new THREE.MeshStandardMaterial({
@@ -829,13 +848,15 @@ export class WorldStageManager {
     }
   }
 
-  // Clamps nameplate screen pixel size (76px..124px) and fades/hides any nameplate within ~2 units of the camera
-  _applyNameplateScreenClamp(sprite, worldX, worldY, worldZ, camera, shouldShow = true) {
+  // Clamps nameplate screen pixel size (76px..124px), keeps it inside screen bounds (preventing left/right edge clipping on mobile),
+  // and fades/hides any nameplate within ~2 units of the camera.
+  _applyNameplateScreenClamp(sprite, worldX, worldY, worldZ, camera, shouldShow = true, localBaseY = 2.35) {
     if (!sprite) return;
     if (!shouldShow) {
       sprite.visible = false;
       return;
     }
+    sprite.position.set(0, localBaseY, 0);
     if (!camera) {
       sprite.visible = true;
       sprite.scale.set(1.48, 0.39, 1);
@@ -860,16 +881,48 @@ export class WorldStageManager {
     }
     const fovRad = ((camera.fov || 58) * Math.PI) / 180;
     const worldHeightAtDist = 2 * Math.tan(fovRad * 0.5) * camDist;
+    const vw = Math.max(320, window.innerWidth || 390);
     const vh = Math.max(360, window.innerHeight || 800);
     const naturalWorldW = 1.48;
     const projectedPxW = (naturalWorldW / worldHeightAtDist) * vh;
     const minPx = 76;
     const maxPx = 124;
     const clampedPxW = Math.max(minPx, Math.min(maxPx, projectedPxW));
+    const clampedPxH = clampedPxW * (68 / 256);
     const clampedWorldW = (clampedPxW / vh) * worldHeightAtDist;
     const clampedWorldH = clampedWorldW * (68 / 256);
     sprite.scale.set(clampedWorldW, clampedWorldH, 1);
     sprite.userData.screenPxWidth = Math.round(clampedPxW);
+
+    // Clamp projected NDC coordinates so the nameplate never clips off the left/right/top/bottom screen edges on mobile
+    camera.updateMatrixWorld();
+    const worldVec = new THREE.Vector3(worldX, worldY, worldZ);
+    const ndc = worldVec.clone().project(camera);
+    if (ndc.z >= -1 && ndc.z <= 1) {
+      const safeMarginPx = 12;
+      const halfNdcW = Math.min(0.85, (clampedPxW + safeMarginPx * 2) / vw);
+      const halfNdcH = Math.min(0.85, (clampedPxH + safeMarginPx * 2) / vh);
+      const clampedNdcX = Math.max(-1 + halfNdcW, Math.min(1 - halfNdcW, ndc.x));
+      const clampedNdcY = Math.max(-1 + halfNdcH, Math.min(1 - halfNdcH, ndc.y));
+      if (clampedNdcX !== ndc.x || clampedNdcY !== ndc.y) {
+        const unproj = new THREE.Vector3(clampedNdcX, clampedNdcY, ndc.z).unproject(camera);
+        sprite.position.set(
+          unproj.x - worldX,
+          localBaseY + (unproj.y - worldY),
+          unproj.z - worldZ
+        );
+      }
+      const centerPxX = ((clampedNdcX + 1) * 0.5) * vw;
+      const centerPxY = ((1 - clampedNdcY) * 0.5) * vh;
+      sprite.userData.screenRect = {
+        left: Math.round(centerPxX - clampedPxW * 0.5),
+        right: Math.round(centerPxX + clampedPxW * 0.5),
+        top: Math.round(centerPxY - clampedPxH * 0.5),
+        bottom: Math.round(centerPxY + clampedPxH * 0.5),
+        width: Math.round(clampedPxW),
+        viewportWidth: vw
+      };
+    }
   }
 
   update(dt, elapsed, playerPos, camera = null) {
@@ -926,7 +979,8 @@ export class WorldStageManager {
         this.eliasCompanion.position.y + 2.22,
         this.eliasCompanion.position.z,
         camera,
-        !this.labelsHidden
+        !this.labelsHidden,
+        2.22
       );
     }
   }

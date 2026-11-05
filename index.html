@@ -891,7 +891,7 @@
         </div>
         <div class="choice-card">
           <strong>Favor, Wells &amp; Sacrificial Treasure</strong>
-          <p class="narrative-p" style="font-size:0.82rem;"><strong>Favor (9 max) &amp; Wells:</strong> Test Favor (<code>2d6 &lt;= Favor</code>, costs 1 Favor) to halve a lost round, or use <strong>Oil (+4)</strong> &amp; <strong>Bread (+2)</strong> mid-fight. Each Well heals <strong>+2 Strength</strong> &amp; <strong>+1 Favor</strong> once.<br/><strong>★ Treasure (Starts at 0):</strong> Each <strong>Give (+1 Treasure)</strong> costs <strong>2 Strength OR 1 Favor</strong> (4+ Treasure reaches the Section 300 True Ending).</p>
+          <p class="narrative-p" style="font-size:0.82rem;"><strong>Favor (9 max) &amp; Wells:</strong> Test Favor (<code>2d6 &lt;= Favor</code>, costs 1 Favor) to halve a lost round, or use <strong>Oil (+4)</strong> &amp; <strong>Bread (+2)</strong> mid-fight (plus 1 extra Bread pickup near Well 3 in Stage IV). Each Well heals <strong>+3 Strength</strong> &amp; <strong>+1 Favor</strong> once.<br/><strong>★ Treasure (Starts at 0):</strong> Each <strong>Give (+1 Treasure)</strong> costs <strong>2 Strength OR 1 Favor</strong> (4+ Treasure reaches the Section 300 True Ending).</p>
         </div>
       </div>
       <div id="welcome-roll-preview" style="font-weight:700; color:var(--aqua); font-size:0.86rem;"></div>
@@ -938,13 +938,13 @@
         <div class="choice-card">
           <strong style="color:var(--emerald);">3. Wells &amp; Cost of Failure</strong>
           <p class="narrative-p" style="font-size:0.8rem;">
-            Each <strong>Well of Living Water</strong> can be used <strong>once</strong>, restoring <strong>+2 Strength</strong> and <strong>+1 Favor</strong> and teaching a KJV Scroll. When you lose a round, you may <strong>Test Favor</strong> (<code>2d6 &lt;= Favor</code>, costs 1 Favor) to halve the loss. If Strength reaches 0, <strong>"Fallen, but not forsaken" (Micah 7:8 KJV)</strong> restores Strength to <strong>50% (10/20)</strong>, loses <strong>1 Treasure</strong> (if any), and sends you to the start of the current stage with that Stand un-cleared.
+            Each <strong>Well of Living Water</strong> can be used <strong>once</strong>, restoring <strong>+3 Strength</strong> and <strong>+1 Favor</strong> and teaching a KJV Scroll. When you lose a round, you may <strong>Test Favor</strong> (<code>2d6 &lt;= Favor</code>, costs 1 Favor) to halve the loss. If Strength reaches 0, <strong>"Fallen, but not forsaken" (Micah 7:8 KJV)</strong> restores Strength to <strong>50% (10/20)</strong>, loses <strong>1 Treasure</strong> (if any), and sends you to the start of the current stage with that Stand un-cleared.
           </p>
         </div>
         <div class="choice-card">
           <strong style="color:var(--gold);">4. Oil, Bread &amp; Sacrificial Treasure</strong>
           <p class="narrative-p" style="font-size:0.8rem;">
-            <strong>Oil (+4 Strength)</strong> and <strong>Bread (+2 Strength)</strong> are your main ways to recover mid-fight inside a Stand (Bread can also be eaten at a Well).<br/>
+            <strong>Oil (+4 Strength)</strong> and <strong>Bread (+2 Strength)</strong> are your main ways to recover mid-fight inside a Stand (Bread can also be eaten at a Well, with 1 extra Bread pickup near Well 3 in Stage IV).<br/>
             <strong>★ Treasure:</strong> Each <strong>Give</strong> costs a real sacrifice—<strong>2 Strength OR 1 Favor</strong> (your choice)—for <strong>+1 Treasure</strong>. Reach <strong>4+ Treasure</strong> with all Stands cleared for Section 300 (True Ending).
           </p>
         </div>
@@ -1035,7 +1035,7 @@
         <p id="well-question" class="narrative-p"></p>
       </div>
       <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-        <button id="btn-well-eat-bread">Eat 1 Bread (+2 Strength)</button>
+        <button id="btn-well-eat-bread">Use Bread · +2 Strength (2 left)</button>
         <button data-close-modal class="btn-primary">Rise Refreshed from the Well</button>
       </div>
     </div>
@@ -1104,6 +1104,7 @@
         <div id="stand-coach-tip" class="coach-tip-banner hidden">
           <strong>Watchman Stand Coach Tip:</strong> <strong>1.</strong> Click <em>Step 1: Apply Victory Law</em> before Round 1. <strong>2.</strong> Speak a <em>Resonant KJV Scroll</em> if learned. <strong>3.</strong> Click <em>Roll Round</em> (ties cost 1 Strength; use <em>Oil</em> or <em>Bread</em> mid-fight to recover)!
         </div>
+        <div id="stand-wisdom-banner" class="coach-tip-banner hidden" style="border-color:rgba(251,191,36,0.55); background:rgba(251,191,36,0.12); color:#fde68a;"></div>
       </div>
 
       <div class="stand-middle-section">
@@ -1127,10 +1128,10 @@
       </div>
 
       <div class="stand-bottom-actions">
-        <button id="btn-stand-roll" class="btn-primary" style="flex:1 1 230px;">Roll Round (2d6 + Courage)</button>
+        <button id="btn-stand-roll" class="btn-primary" style="flex:1 1 230px;">Roll: 2d6 + Courage 9 vs 2d6 + 8</button>
         <button id="btn-stand-favor">Test Favor</button>
-        <button id="btn-stand-oil">Oil (+4 Str)</button>
-        <button id="btn-stand-bread">Bread (+2 Str)</button>
+        <button id="btn-stand-oil">Use Oil · +4 Strength (1 left)</button>
+        <button id="btn-stand-bread">Use Bread · +2 Strength (2 left)</button>
         <button id="btn-stand-token">Token (Auto-10)</button>
         <button id="btn-stand-withdraw">Withdraw (-2 Str)</button>
       </div>
@@ -1149,6 +1150,31 @@
       </div>
       <div id="grace-kjv" class="kjv-box"></div>
       <p id="grace-narrative" class="narrative-p"></p>
+      <div id="grace-stats-summary" class="finale-summary-card">
+        <strong style="color:var(--aqua); font-size:0.84rem;">Stats After Recovery</strong>
+        <div class="finale-summary-grid">
+          <div class="finale-summary-item">
+            <span style="color:var(--text-muted);">Strength</span>
+            <strong id="grace-stat-strength" style="color:var(--emerald);">10 / 20</strong>
+          </div>
+          <div class="finale-summary-item">
+            <span style="color:var(--text-muted);">Favor</span>
+            <strong id="grace-stat-favor" style="color:var(--aqua);">9 / 9</strong>
+          </div>
+          <div class="finale-summary-item">
+            <span style="color:var(--text-muted);">Oil</span>
+            <strong id="grace-stat-oil" style="color:var(--gold);">1 / 2</strong>
+          </div>
+          <div class="finale-summary-item">
+            <span style="color:var(--text-muted);">Bread</span>
+            <strong id="grace-stat-bread" style="color:var(--gold);">2 / 3</strong>
+          </div>
+          <div class="finale-summary-item" style="grid-column: 1 / -1;">
+            <span style="color:var(--text-muted);">★ Treasure</span>
+            <strong id="grace-stat-treasure" style="color:var(--gold);">0</strong>
+          </div>
+        </div>
+      </div>
       <div style="display:flex; flex-direction:column; gap:8px;">
         <button id="btn-grace-restore-str" class="btn-primary">Rise at Start of Current Stage</button>
         <button id="btn-grace-restore-supply" class="btn-gold hidden">Spend 1 Bread/Oil -> Return at Full Starting Strength</button>
